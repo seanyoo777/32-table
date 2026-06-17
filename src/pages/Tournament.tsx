@@ -78,6 +78,8 @@ export default function TournamentPage() {
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [tourPage, setTourPage] = useState(0)
+  const TOUR_PAGE_SIZE = 12
   const selected = tournaments.find(t => t.id === selectedId)
 
   function open(id: string) { setSelectedId(id); setView('detail') }
@@ -141,8 +143,13 @@ export default function TournamentPage() {
           <button onClick={() => setView('create')} className="btn-primary">첫 대회 만들기</button>
         </div>
       ) : (
+        (() => {
+          const sorted = [...tournaments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          const totalPages = Math.ceil(sorted.length / TOUR_PAGE_SIZE)
+          const paged = sorted.slice(tourPage * TOUR_PAGE_SIZE, (tourPage + 1) * TOUR_PAGE_SIZE)
+          return (<>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...tournaments].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => {
+          {paged.map(t => {
             const totalMatches = t.events.reduce((s, e) => s + e.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
             const doneMatches = t.events.reduce((s, e) => s + e.matches.filter(m => m.result && !m.result.walkedOver).length, 0)
             const pct = totalMatches > 0 ? Math.round(doneMatches / totalMatches * 100) : 0
@@ -179,6 +186,17 @@ export default function TournamentPage() {
             )
           })}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <button onClick={() => setTourPage(p => Math.max(0, p - 1))} disabled={tourPage === 0}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white disabled:opacity-40 hover:bg-gray-50">← 이전</button>
+            <span className="text-sm text-gray-500">{tourPage + 1} / {totalPages}</span>
+            <button onClick={() => setTourPage(p => Math.min(totalPages - 1, p + 1))} disabled={tourPage === totalPages - 1}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white disabled:opacity-40 hover:bg-gray-50">다음 →</button>
+          </div>
+        )}
+        </>)
+        })()
       )}
     </div>
   </div>
@@ -255,6 +273,16 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
       .sort((a, b) => b.points - a.points)
       .map(p => p.id)
     setSeedOrderIds(sorted)
+  }
+
+  function moveSeed(idx: number, delta: -1 | 1) {
+    setSeedOrderIds(prev => {
+      const arr = [...prev]
+      const target = idx + delta
+      if (target < 0 || target >= arr.length) return prev
+      ;[arr[idx], arr[target]] = [arr[target], arr[idx]]
+      return arr
+    })
   }
 
   function drawNonSeeds() {
@@ -489,7 +517,11 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
                       if (!p) return null
                       const isSeeded = i < seedCount
                       return (
-                        <div key={id} className={`flex items-center gap-2 px-2 py-1 rounded text-sm ${isSeeded ? 'bg-yellow-100 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
+                        <div key={id} className={`flex items-center gap-1.5 px-2 py-1 rounded text-sm ${isSeeded ? 'bg-yellow-100 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
+                          <div className="flex flex-col gap-0.5">
+                            <button onClick={() => moveSeed(i, -1)} disabled={i === 0} className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none text-xs">▲</button>
+                            <button onClick={() => moveSeed(i, 1)} disabled={i === seedOrderIds.filter(id2 => ef.selectedIds.includes(id2)).length - 1} className="text-gray-300 hover:text-gray-600 disabled:opacity-20 leading-none text-xs">▼</button>
+                          </div>
                           <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
                           {isSeeded ? (
                             <span className="text-[10px] px-1 py-0.5 bg-yellow-500 text-white rounded font-bold min-w-[22px] text-center">S{i + 1}</span>
@@ -557,7 +589,8 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
   onRecord: (evId: string, mId: string, result: MatchResult) => void
   onClearResult: (evId: string, mId: string) => void
 }) {
-  const [activeEventId, setActiveEventId] = useState(tournament.events[0]?.id ?? '')
+  const [activeEventId, setActiveEventId] = useState<string>(tournament.events[0]?.id ?? '')
+  const [showSummary, setShowSummary] = useState(false)
   const activeEvent = tournament.events.find(e => e.id === activeEventId)
 
   return (
@@ -616,21 +649,32 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
 
       {/* Event tabs */}
       <div className="flex gap-2 flex-wrap no-print">
+        <button
+          onClick={() => setShowSummary(true)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center gap-1.5 ${showSummary ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-yellow-600 border-yellow-300 hover:bg-yellow-50'}`}
+        >
+          🏆 결과 요약
+        </button>
         {tournament.events.map(ev => {
           const done = ev.matches.filter(m => m.result && !m.result.walkedOver).length
           const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
           return (
-            <button key={ev.id} onClick={() => setActiveEventId(ev.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${activeEventId === ev.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
+            <button key={ev.id} onClick={() => { setActiveEventId(ev.id); setShowSummary(false) }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${!showSummary && activeEventId === ev.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
               {ev.label}
-              <span className={`ml-1.5 text-xs ${activeEventId === ev.id ? 'text-blue-200' : 'text-gray-400'}`}>{done}/{total}</span>
+              <span className={`ml-1.5 text-xs ${!showSummary && activeEventId === ev.id ? 'text-blue-200' : 'text-gray-400'}`}>{done}/{total}</span>
             </button>
           )
         })}
       </div>
 
+      {/* 결과 요약 뷰 */}
+      {showSummary && (
+        <TournamentSummary tournament={tournament} pMap={pMap} />
+      )}
+
       {/* Active event bracket */}
-      {activeEvent && (
+      {!showSummary && activeEvent && (
         <EventBracket
           event={activeEvent}
           pMap={pMap}
@@ -638,6 +682,155 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
           onClearResult={(mId) => onClearResult(activeEvent.id, mId)}
         />
       )}
+    </div>
+  )
+}
+
+// ─── 결과 요약 ───────────────────────────────────────────
+function TournamentSummary({ tournament, pMap }: {
+  tournament: Tournament
+  pMap: Record<string, { name: string; school: string; points: number; gender: string }>
+}) {
+  const results = tournament.events.map(ev => {
+    const knockout = ev.matches.filter(m => !m.groupId && !m.isThirdPlace && m.participant1Id && m.participant2Id && !m.isBye)
+    const groupMatches = ev.matches.filter(m => m.groupId)
+    const maxRound = knockout.length > 0 ? Math.max(...knockout.map(m => m.round)) : 0
+    const finalMatch = knockout.find(m => m.round === maxRound && !m.nextMatchId)
+      ?? knockout.find(m => m.round === maxRound)
+    const thirdMatch = ev.matches.find(m => m.isThirdPlace)
+
+    let gold: string | null = null
+    let silver: string | null = null
+    let bronze: string[] = []
+
+    if (finalMatch?.result) {
+      gold = finalMatch.result.winnerId
+      silver = finalMatch.result.loserId
+    }
+    if (thirdMatch?.result) {
+      bronze = [thirdMatch.result.winnerId]
+    } else if (finalMatch && ev.bracketFormat !== '리그') {
+      // 준결승 패자들
+      const semis = knockout.filter(m => m.nextMatchId === finalMatch.id && m.result)
+      semis.forEach(s => { if (s.result && s.result.loserId !== silver) bronze.push(s.result.loserId) })
+    }
+
+    // 리그/조별 순위
+    if (ev.bracketFormat === '리그' && knockout.length === 0) {
+      const s = calcStandings(groupMatches.length > 0 ? groupMatches : ev.matches, ev.participantIds)
+      const sorted = [...ev.participantIds].sort((a, b) => (s[b]?.pts ?? 0) - (s[a]?.pts ?? 0))
+      gold = sorted[0] ?? null
+      silver = sorted[1] ?? null
+      bronze = sorted[2] ? [sorted[2]] : []
+    }
+
+    const done = ev.matches.filter(m => m.result && m.participant1Id && m.participant2Id && !m.isBye).length
+    const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+    const pct = total > 0 ? Math.round(done / total * 100) : 0
+
+    return { ev, gold, silver, bronze, done, total, pct }
+  })
+
+  const medalColors: Record<string, string> = {
+    gold: 'bg-yellow-400 text-yellow-900',
+    silver: 'bg-gray-200 text-gray-700',
+    bronze: 'bg-amber-600 text-white',
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 전체 진행률 */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-gray-700">전체 진행률</span>
+          <span className="text-sm font-bold text-blue-600">
+            {results.reduce((s, r) => s + r.done, 0)} / {results.reduce((s, r) => s + r.total, 0)}경기
+          </span>
+        </div>
+        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 rounded-full transition-all"
+            style={{ width: `${results.reduce((s, r) => s + r.total, 0) > 0 ? Math.round(results.reduce((s, r) => s + r.done, 0) / results.reduce((s, r) => s + r.total, 0) * 100) : 0}%` }}
+          />
+        </div>
+      </div>
+
+      {/* 종목별 결과 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {results.map(({ ev, gold, silver, bronze, done, total, pct }) => (
+          <div key={ev.id} className="card space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-800 text-sm">{ev.label}</h3>
+                <p className="text-xs text-gray-400">{ev.bracketFormat} · {ev.participantIds.length}명</p>
+              </div>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${pct === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-600'}`}>
+                {pct === 100 ? '완료' : `${pct}%`}
+              </span>
+            </div>
+
+            <div className="h-1 bg-gray-100 rounded-full">
+              <div className="h-full bg-blue-400 rounded-full" style={{ width: `${pct}%` }} />
+            </div>
+
+            <div className="space-y-1.5">
+              {gold ? (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${medalColors.gold}`}>🥇</span>
+                  <span className="text-sm font-bold">{pMap[gold]?.name ?? '?'}</span>
+                  <span className="text-xs text-gray-400">{pMap[gold]?.school}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-300 px-1.5 py-0.5 rounded border border-dashed border-gray-200">🥇</span>
+                  <span className="text-xs text-gray-300">진행 중</span>
+                </div>
+              )}
+              {silver && (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${medalColors.silver}`}>🥈</span>
+                  <span className="text-sm">{pMap[silver]?.name ?? '?'}</span>
+                  <span className="text-xs text-gray-400">{pMap[silver]?.school}</span>
+                </div>
+              )}
+              {bronze.map((bid, i) => bid && pMap[bid] ? (
+                <div key={i} className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${medalColors.bronze}`}>🥉</span>
+                  <span className="text-sm">{pMap[bid]?.name}</span>
+                  <span className="text-xs text-gray-400">{pMap[bid]?.school}</span>
+                </div>
+              ) : null)}
+            </div>
+
+            <div className="text-xs text-gray-400 text-right">{done}/{total}경기 완료</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 인쇄용 요약 테이블 */}
+      <div className="hidden print:block">
+        <h2 className="font-bold text-lg mb-3">{tournament.name} — 결과 요약</h2>
+        <table className="w-full text-sm border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 px-3 py-2 text-left">종목</th>
+              <th className="border border-gray-300 px-3 py-2">🥇 금메달</th>
+              <th className="border border-gray-300 px-3 py-2">🥈 은메달</th>
+              <th className="border border-gray-300 px-3 py-2">🥉 동메달</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map(({ ev, gold, silver, bronze }) => (
+              <tr key={ev.id}>
+                <td className="border border-gray-300 px-3 py-2 font-medium">{ev.label}</td>
+                <td className="border border-gray-300 px-3 py-2 text-center">{gold ? `${pMap[gold]?.name} (${pMap[gold]?.school})` : '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-center">{silver ? `${pMap[silver]?.name} (${pMap[silver]?.school})` : '-'}</td>
+                <td className="border border-gray-300 px-3 py-2 text-center">{bronze.filter(b => pMap[b]).map(b => `${pMap[b].name}`).join(', ') || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -87,8 +87,10 @@ interface StoreState {
   acknowledgeMatchCall: (id: string) => void
   removeMatchCall: (id: string) => void
 
-  // Rating & Check-in
+  // Rating & Check-in & Fee
   updatePlayerRating: (id: string, newRating: number, gamesPlayed: number) => void
+  toggleFeePaid: (id: string) => void
+  resetFeePaid: () => void
 
   // App settings
   updateAppSettings: (s: Partial<AppSettings>) => void
@@ -332,9 +334,15 @@ export const useStore = create<StoreState>()(
         matchCalls: s.matchCalls.filter(c => c.id !== id)
       })),
 
-      // Rating & Check-in
+      // Rating & Check-in & Fee
       updatePlayerRating: (id, newRating, gamesPlayed) => set((s) => ({
         players: s.players.map(p => p.id === id ? { ...p, rating: newRating, gamesPlayed } : p)
+      })),
+      toggleFeePaid: (id) => set((s) => ({
+        players: s.players.map(p => p.id === id ? { ...p, feePaid: !p.feePaid } : p)
+      })),
+      resetFeePaid: () => set((s) => ({
+        players: s.players.map(p => ({ ...p, feePaid: false }))
       })),
 
       // App settings
@@ -368,7 +376,7 @@ export const useStore = create<StoreState>()(
         appSettings: data.appSettings ?? s.appSettings,
       })),
       resetSeasonStats: () => set((s) => ({
-        players: s.players.map(p => ({ ...p, points: 0, wins: 0, losses: 0, rating: 1000, gamesPlayed: 0 })),
+        players: s.players.map(p => ({ ...p, points: 0, wins: 0, losses: 0, rating: 1000, gamesPlayed: 0, feePaid: false, checkedIn: false })),
         pairs: s.pairs.map(p => ({ ...p, points: 0, wins: 0, losses: 0 })),
         teams: s.teams.map(t => ({ ...t, points: 0, wins: 0, losses: 0 })),
         scoreRecords: [],

@@ -3,12 +3,14 @@ import { useStore } from '../store/useStore'
 import { parseQR, playerQRValue } from '../components/QRCodeDisplay'
 import QRCodeDisplay from '../components/QRCodeDisplay'
 import { getRatingLabel } from '../utils/ratingUtils'
-import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi, Download } from 'lucide-react'
+import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi, Download, DollarSign } from 'lucide-react'
 import type { Player } from '../types'
 
 export default function CheckInPage() {
-  const { players, updatePlayer } = useStore()
-  const [tab, setTab] = useState<'station' | 'list' | 'card'>('station')
+  const { players, updatePlayer, toggleFeePaid, resetFeePaid } = useStore()
+  const [tab, setTab] = useState<'station' | 'list' | 'fee' | 'card'>('station')
+  const [feeAmount, setFeeAmount] = useState(5000)
+  const [feeQuery, setFeeQuery] = useState('')
   const [query, setQuery] = useState('')
   const [lastScanned, setLastScanned] = useState<Player | null>(null)
   const [scanStatus, setScanStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -67,9 +69,9 @@ export default function CheckInPage() {
   }
 
   function exportAttendanceCSV() {
-    const rows = ['이름,소속,부문,성별,레이팅,체크인']
+    const rows = ['이름,소속,부문,성별,레이팅,체크인,참가비납부']
     for (const p of [...players].sort((a, b) => a.name.localeCompare(b.name))) {
-      rows.push([p.name, p.school, p.division, p.gender, p.rating ?? 1000, p.checkedIn ? 'O' : 'X'].join(','))
+      rows.push([p.name, p.school, p.division, p.gender, p.rating ?? 1000, p.checkedIn ? 'O' : 'X', p.feePaid ? 'O' : 'X'].join(','))
     }
     const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -80,9 +82,15 @@ export default function CheckInPage() {
     URL.revokeObjectURL(url)
   }
 
+  const feePaid = players.filter(p => p.feePaid)
+  const feeFiltered = feeQuery
+    ? players.filter(p => p.name.includes(feeQuery) || p.school.includes(feeQuery))
+    : players
+
   const tabs = [
     { id: 'station' as const, label: '체크인 스테이션', icon: QrCode },
     { id: 'list' as const, label: `체크인 현황 (${checkedIn.length}/${players.length})`, icon: Users },
+    { id: 'fee' as const, label: `참가비 납부 (${feePaid.length}/${players.length})`, icon: DollarSign },
     { id: 'card' as const, label: 'QR 선수증 출력', icon: Printer },
   ]
 
@@ -285,6 +293,134 @@ export default function CheckInPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ── 참가비 납부 관리 ── */}
+      {tab === 'fee' && (
+        <div className="space-y-3">
+          {/* 요약 */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="card text-center py-3">
+              <div className="text-2xl font-bold text-green-600">{feePaid.length}</div>
+              <div className="text-xs text-gray-400 mt-0.5">납부 완료</div>
+            </div>
+            <div className="card text-center py-3">
+              <div className="text-2xl font-bold text-red-500">{players.length - feePaid.length}</div>
+              <div className="text-xs text-gray-400 mt-0.5">미납</div>
+            </div>
+            <div className="card text-center py-3">
+              <div className="text-2xl font-bold text-blue-600">
+                {(feePaid.length * feeAmount).toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">수납액 (원)</div>
+            </div>
+          </div>
+
+          {/* 설정 바 */}
+          <div className="card flex items-center gap-3 flex-wrap">
+            <label className="text-xs font-medium text-gray-600">참가비</label>
+            <input
+              type="number" step="1000" min="0"
+              className="input w-28 text-right text-sm"
+              value={feeAmount}
+              onChange={e => setFeeAmount(Number(e.target.value))}
+            />
+            <span className="text-xs text-gray-500">원</span>
+            <div className="ml-auto flex gap-2">
+              <button
+                onClick={() => { if (confirm('전원 납부 완료로 일괄 처리합니까?')) players.forEach(p => updatePlayer(p.id, { feePaid: true })) }}
+                className="text-xs px-2.5 py-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200"
+              >
+                전원 납부
+              </button>
+              <button
+                onClick={() => { if (confirm('납부 현황을 초기화합니까?')) resetFeePaid() }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 flex items-center gap-1"
+              >
+                <RefreshCw size={11} /> 초기화
+              </button>
+              <button onClick={exportAttendanceCSV} className="text-xs px-2.5 py-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-1">
+                <Download size={11} /> CSV
+              </button>
+            </div>
+          </div>
+
+          {/* 검색 */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              className="input pl-8"
+              placeholder="이름, 소속 검색..."
+              value={feeQuery}
+              onChange={e => setFeeQuery(e.target.value)}
+            />
+          </div>
+
+          {/* 진행 바 */}
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-green-500 rounded-full transition-all"
+              style={{ width: `${players.length > 0 ? feePaid.length / players.length * 100 : 0}%` }}
+            />
+          </div>
+
+          {/* 선수 목록 */}
+          <div className="card divide-y divide-gray-100 overflow-y-auto max-h-96">
+            {feeFiltered.sort((a, b) => {
+              // 미납 먼저, 같으면 이름순
+              if (!a.feePaid && b.feePaid) return -1
+              if (a.feePaid && !b.feePaid) return 1
+              return a.name.localeCompare(b.name)
+            }).map(p => (
+              <div key={p.id} className={`flex items-center gap-3 py-2 px-2 transition-colors ${p.feePaid ? 'bg-green-50/30' : ''}`}>
+                <button
+                  onClick={() => toggleFeePaid(p.id)}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                    p.feePaid
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600'
+                  }`}
+                >
+                  {p.feePaid ? <CheckCircle size={16} /> : <DollarSign size={14} />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{p.name}</span>
+                    <span className="text-xs text-gray-400">{p.school}</span>
+                  </div>
+                  <div className="text-xs text-gray-400">{p.division} · {p.gender}자</div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className={`text-xs font-semibold ${p.feePaid ? 'text-green-600' : 'text-red-500'}`}>
+                    {p.feePaid ? '납부' : '미납'}
+                  </div>
+                  {feeAmount > 0 && (
+                    <div className="text-[10px] text-gray-400">{feeAmount.toLocaleString()}원</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 부문별 요약 */}
+          <div className="card space-y-2">
+            <h3 className="text-xs font-semibold text-gray-600">부문별 납부 현황</h3>
+            {(['초등','중등','고등','대학','일반','생활체육'] as const).map(div => {
+              const dp = players.filter(p => p.division === div)
+              const paid = dp.filter(p => p.feePaid).length
+              if (dp.length === 0) return null
+              return (
+                <div key={div} className="flex items-center gap-2 text-xs">
+                  <span className="w-16 text-gray-600 font-medium">{div}</span>
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full">
+                    <div className="h-full bg-green-400 rounded-full" style={{ width: `${dp.length > 0 ? paid / dp.length * 100 : 0}%` }} />
+                  </div>
+                  <span className="text-gray-500 w-12 text-right">{paid}/{dp.length}명</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

@@ -27,6 +27,30 @@ function genId() { return Math.random().toString(36).slice(2, 10) }
 
 type ImportRow = { name: string; school: string; division: Division; gender: '남' | '여'; points: number; photoUrl?: string; error?: string }
 
+function parseQuickText(text: string): ImportRow[] {
+  const validDivs = new Set<string>(['초등', '중등', '고등', '대학', '일반', '생활체육'])
+  const lines = text.trim().split('\n').filter(l => l.trim())
+  return lines.map(line => {
+    // Support tab or multiple spaces as delimiter
+    const cols = line.trim().split(/[\t ]+/)
+    const [name, school, division, gender, pointsStr] = cols
+    const points = Number(pointsStr ?? 0) || 0
+    const errors: string[] = []
+    if (!name) errors.push('이름 없음')
+    if (!school) errors.push('소속 없음')
+    if (!validDivs.has(division)) errors.push(`부문 오류(${division ?? '없음'})`)
+    if (gender !== '남' && gender !== '여') errors.push(`성별 오류(${gender ?? '없음'})`)
+    return {
+      name: name || '',
+      school: school || '',
+      division: (validDivs.has(division) ? division : '일반') as Division,
+      gender: (gender === '남' || gender === '여') ? gender : '남',
+      points,
+      error: errors.length ? errors.join(', ') : undefined,
+    }
+  })
+}
+
 function parseCSV(text: string): ImportRow[] {
   const lines = text.trim().split('\n').filter(l => l.trim())
   const validDivs = new Set<string>(['초등', '중등', '고등', '대학', '일반', '생활체육'])
@@ -71,6 +95,9 @@ export default function Rankings() {
   const [importModal, setImportModal] = useState(false)
   const [importRows, setImportRows] = useState<ImportRow[]>([])
   const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null)
+  const [quickModal, setQuickModal] = useState(false)
+  const [quickText, setQuickText] = useState('')
+  const [quickRows, setQuickRows] = useState<ImportRow[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 50
@@ -217,6 +244,21 @@ export default function Rankings() {
     setImportRows([])
   }
 
+  function handleQuickConfirm() {
+    const validRows = quickRows.filter(r => !r.error)
+    const newPlayers = validRows.map(r => ({
+      id: Math.random().toString(36).slice(2, 10),
+      ...r,
+      wins: 0, losses: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      rating: pointsToRating(r.points), gamesPlayed: 0,
+    }))
+    const result = importPlayers(newPlayers)
+    setImportResult(result)
+    setQuickRows([])
+    setQuickText('')
+  }
+
   function exportCSV() {
     const header = '이름,학교,부문,성별,포인트,승,패,Elo등급,등록번호,연락처,사진URL\n'
     const rows = filteredPlayers.map(p =>
@@ -263,6 +305,9 @@ export default function Rankings() {
           {tab === 'singles' && (
             <>
               <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
+              <button onClick={() => { setQuickModal(true); setQuickText(''); setQuickRows([]); setImportResult(null) }} className="btn-secondary flex items-center gap-1.5 text-sm bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100">
+                ⚡ 빠른 등록
+              </button>
               <button onClick={() => fileInputRef.current?.click()} className="btn-secondary flex items-center gap-1.5 text-sm">
                 <Upload size={14} /> CSV 가져오기
               </button>
@@ -854,6 +899,90 @@ export default function Rankings() {
           pMap={Object.fromEntries(players.map(p => [p.id, p.name]))}
           onClose={() => setStatsModal(null)}
         />
+      )}
+
+      {quickModal && (
+        <Modal title="⚡ 빠른 선수 일괄 등록" onClose={() => { setQuickModal(false); setQuickRows([]); setQuickText(''); setImportResult(null) }}>
+          <div className="space-y-4">
+            {importResult ? (
+              <div className="space-y-3">
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">{importResult.added}명 등록 완료</div>
+                  {importResult.skipped > 0 && <div className="text-sm text-gray-500 mt-1">{importResult.skipped}명 중복 건너뜀</div>}
+                </div>
+                <button className="btn-primary w-full" onClick={() => { setQuickModal(false); setQuickRows([]); setQuickText(''); setImportResult(null) }}>확인</button>
+              </div>
+            ) : (
+              <>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 space-y-1">
+                  <div className="font-semibold">입력 형식 (한 줄 = 한 명)</div>
+                  <div className="font-mono">이름 소속 부문 성별 [포인트]</div>
+                  <div className="text-amber-600 opacity-80">예) 홍길동 서울초 초등 남 100</div>
+                  <div className="text-amber-600 opacity-80">부문: 초등/중등/고등/대학/일반/생활체육 · 성별: 남/여</div>
+                </div>
+                <textarea
+                  className="w-full border rounded-lg p-3 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  rows={8}
+                  placeholder={"홍길동 서울초등학교 초등 남 100\n김영희 부산중학교 중등 여 50\n이철수 대전고등학교 고등 남"}
+                  value={quickText}
+                  onChange={e => {
+                    setQuickText(e.target.value)
+                    setQuickRows(e.target.value.trim() ? parseQuickText(e.target.value) : [])
+                  }}
+                />
+                {quickRows.length > 0 && (
+                  <>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{quickRows.length}행 인식 · <span className="text-green-600 font-medium">{quickRows.filter(r => !r.error).length}행 유효</span>{quickRows.filter(r => r.error).length > 0 && <span className="text-red-500 ml-1">{quickRows.filter(r => r.error).length}행 오류</span>}</span>
+                    </div>
+                    <div className="border rounded-lg overflow-auto max-h-48">
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-2 py-1.5 text-left">이름</th>
+                            <th className="px-2 py-1.5 text-left">소속</th>
+                            <th className="px-2 py-1.5">부문</th>
+                            <th className="px-2 py-1.5">성별</th>
+                            <th className="px-2 py-1.5 text-right">P</th>
+                            <th className="px-2 py-1.5">상태</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quickRows.map((r, i) => (
+                            <tr key={i} className={r.error ? 'bg-red-50' : 'hover:bg-gray-50'}>
+                              <td className="px-2 py-1 font-medium">{r.name}</td>
+                              <td className="px-2 py-1 text-gray-500">{r.school}</td>
+                              <td className="px-2 py-1 text-center"><span className={`badge ${divColors[r.division]}`}>{r.division}</span></td>
+                              <td className="px-2 py-1 text-center">
+                                <span className={r.gender === '남' ? 'text-blue-600' : 'text-pink-500'}>{r.gender}</span>
+                              </td>
+                              <td className="px-2 py-1 text-right text-blue-600">{r.points}</td>
+                              <td className="px-2 py-1 text-center">
+                                {r.error
+                                  ? <span className="text-red-500 flex items-center gap-0.5 text-[10px]"><AlertCircle size={10} />{r.error}</span>
+                                  : <span className="text-green-500">✓</span>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    className="btn-primary flex-1"
+                    onClick={handleQuickConfirm}
+                    disabled={quickRows.filter(r => !r.error).length === 0}
+                  >
+                    {quickRows.filter(r => !r.error).length > 0 ? `${quickRows.filter(r => !r.error).length}명 등록` : '등록'}
+                  </button>
+                  <button className="btn-secondary flex-1" onClick={() => { setQuickModal(false); setQuickRows([]); setQuickText('') }}>취소</button>
+                </div>
+              </>
+            )}
+          </div>
+        </Modal>
       )}
 
       {importModal && (
