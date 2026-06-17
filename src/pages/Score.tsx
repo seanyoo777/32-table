@@ -10,11 +10,12 @@ const DEFAULT_FORMAT: MatchFormat = { sets: 5, pointsPerGame: 11 }
 
 // ── Live Scoreboard ─────────────────────────────────────
 function LiveScoreboard({ onClose }: { onClose: () => void }) {
-  const { tournaments, players, pairs, liveMatches, setLiveMatch, removeLiveMatch, recordMatchResult, addScoreRecord, addPlayerPoints, updatePlayerRating } = useStore()
+  const { tournaments, players, pairs, teams, liveMatches, setLiveMatch, removeLiveMatch, recordMatchResult, addScoreRecord, addPlayerPoints, updatePlayerRating } = useStore()
 
   const pMap = Object.fromEntries([
     ...players.map(p => [p.id, { name: p.name, school: p.school }]),
     ...pairs.map(p => [p.id, { name: p.name, school: p.school }]),
+    ...teams.map(t => [t.id, { name: t.name, school: t.school }]),
   ])
 
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })

@@ -11,7 +11,7 @@ import {
 import type {
   Division, EventType, Gender, BracketFormat,
   Tournament, TournamentEvent, BracketMatch, MatchResult, Player, Pair,
-  TournamentGrade, MatchFormat
+  TournamentGrade, MatchFormat, TeamSubMatch
 } from '../types'
 import { TOURNAMENT_GRADES } from '../utils/rankingUtils'
 import { calcNewRatings } from '../utils/ratingUtils'
@@ -651,6 +651,7 @@ function EventBracket({ event, pMap, onRecord }: {
         <ResultModal
           match={resultModal}
           pMap={pMap}
+          event={event}
           onSubmit={(result) => { onRecord(resultModal.id, result); setResultModal(null) }}
           onClose={() => setResultModal(null)}
         />
@@ -857,16 +858,43 @@ function StandingsTable({ participantIds, standings, pMap }: {
 }
 
 // ─── 결과 입력 모달 ───────────────────────────────────────
-function ResultModal({ match, pMap, onSubmit, onClose }: {
+function ResultModal({ match, pMap, event, onSubmit, onClose }: {
   match: BracketMatch
   pMap: Record<string, any>
+  event: TournamentEvent
   onSubmit: (r: MatchResult) => void
   onClose: () => void
 }) {
-  const [sets, setSets] = useState<Array<[string, string]>>([['', '']])
+  const { players, teams } = useStore()
+  const isTeamEvent = event.eventType === '단체전'
   const p1 = match.participant1Id ? pMap[match.participant1Id] : null
   const p2 = match.participant2Id ? pMap[match.participant2Id] : null
 
+  // 단체전: 팀 구성원 조회
+  const team1 = isTeamEvent && match.participant1Id ? teams.find(t => t.id === match.participant1Id) : null
+  const team2 = isTeamEvent && match.participant2Id ? teams.find(t => t.id === match.participant2Id) : null
+  const team1Players = team1 ? team1.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean) : []
+  const team2Players = team2 ? team2.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean) : []
+  const maxPlayers = Math.max(team1Players.length, team2Players.length, 1)
+
+  // 단체전 서브매치 상태
+  const [subMatches, setSubMatches] = useState<TeamSubMatch[]>(() =>
+    Array.from({ length: Math.max(maxPlayers * 2 - 1, 3) }, (_, i) => ({
+      player1Id: team1Players[i % Math.max(team1Players.length, 1)]?.id ?? null,
+      player2Id: team2Players[i % Math.max(team2Players.length, 1)]?.id ?? null,
+      winnerId: null,
+    }))
+  )
+
+  // 일반 세트 상태
+  const [sets, setSets] = useState<Array<[string, string]>>([['', '']])
+
+  // 단체전: 팀 승수 계산
+  const team1Wins = subMatches.filter(s => s.winnerId === 'team1').length
+  const team2Wins = subMatches.filter(s => s.winnerId === 'team2').length
+  const teamHasWinner = team1Wins !== team2Wins
+
+  // 일반: 세트 합산
   function calcWinner() {
     let w1 = 0, w2 = 0
     for (const [a, b] of sets) {
@@ -875,32 +903,46 @@ function ResultModal({ match, pMap, onSubmit, onClose }: {
     }
     return { w1, w2 }
   }
-
   const { w1, w2 } = calcWinner()
-  const hasWinner = w1 !== w2 && sets.some(([a, b]) => a !== '' && b !== '')
+  const hasWinner = isTeamEvent ? teamHasWinner : (w1 !== w2 && sets.some(([a, b]) => a !== '' && b !== ''))
 
   function handleSubmit() {
-    if (!hasWinner || !match.participant1Id || !match.participant2Id) return
-    const winnerId = w1 > w2 ? match.participant1Id : match.participant2Id
-    const loserId = w1 > w2 ? match.participant2Id : match.participant1Id
-    onSubmit({
-      winnerId, loserId,
-      winnerScore: Math.max(w1, w2),
-      loserScore: Math.min(w1, w2),
-      sets: sets.filter(([a, b]) => a !== '' && b !== '').map(([a, b]) => [Number(a), Number(b)]),
-    })
+    if (!match.participant1Id || !match.participant2Id) return
+    if (isTeamEvent) {
+      if (!teamHasWinner) return
+      const winnerId = team1Wins > team2Wins ? match.participant1Id : match.participant2Id
+      const loserId = team1Wins > team2Wins ? match.participant2Id : match.participant1Id
+      onSubmit({
+        winnerId, loserId,
+        winnerScore: Math.max(team1Wins, team2Wins),
+        loserScore: Math.min(team1Wins, team2Wins),
+        teamSubMatches: subMatches,
+      })
+    } else {
+      if (!hasWinner) return
+      const winnerId = w1 > w2 ? match.participant1Id : match.participant2Id
+      const loserId = w1 > w2 ? match.participant2Id : match.participant1Id
+      onSubmit({
+        winnerId, loserId,
+        winnerScore: Math.max(w1, w2),
+        loserScore: Math.min(w1, w2),
+        sets: sets.filter(([a, b]) => a !== '' && b !== '').map(([a, b]) => [Number(a), Number(b)]),
+      })
+    }
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-semibold text-gray-800">경기 결과 입력</h3>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">
+            {isTeamEvent ? '단체전 결과 입력' : '경기 결과 입력'}
+          </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
         </div>
 
         {/* VS header */}
-        <div className="flex items-center justify-center gap-4 mb-5 py-3 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-center gap-4 mb-4 py-3 bg-gray-50 rounded-lg">
           <div className="text-center flex-1">
             <div className="font-bold text-blue-600">{p1?.name}</div>
             <div className="text-xs text-gray-400">{p1?.school}</div>
@@ -912,41 +954,76 @@ function ResultModal({ match, pMap, onSubmit, onClose }: {
           </div>
         </div>
 
-        {/* Set scores */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center text-xs text-gray-400 px-2">
-            <span className="flex-1 text-center">세트</span>
-            <span className="flex-1 text-center">{p1?.name}</span>
-            <span className="w-6" />
-            <span className="flex-1 text-center">{p2?.name}</span>
-            <span className="w-6" />
+        {isTeamEvent ? (
+          /* 단체전 서브매치 UI */
+          <div className="space-y-2 mb-4">
+            <div className="text-xs font-medium text-gray-500 mb-1">개인전 결과 (클릭으로 승자 선택)</div>
+            {subMatches.map((sm, i) => {
+              const sp1 = sm.player1Id ? players.find(p => p.id === sm.player1Id) : null
+              const sp2 = sm.player2Id ? players.find(p => p.id === sm.player2Id) : null
+              return (
+                <div key={i} className="flex items-center gap-2 p-2 rounded-lg border border-gray-100">
+                  <span className="text-xs text-gray-400 w-5 text-center">{i + 1}</span>
+                  <button
+                    onClick={() => setSubMatches(s => s.map((x, xi) => xi === i ? { ...x, winnerId: 'team1' } : x))}
+                    className={`flex-1 text-left px-2 py-1.5 rounded text-xs font-medium transition-colors ${sm.winnerId === 'team1' ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-600 hover:bg-blue-50'}`}>
+                    {sp1?.name ?? `${p1?.name} ${i + 1}번`}
+                  </button>
+                  <span className="text-gray-300 text-xs">vs</span>
+                  <button
+                    onClick={() => setSubMatches(s => s.map((x, xi) => xi === i ? { ...x, winnerId: 'team2' } : x))}
+                    className={`flex-1 text-right px-2 py-1.5 rounded text-xs font-medium transition-colors ${sm.winnerId === 'team2' ? 'bg-red-100 text-red-600' : 'bg-gray-50 text-gray-600 hover:bg-red-50'}`}>
+                    {sp2?.name ?? `${p2?.name} ${i + 1}번`}
+                  </button>
+                  <button onClick={() => setSubMatches(s => s.filter((_, xi) => xi !== i))} className="text-gray-300 hover:text-red-400 w-5 flex-shrink-0"><X size={12} /></button>
+                </div>
+              )
+            })}
+            <button onClick={() => setSubMatches(s => [...s, { player1Id: null, player2Id: null, winnerId: null }])}
+              className="text-xs text-blue-500 hover:underline w-full text-center py-1">
+              + 개인전 추가
+            </button>
+            {teamHasWinner && (
+              <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <div className="text-xs text-gray-500 mb-1">단체전 결과</div>
+                <div className="font-bold text-blue-700">{team1Wins > team2Wins ? p1?.name : p2?.name} 승리</div>
+                <div className="text-sm text-gray-500">{Math.max(team1Wins, team2Wins)} : {Math.min(team1Wins, team2Wins)}</div>
+              </div>
+            )}
           </div>
-          {sets.map(([a, b], i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 w-8 text-center">{i + 1}</span>
-              <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
-                value={a} onChange={e => setSets(s => s.map((set, si) => si === i ? [e.target.value, set[1]] : set))} />
-              <span className="text-gray-300 font-bold">-</span>
-              <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
-                value={b} onChange={e => setSets(s => s.map((set, si) => si === i ? [set[0], e.target.value] : set))} />
-              {sets.length > 1 && (
-                <button onClick={() => setSets(s => s.filter((_, si) => si !== i))} className="text-gray-300 hover:text-red-400 w-6"><X size={14} /></button>
-              )}
+        ) : (
+          /* 일반 세트 UI */
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center text-xs text-gray-400 px-2">
+              <span className="flex-1 text-center">세트</span>
+              <span className="flex-1 text-center">{p1?.name}</span>
+              <span className="w-6" />
+              <span className="flex-1 text-center">{p2?.name}</span>
+              <span className="w-6" />
             </div>
-          ))}
-          <button onClick={() => setSets(s => [...s, ['', '']])} className="text-xs text-blue-500 hover:underline w-full text-center py-1">
-            + 세트 추가
-          </button>
-        </div>
-
-        {/* Winner preview */}
-        {hasWinner && (
-          <div className="bg-blue-50 rounded-lg p-3 mb-4 text-center">
-            <div className="text-xs text-gray-500 mb-1">최종 결과</div>
-            <div className="font-bold text-blue-700">
-              {w1 > w2 ? p1?.name : p2?.name} 승리
-            </div>
-            <div className="text-sm text-gray-500">{Math.max(w1, w2)} : {Math.min(w1, w2)} 세트</div>
+            {sets.map(([a, b], i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-8 text-center">{i + 1}</span>
+                <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
+                  value={a} onChange={e => setSets(s => s.map((set, si) => si === i ? [e.target.value, set[1]] : set))} />
+                <span className="text-gray-300 font-bold">-</span>
+                <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
+                  value={b} onChange={e => setSets(s => s.map((set, si) => si === i ? [set[0], e.target.value] : set))} />
+                {sets.length > 1 && (
+                  <button onClick={() => setSets(s => s.filter((_, si) => si !== i))} className="text-gray-300 hover:text-red-400 w-6"><X size={14} /></button>
+                )}
+              </div>
+            ))}
+            <button onClick={() => setSets(s => [...s, ['', '']])} className="text-xs text-blue-500 hover:underline w-full text-center py-1">
+              + 세트 추가
+            </button>
+            {hasWinner && (
+              <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <div className="text-xs text-gray-500 mb-1">최종 결과</div>
+                <div className="font-bold text-blue-700">{w1 > w2 ? p1?.name : p2?.name} 승리</div>
+                <div className="text-sm text-gray-500">{Math.max(w1, w2)} : {Math.min(w1, w2)} 세트</div>
+              </div>
+            )}
           </div>
         )}
 
@@ -957,7 +1034,7 @@ function ResultModal({ match, pMap, onSubmit, onClose }: {
 
         {/* 부전승 처리 */}
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-400 mb-2 text-center">한 선수가 기권/불참한 경우</p>
+          <p className="text-xs text-gray-400 mb-2 text-center">기권/불참</p>
           <div className="flex gap-2">
             <button
               onClick={() => { if (!match.participant1Id || !match.participant2Id) return; onSubmit({ winnerId: match.participant1Id, loserId: match.participant2Id, winnerScore: 1, loserScore: 0, walkedOver: true }) }}

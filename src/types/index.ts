@@ -78,6 +78,13 @@ export interface MatchResult {
   loserScore: number
   sets?: Array<[number, number]>
   walkedOver?: boolean
+  teamSubMatches?: TeamSubMatch[]
+}
+
+export interface TeamSubMatch {
+  player1Id: string | null
+  player2Id: string | null
+  winnerId: 'team1' | 'team2' | null
 }
 
 export interface BracketMatch {
@@ -95,6 +102,7 @@ export interface BracketMatch {
   isThirdPlace?: boolean
   setScores?: Array<[number, number]>
   tableNo?: number
+  teamSubMatches?: TeamSubMatch[]
 }
 
 export interface Group {
