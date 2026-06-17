@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { generateSmartSlots, previewSmartPlan, calcDayCapacity, calcRoundsFromParticipants } from '../utils/scheduleUtils'
+import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, matchMinutes, calcRoundsFromParticipants } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
 import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
@@ -49,6 +49,13 @@ const eventColors: Record<string, string> = {
 }
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
+
+function fmtCourtHours(min: number): string {
+  const h = Math.floor(min / 60)
+  const m = Math.round(min % 60)
+  if (h === 0) return `${m}분`
+  return m === 0 ? `${h}시간` : `${h}시간 ${m}분`
+}
 
 function formatTime12h(time: string): string {
   if (!time) return ''
@@ -130,7 +137,9 @@ export default function SchedulePage() {
 
   const [totalDays, setTotalDays] = useState(1)
   const [globalMinutesPerMatch, setGlobalMinutesPerMatch] = useState(30)
+  const [globalTeamMinutes, setGlobalTeamMinutes] = useState(120)
   const [globalBuffer, setGlobalBuffer] = useState(5)
+  const [teamCourtCount, setTeamCourtCount] = useState(0) // 단체전 전용 코트 수 (0=분리 안 함)
   const [dayConfigs, setDayConfigs] = useState<DayConfig[]>([
     { day: 1, date: planDate, startTime: '09:00', endTime: '20:00', courtCount: 4 }
   ])
@@ -170,17 +179,27 @@ export default function SchedulePage() {
     setDayConfigs(prev => prev.map(d => d.day === day ? { ...d, [field]: value } : d))
   }
 
+  // 하루 코트-분 수용량 (코트 수 × 운영시간)
   const dayCapacities = useMemo(() =>
     dayConfigs.map(d => ({
       day: d.day,
-      capacity: calcDayCapacity(d, globalMinutesPerMatch, globalBuffer),
+      capacityMin: calcDayCourtMinutes(d),
       label: d.label ?? `${d.day}일차`,
       date: d.date,
     })),
-    [dayConfigs, globalMinutesPerMatch, globalBuffer]
+    [dayConfigs]
   )
 
-  const totalCapacity = dayCapacities.reduce((s, d) => s + d.capacity, 0)
+  const totalCapacityMin = dayCapacities.reduce((s, d) => s + d.capacityMin, 0)
+  // 필요 코트-분 = Σ(경기 수 × (종목별 경기시간 + 버퍼))
+  const totalRequiredMin = useMemo(() =>
+    smartEvents.reduce((s, ev) => {
+      const rounds = calcRoundsFromParticipants(ev)
+      const per = matchMinutes(ev.eventType, globalMinutesPerMatch, globalTeamMinutes) + globalBuffer
+      return s + rounds.reduce((rs, r) => rs + r.matchCount, 0) * per
+    }, 0),
+    [smartEvents, globalMinutesPerMatch, globalTeamMinutes, globalBuffer]
+  )
   const totalRequiredMatches = useMemo(() =>
     smartEvents.reduce((s, ev) => {
       const rounds = calcRoundsFromParticipants(ev)
@@ -189,20 +208,35 @@ export default function SchedulePage() {
     [smartEvents]
   )
 
+  const maxCourts = useMemo(() => Math.max(1, ...dayConfigs.map(d => d.courtCount)), [dayConfigs])
+  const hasTeamEvent = smartEvents.some(e => e.eventType === '단체전')
+  // 단체전 전용 코트 분리: 단체전→뒤쪽 코트, 개인/복식→앞쪽 코트 (겹침 방지)
+  const planEvents = useMemo<SmartEventInput[]>(() => {
+    if (teamCourtCount <= 0) return smartEvents
+    const split = Math.max(1, maxCourts - teamCourtCount) // 개인전 마지막 코트 번호
+    return smartEvents.map(ev => {
+      if (ev.eventType === '단체전') {
+        return { ...ev, preferredCourtStart: split + 1, preferredCourtEnd: maxCourts }
+      }
+      return { ...ev, preferredCourtStart: 1, preferredCourtEnd: split }
+    })
+  }, [smartEvents, teamCourtCount, maxCourts])
+
   const smartPreview = useMemo(() => {
-    if (smartEvents.length === 0 || dayConfigs.length === 0) return null
-    return previewSmartPlan(smartEvents, dayConfigs, globalMinutesPerMatch, globalBuffer)
-  }, [smartEvents, dayConfigs, globalMinutesPerMatch, globalBuffer])
+    if (planEvents.length === 0 || dayConfigs.length === 0) return null
+    return previewSmartPlan(planEvents, dayConfigs, globalMinutesPerMatch, globalTeamMinutes, globalBuffer)
+  }, [planEvents, dayConfigs, globalMinutesPerMatch, globalTeamMinutes, globalBuffer])
 
   function handleGenerate() {
     if (!planName || smartEvents.length === 0) return
-    const slots: ScheduleSlot[] = generateSmartSlots(smartEvents, dayConfigs, globalMinutesPerMatch, globalBuffer)
-    const derivedEvents: ScheduleEvent[] = smartEvents.map(se => {
+    const slots: ScheduleSlot[] = generateSmartSlots(planEvents, dayConfigs, globalMinutesPerMatch, globalTeamMinutes, globalBuffer)
+    const derivedEvents: ScheduleEvent[] = planEvents.map(se => {
       const rounds = calcRoundsFromParticipants(se)
       const totalMatches = rounds.reduce((s, r) => s + r.matchCount, 0)
       return {
         id: se.id, label: se.label, division: se.division, eventType: se.eventType,
-        gender: se.gender, matchCount: totalMatches, minutesPerMatch: globalMinutesPerMatch,
+        gender: se.gender, matchCount: totalMatches,
+        minutesPerMatch: matchMinutes(se.eventType, globalMinutesPerMatch, globalTeamMinutes),
         courtCount: dayConfigs[0]?.courtCount ?? 4, bufferMinutes: globalBuffer, type: 'match' as const,
       }
     })
@@ -261,10 +295,15 @@ export default function SchedulePage() {
               <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
                 <Sun size={14} className="text-orange-500" /> ② 일자별 운영 시간
               </h2>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-gray-600">경기당</label>
+              <div className="flex items-center gap-2.5 text-sm flex-wrap">
+                <div className="flex items-center gap-1.5 bg-blue-50 rounded-lg px-2 py-1">
+                  <label className="text-xs text-blue-700 font-medium">개인전</label>
                   <input className="input w-14 text-center py-1 text-sm" type="number" min="10" max="120" value={globalMinutesPerMatch} onChange={e => setGlobalMinutesPerMatch(Number(e.target.value))} />
+                  <span className="text-xs text-gray-500">분</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-orange-50 rounded-lg px-2 py-1">
+                  <label className="text-xs text-orange-700 font-medium">단체전</label>
+                  <input className="input w-16 text-center py-1 text-sm" type="number" min="30" max="300" step="10" value={globalTeamMinutes} onChange={e => setGlobalTeamMinutes(Number(e.target.value))} />
                   <span className="text-xs text-gray-500">분</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -282,12 +321,12 @@ export default function SchedulePage() {
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">시작</th>
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">종료</th>
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">코트 수</th>
-                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">최대 수용 경기<br/><span className="text-[10px] text-gray-400 font-normal">(코트×시간슬롯)</span></th>
+                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">코트 운영시간<br/><span className="text-[10px] text-gray-400 font-normal">(코트수 × 운영시간)</span></th>
                 </tr>
               </thead>
               <tbody>
                 {dayConfigs.map(d => {
-                  const cap = calcDayCapacity(d, globalMinutesPerMatch, globalBuffer)
+                  const capMin = calcDayCourtMinutes(d)
                   return (
                     <tr key={d.day} className="border-b last:border-0">
                       <td className="py-1.5 pr-3">
@@ -297,17 +336,17 @@ export default function SchedulePage() {
                         <input className="input py-1 text-sm w-32" type="date" value={d.date ?? ''} onChange={e => updateDayConfig(d.day, 'date', e.target.value)} />
                       </td>
                       <td className="py-1.5 pr-3">
-                        <div className="flex items-center gap-1.5">
-                          <input className="input py-1 text-sm w-24" type="time" value={d.startTime} onChange={e => updateDayConfig(d.day, 'startTime', e.target.value)} />
-                          <span className={`text-xs font-medium whitespace-nowrap px-1.5 py-0.5 rounded ${Number(d.startTime.split(':')[0]) >= 12 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'}`}>
+                        <div className="flex flex-col gap-1">
+                          <input className="input py-1 text-sm w-28" type="time" value={d.startTime} onChange={e => updateDayConfig(d.day, 'startTime', e.target.value)} />
+                          <span className={`text-xs font-semibold text-center whitespace-nowrap px-1.5 py-0.5 rounded ${Number(d.startTime.split(':')[0]) >= 12 ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
                             {formatTime12h(d.startTime)}
                           </span>
                         </div>
                       </td>
                       <td className="py-1.5 pr-3">
-                        <div className="flex items-center gap-1.5">
-                          <input className="input py-1 text-sm w-24" type="time" value={d.endTime} onChange={e => updateDayConfig(d.day, 'endTime', e.target.value)} />
-                          <span className={`text-xs font-medium whitespace-nowrap px-1.5 py-0.5 rounded ${Number(d.endTime.split(':')[0]) >= 12 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'}`}>
+                        <div className="flex flex-col gap-1">
+                          <input className="input py-1 text-sm w-28" type="time" value={d.endTime} onChange={e => updateDayConfig(d.day, 'endTime', e.target.value)} />
+                          <span className={`text-xs font-semibold text-center whitespace-nowrap px-1.5 py-0.5 rounded ${Number(d.endTime.split(':')[0]) >= 12 ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
                             {formatTime12h(d.endTime)}
                           </span>
                         </div>
@@ -316,7 +355,7 @@ export default function SchedulePage() {
                         <input className="input py-1 text-sm w-14 text-center" type="number" min="1" max="20" value={d.courtCount} onChange={e => updateDayConfig(d.day, 'courtCount', Number(e.target.value))} />
                       </td>
                       <td className="py-1.5">
-                        <span className="font-bold text-sm text-green-600">{cap}경기</span>
+                        <span className="font-bold text-sm text-green-600">{fmtCourtHours(capMin)}</span>
                       </td>
                     </tr>
                   )
@@ -327,10 +366,10 @@ export default function SchedulePage() {
                   <td colSpan={5} className="py-2 pr-3 text-xs text-gray-500 font-medium">합계 (전체 일차)</td>
                   <td className="py-2">
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-bold text-sm text-green-600">수용 {totalCapacity}경기</span>
-                      {totalRequiredMatches > 0 && (
-                        <span className={`text-xs font-semibold ${totalRequiredMatches > totalCapacity ? 'text-red-600' : 'text-blue-600'}`}>
-                          필요 {totalRequiredMatches}경기{totalRequiredMatches > totalCapacity ? ' ⚠ 초과' : ' ✓'}
+                      <span className="font-bold text-sm text-green-600">수용 {fmtCourtHours(totalCapacityMin)}</span>
+                      {totalRequiredMin > 0 && (
+                        <span className={`text-xs font-semibold ${totalRequiredMin > totalCapacityMin ? 'text-red-600' : 'text-blue-600'}`}>
+                          필요 {fmtCourtHours(totalRequiredMin)} ({totalRequiredMatches}경기){totalRequiredMin > totalCapacityMin ? ' ⚠ 초과' : ' ✓'}
                         </span>
                       )}
                     </div>
@@ -338,6 +377,25 @@ export default function SchedulePage() {
                 </tr>
               </tfoot>
             </table>
+            {hasTeamEvent && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap">
+                <span className="text-xs font-semibold text-orange-700 whitespace-nowrap">🏓 단체전 전용 코트</span>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number" min="0" max={Math.max(0, maxCourts - 1)}
+                    className="input w-14 text-center py-1 text-sm"
+                    value={teamCourtCount}
+                    onChange={e => setTeamCourtCount(Math.max(0, Math.min(maxCourts - 1, Number(e.target.value))))}
+                  />
+                  <span className="text-xs text-gray-500">개</span>
+                </div>
+                <span className="text-[11px] text-gray-500">
+                  {teamCourtCount > 0
+                    ? `개인·복식 → 코트 1~${maxCourts - teamCourtCount}번 / 단체전 → 코트 ${maxCourts - teamCourtCount + 1}~${maxCourts}번 (겹침 없음)`
+                    : '0 = 분리 안 함 (모든 코트 공용). 단체전·개인전이 겹치지 않게 하려면 전용 코트 수를 지정하세요.'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ③ 종목 및 인원 */}
@@ -480,8 +538,8 @@ export default function SchedulePage() {
               <div className="space-y-3">
                 {smartPreview.map(dayPlan => {
                   const dayConfig = dayConfigs.find(d => d.day === dayPlan.day)
-                  const pct = dayPlan.capacity > 0 ? Math.min(100, Math.round(dayPlan.assignedMatches / dayPlan.capacity * 100)) : 0
-                  const over = dayPlan.assignedMatches > dayPlan.capacity
+                  const pct = dayPlan.capacityMinutes > 0 ? Math.min(100, Math.round(dayPlan.assignedMinutes / dayPlan.capacityMinutes * 100)) : 0
+                  const over = dayPlan.assignedMinutes > dayPlan.capacityMinutes
                   const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-orange-400' : 'bg-green-500'
                   const textColor = over ? 'text-red-600' : pct >= 70 ? 'text-orange-600' : 'text-green-600'
                   const byEvent = new Map<string, typeof dayPlan.rounds>()
@@ -496,7 +554,7 @@ export default function SchedulePage() {
                           {dayConfig?.date && <span className="text-xs text-gray-400 ml-2">({dayConfig.date})</span>}
                         </div>
                         <span className={`text-sm font-bold ${textColor}`}>
-                          {dayPlan.assignedMatches} / {dayPlan.capacity}경기{over && ' ⚠ 초과'}
+                          {fmtCourtHours(dayPlan.assignedMinutes)} / {fmtCourtHours(dayPlan.capacityMinutes)}{over && ' ⚠ 초과'}
                         </span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -517,7 +575,7 @@ export default function SchedulePage() {
                       )}
                       {over && (
                         <div className="text-xs text-red-600 bg-red-50 rounded px-2 py-1.5 border border-red-200">
-                          ⚠ 코트 수용 가능({dayPlan.capacity}경기)을 초과합니다. 코트 수 또는 운영 시간을 늘려주세요.
+                          ⚠ 코트 운영시간({fmtCourtHours(dayPlan.capacityMinutes)})을 초과합니다. 코트 수 또는 운영 시간을 늘려주세요.
                         </div>
                       )}
                     </div>

@@ -14,6 +14,8 @@ export interface SmartEventInput {
   label: string
   preferredDayStart?: number
   preferredDayEnd?: number
+  preferredCourtStart?: number
+  preferredCourtEnd?: number
 }
 
 export interface Player {

@@ -35,6 +35,16 @@ export function calcDayCapacity(day: DayConfig, minutesPerMatch: number, bufferM
   return slotsPerCourt * day.courtCount
 }
 
+// ─── 종목별 경기 시간 (단체전은 별도 시간) ──────────────────
+export function matchMinutes(eventType: EventType, individualMin: number, teamMin: number): number {
+  return eventType === '단체전' ? teamMin : individualMin
+}
+
+// 하루 전체 코트-분 (코트 수 × 운영 시간) — 혼합 경기시간 정확 계산용
+export function calcDayCourtMinutes(day: DayConfig): number {
+  return Math.max(0, timeToMins(day.endTime) - timeToMins(day.startTime)) * day.courtCount
+}
+
 // ─── 기본 단일 날 슬롯 생성 (기존 호환) ───────────────────
 export function generateScheduleSlots(
   events: ScheduleEvent[],
@@ -317,14 +327,21 @@ export function calcRoundsFromParticipants(ev: SmartEventInput): RoundPlan[] {
   return rounds
 }
 
+// 라운드 1개가 차지하는 코트-분 (경기 수 × (경기시간 + 버퍼))
+function roundCourtMinutes(r: RoundPlan, individualMin: number, teamMin: number, bufferMinutes: number): number {
+  return r.matchCount * (matchMinutes(r.eventType, individualMin, teamMin) + bufferMinutes)
+}
+
 export function previewSmartPlan(
   events: SmartEventInput[],
   days: DayConfig[],
-  minutesPerMatch: number,
+  individualMinutes: number,
+  teamMinutes: number,
   bufferMinutes: number,
-): { day: number; rounds: RoundPlan[]; assignedMatches: number; capacity: number }[] {
-  const capacities = days.map(d => calcDayCapacity(d, minutesPerMatch, bufferMinutes))
+): { day: number; rounds: RoundPlan[]; assignedMinutes: number; capacityMinutes: number }[] {
+  const capacities = days.map(d => calcDayCourtMinutes(d))
   const remaining = [...capacities]
+  const cost = (r: RoundPlan) => roundCourtMinutes(r, individualMinutes, teamMinutes, bufferMinutes)
   const roundDayAssign: { round: RoundPlan; day: number }[] = []
 
   // 1) 일차 범위 지정된 종목 먼저 배정 (예선→앞날, 준결승/결승→마지막날)
@@ -347,21 +364,21 @@ export function previewSmartPlan(
       ? days.findIndex(d => d.day === endDay) - (lateRounds.length > 0 ? 1 : 0)
       : ei
     for (const r of earlyRounds) {
-      while (ei < maxEarlyIdx && remaining[ei] < r.matchCount) ei++
+      while (ei < maxEarlyIdx && remaining[ei] < cost(r)) ei++
       if (ei >= days.length) ei = days.length - 1
       roundDayAssign.push({ round: r, day: days[ei].day })
-      remaining[ei] -= r.matchCount
+      remaining[ei] -= cost(r)
     }
 
     // 준결승/결승: 범위 마지막 날짜에 배정
     const lastIdx = days.findIndex(d => d.day === endDay)
     for (const r of lateRounds) {
       roundDayAssign.push({ round: r, day: endDay })
-      remaining[lastIdx] -= r.matchCount
+      remaining[lastIdx] -= cost(r)
     }
   }
 
-  // 2) 나머지 자동 배정 (기존 로직)
+  // 2) 나머지 자동 배정
   const allAutoRounds = autoEvents.flatMap(e => calcRoundsFromParticipants(e))
   const earlyRounds = allAutoRounds.filter(r => !r.isLate)
   const lateRounds = allAutoRounds.filter(r => r.isLate)
@@ -369,36 +386,45 @@ export function previewSmartPlan(
   let di = 0
   for (const r of earlyRounds) {
     const maxEarlyDay = Math.max(0, days.length - (lateRounds.length > 0 ? 2 : 1))
-    while (di < maxEarlyDay && remaining[di] < r.matchCount) di++
+    while (di < maxEarlyDay && remaining[di] < cost(r)) di++
     if (di >= days.length) di = days.length - 1
     roundDayAssign.push({ round: r, day: days[di].day })
-    remaining[di] -= r.matchCount
+    remaining[di] -= cost(r)
   }
 
   let li = Math.max(0, days.length - 2)
   for (const r of lateRounds) {
-    while (li < days.length - 1 && remaining[li] < r.matchCount) li++
+    while (li < days.length - 1 && remaining[li] < cost(r)) li++
     roundDayAssign.push({ round: r, day: days[li].day })
-    remaining[li] -= r.matchCount
+    remaining[li] -= cost(r)
   }
 
   return days.map((d, i) => ({
     day: d.day,
     rounds: roundDayAssign.filter(x => x.day === d.day).map(x => x.round),
-    assignedMatches: capacities[i] - remaining[i],
-    capacity: capacities[i],
+    assignedMinutes: capacities[i] - remaining[i],
+    capacityMinutes: capacities[i],
   }))
 }
 
 export function generateSmartSlots(
   events: SmartEventInput[],
   days: DayConfig[],
-  minutesPerMatch: number,
+  individualMinutes: number,
+  teamMinutes: number,
   bufferMinutes: number,
 ): ScheduleSlot[] {
-  const plan = previewSmartPlan(events, days, minutesPerMatch, bufferMinutes)
+  const plan = previewSmartPlan(events, days, individualMinutes, teamMinutes, bufferMinutes)
   const slots: ScheduleSlot[] = []
   let slotIdx = 0
+
+  // 종목별 코트 범위 사전 배정 맵 (단체전 ↔ 개인전 코트 분리용)
+  const courtRange: Record<string, { start: number; end: number }> = {}
+  for (const ev of events) {
+    if (ev.preferredCourtStart) {
+      courtRange[ev.id] = { start: ev.preferredCourtStart, end: ev.preferredCourtEnd ?? ev.preferredCourtStart }
+    }
+  }
 
   for (const dayPlan of plan) {
     const dayConfig = days.find(d => d.day === dayPlan.day)!
@@ -408,14 +434,20 @@ export function generateSmartSlots(
     const rounds = [...dayPlan.rounds]
 
     for (const round of rounds) {
+      const dur = matchMinutes(round.eventType, individualMinutes, teamMinutes)
+      // 이 종목이 사용할 코트 범위 (지정 없으면 전체 코트)
+      const range = courtRange[round.eventId]
+      const courtFrom = range ? Math.max(1, range.start) : 1
+      const courtTo = range ? Math.min(dayConfig.courtCount, range.end) : dayConfig.courtCount
+
       for (let matchNo = 1; matchNo <= round.matchCount; matchNo++) {
-        let bestCourt = 1
-        let bestTime = courtAvail[1] ?? dayConfig.startTime
-        for (let c = 1; c <= dayConfig.courtCount; c++) {
+        let bestCourt = courtFrom
+        let bestTime = courtAvail[courtFrom] ?? dayConfig.startTime
+        for (let c = courtFrom; c <= courtTo; c++) {
           const t = courtAvail[c] ?? dayConfig.startTime
           if (timeToMins(t) < timeToMins(bestTime)) { bestTime = t; bestCourt = c }
         }
-        const endT = addMinutes(bestTime, minutesPerMatch)
+        const endT = addMinutes(bestTime, dur)
         if (timeToMins(endT) > timeToMins(dayConfig.endTime)) break
 
         slots.push({
