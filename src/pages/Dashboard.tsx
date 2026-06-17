@@ -76,6 +76,19 @@ export default function DashboardPage() {
     void ev
     addMatchCall(call)
     setCallMatchKey('')
+    // Browser notification for match call
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(`🏓 경기 호출 — ${callTableNo}번대`, {
+        body: `${call.participant1Name} vs ${call.participant2Name} (${call.eventLabel})`,
+        icon: '/favicon.ico',
+      })
+    }
+  }
+
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
   }
 
   const pendingCalls = matchCalls.filter(c => !c.acknowledged)
@@ -93,6 +106,12 @@ export default function DashboardPage() {
             <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap)}
               className="btn-secondary text-sm flex items-center gap-1.5">
               <Download size={14} /> 기록 CSV
+            </button>
+          )}
+          {'Notification' in window && Notification.permission === 'default' && (
+            <button onClick={requestNotificationPermission}
+              className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-2 py-1 rounded-lg flex items-center gap-1">
+              <Bell size={12} /> 알림 허용
             </button>
           )}
           <div className="text-2xl font-mono font-bold text-gray-700">{formatTime(now)}</div>

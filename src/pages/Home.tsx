@@ -171,6 +171,38 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Hall of Fame — completed tournament champions */}
+      {(() => {
+        const completed = tournaments.filter(t => t.status === 'completed')
+        const champData = completed.flatMap(t =>
+          t.events.map(ev => {
+            const finalRound = Math.max(...ev.matches.map(m => m.round), 0)
+            const final = ev.matches.find(m => m.round === finalRound && m.result && !m.isBye && !m.result.walkedOver)
+            if (!final?.result) return null
+            const champId = final.result.winnerId
+            const champ = players.find(p => p.id === champId)
+            return champ ? { tournamentName: t.name, eventLabel: ev.label, champion: champ } : null
+          }).filter(Boolean)
+        ).slice(0, 6)
+        if (champData.length === 0) return null
+        return (
+          <div className="card">
+            <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2"><Award size={16} className="text-yellow-500" /> 우승자 명예의 전당</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {champData.map((d, i) => d && (
+                <div key={i} className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-xl p-3 text-center">
+                  <div className="text-2xl mb-1">🏆</div>
+                  <div className="font-bold text-sm text-gray-800">{d.champion.name}</div>
+                  <div className="text-xs text-gray-500">{d.champion.school}</div>
+                  <div className="text-xs text-yellow-700 mt-1 font-medium">{d.tournamentName}</div>
+                  <div className="text-xs text-gray-400">{d.eventLabel}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Recent tournaments */}
       <div className="card">
         <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2"><Trophy size={16} /> 최근 대회</h2>

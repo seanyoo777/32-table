@@ -205,9 +205,9 @@ export default function Rankings() {
   }
 
   function exportCSV() {
-    const header = '이름,학교,부문,성별,포인트,승,패,Elo등급\n'
+    const header = '이름,학교,부문,성별,포인트,승,패,Elo등급,등록번호,연락처\n'
     const rows = filteredPlayers.map(p =>
-      `${p.name},${p.school},${p.division},${p.gender},${p.points},${p.wins},${p.losses},${p.rating ?? 1000}`
+      `${p.name},${p.school},${p.division},${p.gender},${p.points},${p.wins},${p.losses},${p.rating ?? 1000},${p.registrationNo ?? ''},${p.phone ?? ''}`
     ).join('\n')
     const blob = new Blob(['﻿' + header + rows], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
