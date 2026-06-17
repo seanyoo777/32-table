@@ -60,19 +60,20 @@ function exportTournamentCSV(
 }
 
 // ─── 참가자 이름 조회 ─────────────────────────────────────
-function useParticipantMap(players: Player[], pairs: Pair[]) {
+function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../types').Team[]) {
   return useMemo(() => {
     const m: Record<string, { name: string; school: string; points: number; gender: string }> = {}
     for (const p of players) m[p.id] = { name: p.name, school: p.school, points: p.points, gender: p.gender }
     for (const p of pairs) m[p.id] = { name: p.name, school: p.school, points: p.points, gender: p.gender }
+    for (const t of teams) m[t.id] = { name: t.name, school: t.school, points: t.points, gender: t.gender }
     return m
-  }, [players, pairs])
+  }, [players, pairs, teams])
 }
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, tournaments, addTournament, deleteTournament, recordMatchResult, addPlayerPoints, updatePlayerRating } = useStore()
-  const pMap = useParticipantMap(players, pairs)
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, recordMatchResult, addPlayerPoints, updatePlayerRating } = useStore()
+  const pMap = useParticipantMap(players, pairs, teams)
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -185,6 +186,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
   onCancel: () => void
   onCreate: (t: Tournament) => void
 }) {
+  const { teams } = useStore()
   const [name, setName] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [venue, setVenue] = useState('')
@@ -202,9 +204,16 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
   })
 
   const isDoubles = ef.eventType === '복식' || ef.eventType === '혼합복식'
+  const isTeam = ef.eventType === '단체전'
 
   // Available participants based on event type
   const availableParticipants = useMemo(() => {
+    if (isTeam) {
+      return teams.filter(t =>
+        t.division === ef.division &&
+        (ef.gender === '혼합' || t.gender === ef.gender)
+      ).map(t => ({ id: t.id, name: t.name, school: t.school, points: t.points, gender: t.gender }))
+    }
     if (isDoubles) {
       return pairs.filter(p =>
         p.division === ef.division &&
@@ -215,7 +224,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
       p.division === ef.division &&
       (ef.gender === '혼합' || p.gender === ef.gender)
     ).map(p => ({ id: p.id, name: p.name, school: p.school, points: p.points, gender: p.gender }))
-  }, [players, pairs, ef.division, ef.gender, ef.eventType, isDoubles])
+  }, [players, pairs, teams, ef.division, ef.gender, ef.eventType, isDoubles, isTeam])
 
   function autoSelect() {
     setEf(f => ({ ...f, selectedIds: availableParticipants.sort((a, b) => b.points - a.points).map(p => p.id) }))
@@ -363,7 +372,9 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
               </div>
               {availableParticipants.length === 0 ? (
                 <div className="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg">
-                  {isDoubles
+                  {isTeam
+                    ? '등록된 팀이 없습니다. 먼저 랭킹 페이지 단체전 탭에서 팀을 등록해주세요.'
+                    : isDoubles
                     ? '등록된 복식 페어가 없습니다. 먼저 랭킹 페이지에서 페어를 등록해주세요.'
                     : '해당 부문/성별 선수가 없습니다.'}
                 </div>
@@ -821,7 +832,7 @@ function ResultModal({ match, pMap, onSubmit, onClose }: {
         {/* Set scores */}
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-xs text-gray-400 px-2">
-            <span className="flex-1 text-center">SET</span>
+            <span className="flex-1 text-center">세트</span>
             <span className="flex-1 text-center">{p1?.name}</span>
             <span className="w-6" />
             <span className="flex-1 text-center">{p2?.name}</span>

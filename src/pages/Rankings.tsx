@@ -54,8 +54,8 @@ function parseCSV(text: string): ImportRow[] {
 }
 
 export default function Rankings() {
-  const { players, pairs, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers } = useStore()
-  const [tab, setTab] = useState<'singles' | 'doubles'>('singles')
+  const { players, pairs, teams, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers, addTeam, deleteTeam } = useStore()
+  const [tab, setTab] = useState<'singles' | 'doubles' | 'teams'>('singles')
   const [rankView, setRankView] = useState<RankView>('통합')
   const [subGender, setSubGender] = useState<'all' | '남' | '여'>('all')
   const [sortBy, setSortBy] = useState<SortBy>('points')
@@ -79,6 +79,11 @@ export default function Rankings() {
   const [pairForm, setPairForm] = useState({
     player1Id: '', player2Id: '', division: '초등' as Division,
     pairType: '남복' as '남복' | '여복' | '혼복',
+  })
+  // Team form
+  const [teamForm, setTeamForm] = useState({
+    name: '', school: '', division: '초등' as Division, gender: '남' as '남' | '여' | '혼합',
+    playerIds: [] as string[],
   })
 
   const isDivView = DIVISIONS.includes(rankView as Division)
@@ -134,6 +139,19 @@ export default function Rankings() {
       wins: 0, losses: 0,
     })
     setPairForm({ player1Id: '', player2Id: '', division: '초등', pairType: '남복' })
+    setShowAdd(false)
+  }
+
+  function handleAddTeam() {
+    if (!teamForm.name || teamForm.playerIds.length < 2) return
+    const avgPts = Math.floor(teamForm.playerIds.reduce((s, id) => s + (players.find(p => p.id === id)?.points ?? 0), 0) / teamForm.playerIds.length)
+    addTeam({
+      id: Math.random().toString(36).slice(2, 10),
+      name: teamForm.name, school: teamForm.school,
+      division: teamForm.division, gender: teamForm.gender as any,
+      playerIds: teamForm.playerIds, points: avgPts, wins: 0, losses: 0,
+    })
+    setTeamForm({ name: '', school: '', division: '초등', gender: '남', playerIds: [] })
     setShowAdd(false)
   }
 
@@ -234,18 +252,21 @@ export default function Rankings() {
             </>
           )}
           <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-1.5">
-            <Plus size={15} /> {tab === 'singles' ? '선수 등록' : '페어 등록'}
+            <Plus size={15} /> {tab === 'singles' ? '선수 등록' : tab === 'doubles' ? '페어 등록' : '팀 등록'}
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button onClick={() => setTab('singles')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'singles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           <Trophy size={14} /> 단식 랭킹 <span className="text-xs opacity-70">({players.length}명)</span>
         </button>
         <button onClick={() => setTab('doubles')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'doubles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           <Users size={14} /> 복식 페어 <span className="text-xs opacity-70">({pairs.length}페어)</span>
+        </button>
+        <button onClick={() => setTab('teams')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'teams' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+          <Users size={14} /> 단체전 팀 <span className="text-xs opacity-70">({teams.length}팀)</span>
         </button>
       </div>
 
@@ -472,6 +493,49 @@ export default function Rankings() {
         </div>
       )}
 
+      {/* Teams Table */}
+      {tab === 'teams' && (
+        <div className="card p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="py-3 px-4 text-left text-gray-600 w-12">순위</th>
+                  <th className="py-3 px-4 text-left text-gray-600">팀명</th>
+                  <th className="py-3 px-4 text-left text-gray-600">학교/소속</th>
+                  <th className="py-3 px-4 text-left text-gray-600">부문</th>
+                  <th className="py-3 px-4 text-center text-gray-600">성별</th>
+                  <th className="py-3 px-4 text-center text-gray-600">선수 수</th>
+                  <th className="py-3 px-4 text-right text-blue-600 font-bold">평균 포인트</th>
+                  <th className="py-3 px-4 text-center text-gray-600">삭제</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...teams].sort((a, b) => b.points - a.points).map((t, i) => (
+                  <tr key={t.id} className={`border-b last:border-0 hover:bg-gray-50`}>
+                    <td className="py-3 px-4 text-center"><RankIcon rank={i + 1} /></td>
+                    <td className="py-3 px-4 font-medium">{t.name}</td>
+                    <td className="py-3 px-4 text-gray-500 text-xs">{t.school}</td>
+                    <td className="py-3 px-4"><span className={`badge ${divColors[t.division]}`}>{t.division}</span></td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`badge ${t.gender === '남' ? 'bg-blue-50 text-blue-600' : t.gender === '여' ? 'bg-pink-50 text-pink-600' : 'bg-purple-50 text-purple-600'}`}>{t.gender}</span>
+                    </td>
+                    <td className="py-3 px-4 text-center">{t.playerIds.length}명</td>
+                    <td className="py-3 px-4 text-right"><span className="font-bold text-blue-600">{t.points.toLocaleString()}</span><span className="text-xs text-gray-400 ml-1">P</span></td>
+                    <td className="py-3 px-4 text-center">
+                      <button onClick={() => deleteTeam(t.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
+                    </td>
+                  </tr>
+                ))}
+                {teams.length === 0 && (
+                  <tr><td colSpan={8} className="py-12 text-center text-gray-400">등록된 팀이 없습니다<br /><span className="text-xs">우상단 '팀 등록' 버튼으로 추가하세요</span></td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Division summary cards — clickable */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {DIVISIONS.map(div => {
@@ -618,6 +682,47 @@ export default function Rankings() {
             <div className="flex gap-2 pt-2">
               <button className="btn-primary flex-1" onClick={handleEditSave}>저장</button>
               <button className="btn-secondary flex-1" onClick={() => setEditModal(null)}>취소</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Add Team Modal */}
+      {showAdd && tab === 'teams' && (
+        <Modal title="단체전 팀 등록" onClose={() => setShowAdd(false)}>
+          <div className="space-y-3">
+            <Field label="팀명 *"><input className="input" placeholder="예: 서울중학교 A팀" value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} /></Field>
+            <Field label="학교/소속"><input className="input" placeholder="학교 또는 소속" value={teamForm.school} onChange={e => setTeamForm(f => ({ ...f, school: e.target.value }))} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="부문">
+                <select className="select" value={teamForm.division} onChange={e => setTeamForm(f => ({ ...f, division: e.target.value as Division, playerIds: [] }))}>
+                  {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </Field>
+              <Field label="성별">
+                <select className="select" value={teamForm.gender} onChange={e => setTeamForm(f => ({ ...f, gender: e.target.value as any, playerIds: [] }))}>
+                  <option value="남">남자팀</option><option value="여">여자팀</option><option value="혼합">혼성팀</option>
+                </select>
+              </Field>
+            </div>
+            <Field label={`선수 선택 (2~7명, 선택: ${teamForm.playerIds.length}명)`}>
+              <div className="max-h-48 overflow-y-auto border rounded-lg divide-y">
+                {players.filter(p => p.division === teamForm.division && (teamForm.gender === '혼합' || p.gender === teamForm.gender)).map(p => {
+                  const checked = teamForm.playerIds.includes(p.id)
+                  return (
+                    <label key={p.id} className={`flex items-center gap-2 px-3 py-2 cursor-pointer ${checked ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                      <input type="checkbox" checked={checked} onChange={() => setTeamForm(f => ({ ...f, playerIds: checked ? f.playerIds.filter(x => x !== p.id) : [...f.playerIds, p.id] }))} className="rounded" />
+                      <span className="font-medium text-sm flex-1">{p.name}</span>
+                      <span className="text-xs text-gray-400">{p.school}</span>
+                      <span className="text-xs text-blue-600">{p.points}P</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary flex-1" onClick={handleAddTeam} disabled={!teamForm.name || teamForm.playerIds.length < 2}>팀 등록</button>
+              <button className="btn-secondary flex-1" onClick={() => setShowAdd(false)}>취소</button>
             </div>
           </div>
         </Modal>
