@@ -24,10 +24,10 @@ const GRID_COLS: GridColDef[] = [
   { key: 'F-단체',  label: '여자단체',  eventType: '단체전',  gender: '여' },
 ]
 
-type GridRow = { bracketFormat: SmartBracketFormat; counts: Record<string, number>; day: number }
+type GridRow = { bracketFormat: SmartBracketFormat; counts: Record<string, number>; dayStart: number; dayEnd: number }
 type GridState = Record<Division, GridRow>
 const initGrid = (): GridState =>
-  Object.fromEntries(DIVISIONS.map(d => [d, { bracketFormat: 'single' as SmartBracketFormat, counts: {}, day: 1 }])) as GridState
+  Object.fromEntries(DIVISIONS.map(d => [d, { bracketFormat: 'single' as SmartBracketFormat, counts: {}, dayStart: 1, dayEnd: 1 }])) as GridState
 
 const divColors: Record<Division, string> = {
   초등: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -77,8 +77,17 @@ export default function SchedulePage() {
   function setGridBracket(div: Division, fmt: SmartBracketFormat) {
     setGrid(prev => ({ ...prev, [div]: { ...prev[div], bracketFormat: fmt } }))
   }
-  function setGridDay(div: Division, day: number) {
-    setGrid(prev => ({ ...prev, [div]: { ...prev[div], day } }))
+  function setGridDayStart(div: Division, dayStart: number) {
+    setGrid(prev => ({
+      ...prev,
+      [div]: { ...prev[div], dayStart, dayEnd: Math.max(prev[div].dayEnd, dayStart) },
+    }))
+  }
+  function setGridDayEnd(div: Division, dayEnd: number) {
+    setGrid(prev => ({
+      ...prev,
+      [div]: { ...prev[div], dayEnd, dayStart: Math.min(prev[div].dayStart, dayEnd) },
+    }))
   }
 
   const [fillRow, setFillRow] = useState<Record<string, string>>({})
@@ -110,7 +119,8 @@ export default function SchedulePage() {
             participantCount: count,
             bracketFormat: row.bracketFormat,
             label: `${div} ${gLabel}${col.eventType}`,
-            preferredDay: row.day,
+            preferredDayStart: row.dayStart,
+            preferredDayEnd: row.dayEnd,
           })
         }
       }
@@ -137,6 +147,19 @@ export default function SchedulePage() {
           const baseDate = new Date(planDate)
           baseDate.setDate(baseDate.getDate() + i - 1)
           next.push({ day: i, date: baseDate.toISOString().split('T')[0], startTime: '09:00', endTime: '20:00', courtCount: 4 })
+        }
+      }
+      return next
+    })
+    // 일수가 줄면 범위 유효성 보정
+    setGrid(prev => {
+      const next = { ...prev }
+      for (const div of DIVISIONS) {
+        const row = next[div]
+        const clampedEnd = Math.min(row.dayEnd, clamped)
+        const clampedStart = Math.min(row.dayStart, clampedEnd)
+        if (clampedStart !== row.dayStart || clampedEnd !== row.dayEnd) {
+          next[div] = { ...row, dayStart: clampedStart, dayEnd: clampedEnd }
         }
       }
       return next
@@ -315,7 +338,7 @@ export default function SchedulePage() {
                   <tr className="bg-gray-50">
                     <th className="text-left py-1.5 px-2 font-medium text-gray-600 border border-gray-200 text-xs w-16">부문</th>
                     {totalDays > 1 && (
-                      <th className="text-center py-1.5 px-1 font-medium text-gray-600 border border-gray-200 text-xs w-16">일차</th>
+                      <th className="text-center py-1.5 px-1 font-medium text-gray-600 border border-gray-200 text-xs" style={{minWidth: '110px'}}>진행 일차</th>
                     )}
                     <th className="text-center py-1.5 px-2 font-medium text-gray-600 border border-gray-200 text-xs w-24">대진방식</th>
                     {GRID_COLS.map(col => (
@@ -355,16 +378,33 @@ export default function SchedulePage() {
                           <span className={`badge border text-xs ${divColors[div]}`}>{div}</span>
                         </td>
                         {totalDays > 1 && (
-                          <td className="py-1 px-1 border border-gray-200 text-center">
-                            <select
-                              className="w-14 text-xs border border-gray-200 rounded px-1 py-1 bg-white"
-                              value={row.day}
-                              onChange={e => setGridDay(div, Number(e.target.value))}
-                            >
-                              {dayConfigs.map(d => (
-                                <option key={d.day} value={d.day}>{d.day}일차</option>
-                              ))}
-                            </select>
+                          <td className="py-1 px-1 border border-gray-200">
+                            <div className="flex items-center gap-0.5 justify-center">
+                              <select
+                                className="text-xs border border-gray-200 rounded px-1 py-1 bg-white w-12"
+                                value={row.dayStart}
+                                onChange={e => setGridDayStart(div, Number(e.target.value))}
+                              >
+                                {dayConfigs.map(d => (
+                                  <option key={d.day} value={d.day}>{d.day}일</option>
+                                ))}
+                              </select>
+                              <span className="text-xs text-gray-400">~</span>
+                              <select
+                                className="text-xs border border-gray-200 rounded px-1 py-1 bg-white w-12"
+                                value={row.dayEnd}
+                                onChange={e => setGridDayEnd(div, Number(e.target.value))}
+                              >
+                                {dayConfigs.map(d => (
+                                  <option key={d.day} value={d.day}>{d.day}일</option>
+                                ))}
+                              </select>
+                            </div>
+                            {row.dayEnd > row.dayStart && (
+                              <div className="text-[10px] text-center text-purple-600 mt-0.5">
+                                예선→{row.dayStart}일 / 결승→{row.dayEnd}일
+                              </div>
+                            )}
                           </td>
                         )}
                         <td className="py-1 px-1.5 border border-gray-200">

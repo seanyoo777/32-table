@@ -327,16 +327,37 @@ export function previewSmartPlan(
   const remaining = [...capacities]
   const roundDayAssign: { round: RoundPlan; day: number }[] = []
 
-  // 1) 일차 지정된 종목 먼저 배정
-  const pinnedEvents = events.filter(e => e.preferredDay)
-  const autoEvents = events.filter(e => !e.preferredDay)
+  // 1) 일차 범위 지정된 종목 먼저 배정 (예선→앞날, 준결승/결승→마지막날)
+  const pinnedEvents = events.filter(e => e.preferredDayStart)
+  const autoEvents = events.filter(e => !e.preferredDayStart)
 
   for (const ev of pinnedEvents) {
-    const dayIdx = days.findIndex(d => d.day === ev.preferredDay)
-    if (dayIdx < 0) continue
-    for (const r of calcRoundsFromParticipants(ev)) {
-      roundDayAssign.push({ round: r, day: ev.preferredDay! })
-      remaining[dayIdx] -= r.matchCount
+    const startDay = ev.preferredDayStart!
+    const endDay = ev.preferredDayEnd ?? startDay
+    const rangeDays = days.filter(d => d.day >= startDay && d.day <= endDay)
+    if (rangeDays.length === 0) continue
+
+    const rounds = calcRoundsFromParticipants(ev)
+    const earlyRounds = rounds.filter(r => !r.isLate)
+    const lateRounds = rounds.filter(r => r.isLate)
+
+    // 예선 라운드: 범위 앞쪽 날짜에 순서대로 채움
+    let ei = days.findIndex(d => d.day === startDay)
+    const maxEarlyIdx = rangeDays.length > 1
+      ? days.findIndex(d => d.day === endDay) - (lateRounds.length > 0 ? 1 : 0)
+      : ei
+    for (const r of earlyRounds) {
+      while (ei < maxEarlyIdx && remaining[ei] < r.matchCount) ei++
+      if (ei >= days.length) ei = days.length - 1
+      roundDayAssign.push({ round: r, day: days[ei].day })
+      remaining[ei] -= r.matchCount
+    }
+
+    // 준결승/결승: 범위 마지막 날짜에 배정
+    const lastIdx = days.findIndex(d => d.day === endDay)
+    for (const r of lateRounds) {
+      roundDayAssign.push({ round: r, day: endDay })
+      remaining[lastIdx] -= r.matchCount
     }
   }
 
