@@ -202,6 +202,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
     gender: '남' as Gender, format: '토너먼트' as BracketFormat,
     pointsForWin: 50, groupSize: 4, advanceCount: 2,
     selectedIds: [] as string[],
+    thirdPlace: false,
   })
 
   const isDoubles = ef.eventType === '복식' || ef.eventType === '혼합복식'
@@ -243,7 +244,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
     const seeded = availableParticipants.filter(p => ef.selectedIds.includes(p.id)).sort((a, b) => b.points - a.points)
 
     if (ef.format === '토너먼트') {
-      matches = generateTournamentBracket(seeded)
+      matches = generateTournamentBracket(seeded, { thirdPlace: ef.thirdPlace })
     } else if (ef.format === '리그') {
       matches = generateLeagueMatches(seeded)
     } else {
@@ -257,6 +258,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
       division: ef.division, bracketFormat: ef.format,
       participantIds: ef.selectedIds, groups, matches,
       pointsForWin: ef.pointsForWin, status: 'ongoing',
+      hasThirdPlace: ef.format === '토너먼트' && ef.thirdPlace,
     }
     setEvents(evs => [...evs, ev])
     setShowEventForm(false)
@@ -340,9 +342,15 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">대진 방식</label>
-                <select className="select" value={ef.format} onChange={e => setEf(f => ({ ...f, format: e.target.value as BracketFormat }))}>
+                <select className="select" value={ef.format} onChange={e => setEf(f => ({ ...f, format: e.target.value as BracketFormat, thirdPlace: false }))}>
                   {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
+                {ef.format === '토너먼트' && ef.selectedIds.length >= 4 && (
+                  <label className="flex items-center gap-1.5 mt-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={ef.thirdPlace} onChange={e => setEf(f => ({ ...f, thirdPlace: e.target.checked }))} className="rounded" />
+                    <span className="text-xs text-gray-600">3·4위전 자동 생성</span>
+                  </label>
+                )}
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">승리 포인트</label>
@@ -527,12 +535,14 @@ function EventBracket({ event, pMap, onRecord }: {
     ? calcStandings(event.matches, event.participantIds)
     : {}
 
-  // Champion / runner-up calculation
+  // Champion / runner-up / 3rd place calculation
   const finalMatch = event.bracketFormat === '토너먼트'
-    ? event.matches.filter(m => m.round === maxRound && m.result && !m.isBye).sort((a, b) => b.position - a.position)[0]
+    ? event.matches.filter(m => m.round === maxRound && m.result && !m.isBye && !m.isThirdPlace).sort((a, b) => a.position - b.position)[0]
     : null
+  const thirdPlaceMatch = event.matches.find(m => m.isThirdPlace)
   const champion = finalMatch?.result ? pMap[finalMatch.result.winnerId] : null
   const runnerUp = finalMatch?.result ? pMap[finalMatch.result.loserId] : null
+  const thirdPlace = thirdPlaceMatch?.result ? pMap[thirdPlaceMatch.result.winnerId] : null
   const leagueTop2 = (isLeague || isGrouped) && Object.keys(standings).length > 0
     ? Object.entries(standings).sort((a, b) => b[1].wins - a[1].wins || a[1].losses - b[1].losses).slice(0, 2).map(([id]) => pMap[id])
     : null
@@ -555,6 +565,14 @@ function EventBracket({ event, pMap, onRecord }: {
                 <div className="font-bold text-lg">{(runnerUp ?? leagueTop2![1])?.name ?? '?'}</div>
                 <div className="text-yellow-100 text-xs">{(runnerUp ?? leagueTop2![1])?.school ?? ''}</div>
                 <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">준우승</div>
+              </div>
+            )}
+            {thirdPlace && (
+              <div className="text-center">
+                <div className="text-2xl mb-1">🥉</div>
+                <div className="font-bold text-lg">{thirdPlace.name}</div>
+                <div className="text-yellow-100 text-xs">{thirdPlace.school}</div>
+                <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">3위</div>
               </div>
             )}
           </div>
@@ -639,14 +657,39 @@ function BracketTree({ event, pMap, onClickMatch }: {
   pMap: Record<string, any>
   onClickMatch: (m: BracketMatch) => void
 }) {
-  const rounds = [...new Set(event.matches.map(m => m.round))].sort((a, b) => a - b)
+  const mainMatches = event.matches.filter(m => !m.isThirdPlace)
+  const thirdPlaceMatch = event.matches.find(m => m.isThirdPlace)
+  const rounds = [...new Set(mainMatches.map(m => m.round))].sort((a, b) => a - b)
   const totalRounds = rounds.length
 
+  function MatchCard({ m }: { m: BracketMatch }) {
+    const p1 = m.participant1Id ? pMap[m.participant1Id] : null
+    const p2 = m.participant2Id ? pMap[m.participant2Id] : null
+    const isPlayable = p1 && p2 && !m.result
+    const w = m.result?.winnerId
+    return (
+      <div
+        className={`bracket-match ${m.result ? 'winner-determined' : ''} ${isPlayable ? 'cursor-pointer hover:border-blue-500' : ''}`}
+        onClick={() => isPlayable && onClickMatch(m)}
+        style={{ minWidth: 180 }}>
+        <div className={`bracket-player border-b border-gray-100 ${w === m.participant1Id ? 'winner' : w ? 'loser' : ''}`}>
+          <span className="truncate max-w-32 text-xs">{p1 ? p1.name : '-'}</span>
+          {m.result && <span className="text-sm font-bold">{w === m.participant1Id ? m.result.winnerScore : m.result.loserScore}</span>}
+        </div>
+        <div className={`bracket-player ${w === m.participant2Id ? 'winner' : w ? 'loser' : ''}`}>
+          <span className="truncate max-w-32 text-xs">{p2 ? p2.name : '-'}</span>
+          {m.result && <span className="text-sm font-bold">{w === m.participant2Id ? m.result.winnerScore : m.result.loserScore}</span>}
+        </div>
+        {isPlayable && <div className="text-center text-xs text-blue-500 py-0.5 bg-blue-50">클릭 → 결과입력</div>}
+      </div>
+    )
+  }
+
   return (
-    <div className="overflow-x-auto pb-4">
+    <div className="overflow-x-auto pb-4 space-y-4">
       <div className="flex gap-8 min-w-max">
         {rounds.map(round => {
-          const rMatches = event.matches.filter(m => m.round === round && !m.isBye).sort((a, b) => a.position - b.position)
+          const rMatches = mainMatches.filter(m => m.round === round && !m.isBye).sort((a, b) => a.position - b.position)
           return (
             <div key={round} className="flex flex-col">
               <div className="text-center mb-3">
@@ -656,33 +699,19 @@ function BracketTree({ event, pMap, onClickMatch }: {
                 <div className="text-xs text-gray-400">{rMatches.length}경기</div>
               </div>
               <div className="flex flex-col justify-around flex-1 gap-4">
-                {rMatches.map(m => {
-                  const p1 = m.participant1Id ? pMap[m.participant1Id] : null
-                  const p2 = m.participant2Id ? pMap[m.participant2Id] : null
-                  const isPlayable = p1 && p2 && !m.result
-                  const w = m.result?.winnerId
-                  return (
-                    <div key={m.id}
-                      className={`bracket-match ${m.result ? 'winner-determined' : ''} ${isPlayable ? 'cursor-pointer hover:border-blue-500' : ''}`}
-                      onClick={() => isPlayable && onClickMatch(m)}
-                      style={{ minWidth: 180 }}>
-                      <div className={`bracket-player border-b border-gray-100 ${w === p1?.id ? 'winner' : w ? 'loser' : ''}`}>
-                        <span className="truncate max-w-32 text-xs">{p1 ? p1.name : '-'}</span>
-                        {m.result && <span className="text-sm font-bold">{w === m.participant1Id ? m.result.winnerScore : m.result.loserScore}</span>}
-                      </div>
-                      <div className={`bracket-player ${w === p2?.id ? 'winner' : w ? 'loser' : ''}`}>
-                        <span className="truncate max-w-32 text-xs">{p2 ? p2.name : '-'}</span>
-                        {m.result && <span className="text-sm font-bold">{w === m.participant2Id ? m.result.winnerScore : m.result.loserScore}</span>}
-                      </div>
-                      {isPlayable && <div className="text-center text-xs text-blue-500 py-0.5 bg-blue-50">클릭 → 결과입력</div>}
-                    </div>
-                  )
-                })}
+                {rMatches.map(m => <MatchCard key={m.id} m={m} />)}
               </div>
             </div>
           )
         })}
       </div>
+
+      {thirdPlaceMatch && (
+        <div className="border-t pt-3">
+          <div className="text-xs font-semibold text-orange-600 mb-2">3·4위전</div>
+          <MatchCard m={thirdPlaceMatch} />
+        </div>
+      )}
     </div>
   )
 }

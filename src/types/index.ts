@@ -92,6 +92,7 @@ export interface BracketMatch {
   courtNo?: number
   scheduledTime?: string
   isBye?: boolean
+  isThirdPlace?: boolean
   setScores?: Array<[number, number]>
   tableNo?: number
 }
@@ -116,6 +117,7 @@ export interface TournamentEvent {
   pointsForWin: number
   status: 'draft' | 'ongoing' | 'completed'
   matchFormat?: MatchFormat
+  hasThirdPlace?: boolean
 }
 
 export interface Tournament {

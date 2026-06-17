@@ -9,7 +9,7 @@ export function nextPow2(n: number): number {
 interface Seeded { id: string; points: number }
 
 // ─── 토너먼트 (단일 제거) ─────────────────────────────────
-export function generateTournamentBracket(participants: Seeded[]): BracketMatch[] {
+export function generateTournamentBracket(participants: Seeded[], options?: { thirdPlace?: boolean }): BracketMatch[] {
   const sorted = [...participants].sort((a, b) => b.points - a.points)
   const n = sorted.length
   const size = nextPow2(n)
@@ -62,6 +62,15 @@ export function generateTournamentBracket(participants: Seeded[]): BracketMatch[
         result: null, nextMatchId,
       })
     }
+  }
+
+  // 3·4위전: 준결승(totalRounds-1 라운드)이 존재하는 경우에만 추가
+  if (options?.thirdPlace && totalRounds >= 2) {
+    matches.push({
+      id: 'third-place', round: totalRounds, position: 1,
+      participant1Id: null, participant2Id: null,
+      result: null, nextMatchId: null, isThirdPlace: true,
+    })
   }
 
   return matches

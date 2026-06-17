@@ -181,6 +181,27 @@ export const useStore = create<StoreState>()(
               return updated
             })
 
+            // 2.5) 3·4위전: 준결승 패자를 자동 배정
+            const thirdPlaceIdx = matches.findIndex(m => m.isThirdPlace)
+            if (thirdPlaceIdx >= 0) {
+              const knockout = matches.filter(m => !m.isThirdPlace && !m.groupId)
+              const maxKnockRound = Math.max(...knockout.map(m => m.round), 1)
+              const finalM = knockout.find(m => m.round === maxKnockRound && !m.nextMatchId)
+              if (finalM) {
+                const semis = knockout
+                  .filter(m => m.nextMatchId === finalM.id)
+                  .sort((a, b) => a.position - b.position)
+                const tp = matches[thirdPlaceIdx]
+                const p1 = semis[0]?.result?.loserId || tp.participant1Id
+                const p2 = semis[1]?.result?.loserId || tp.participant2Id
+                if (p1 !== tp.participant1Id || p2 !== tp.participant2Id) {
+                  matches = matches.map((m, i) =>
+                    i === thirdPlaceIdx ? { ...m, participant1Id: p1, participant2Id: p2 } : m
+                  )
+                }
+              }
+            }
+
             // 3) Group stage → Knockout wiring
             // When all matches of a group are done, fill the knockout placeholder slots
             if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
