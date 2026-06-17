@@ -219,13 +219,35 @@ export default function DashboardPage() {
               {pendingMatches.map(m => {
                 const p1 = m.participant1Id ? pMap[m.participant1Id] : null
                 const p2 = m.participant2Id ? pMap[m.participant2Id] : null
+                const alreadyCalled = matchCalls.some(c => !c.acknowledged && c.matchId === m.id)
                 return (
                   <div key={`${m.tournamentId}-${m.eventId}-${m.id}`}
                     className="flex items-center gap-2 px-2.5 py-2 bg-gray-50 rounded-lg text-xs">
-                    <span className="text-gray-400 font-medium w-16 truncate flex-shrink-0">{m.eventLabel}</span>
+                    <span className="text-gray-400 font-medium w-14 truncate flex-shrink-0">{m.eventLabel}</span>
                     <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
-                    {m.scheduledTime && (
-                      <span className="text-blue-500 flex-shrink-0">{m.scheduledTime}</span>
+                    {alreadyCalled && <span className="text-orange-500 flex-shrink-0 text-[10px]">호출됨</span>}
+                    {!alreadyCalled && (
+                      <button
+                        onClick={() => {
+                          if (!m.participant1Id || !m.participant2Id) return
+                          const call: MatchCall = {
+                            id: genId(), matchId: m.id, tournamentId: m.tournamentId,
+                            eventId: m.eventId, tableNo: callTableNo,
+                            participant1Name: pMap[m.participant1Id]?.name ?? '?',
+                            participant2Name: pMap[m.participant2Id]?.name ?? '?',
+                            eventLabel: m.eventLabel, calledAt: new Date().toISOString(), acknowledged: false,
+                          }
+                          addMatchCall(call)
+                          if ('Notification' in window && Notification.permission === 'granted') {
+                            new Notification(`🏓 경기 호출 — ${callTableNo}번대`, {
+                              body: `${call.participant1Name} vs ${call.participant2Name}`,
+                              icon: '/favicon.ico',
+                            })
+                          }
+                        }}
+                        className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded hover:bg-orange-200 flex-shrink-0">
+                        <Bell size={9} className="inline mr-0.5" />호출
+                      </button>
                     )}
                     <button onClick={() => navigate('/score')}
                       className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-200 flex-shrink-0">
