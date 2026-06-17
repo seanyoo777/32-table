@@ -74,6 +74,12 @@ export default function SchedulePage() {
   const [planDate, setPlanDate] = useState(new Date().toISOString().split('T')[0])
 
   const [grid, setGrid] = useState<GridState>(initGrid)
+  const [activeDivs, setActiveDivs] = useState<Record<Division, boolean>>(
+    () => Object.fromEntries(DIVISIONS.map(d => [d, true])) as Record<Division, boolean>
+  )
+  function toggleDiv(div: Division) {
+    setActiveDivs(prev => ({ ...prev, [div]: !prev[div] }))
+  }
 
   function setGridCount(div: Division, colKey: string, val: number) {
     setGrid(prev => ({
@@ -104,6 +110,7 @@ export default function SchedulePage() {
     setGrid(prev => {
       const next = { ...prev }
       for (const div of DIVISIONS) {
+        if (!activeDivs[div]) continue  // 비참가 부문은 일괄입력 제외
         next[div] = { ...next[div], counts: { ...next[div].counts, [colKey]: val } }
       }
       return next
@@ -113,6 +120,7 @@ export default function SchedulePage() {
   const smartEvents = useMemo<SmartEventInput[]>(() => {
     const result: SmartEventInput[] = []
     for (const div of DIVISIONS) {
+      if (!activeDivs[div]) continue
       const row = grid[div]
       for (const col of GRID_COLS) {
         const count = row.counts[col.key] ?? 0
@@ -133,7 +141,7 @@ export default function SchedulePage() {
       }
     }
     return result
-  }, [grid])
+  }, [grid, activeDivs])
 
   const [totalDays, setTotalDays] = useState(1)
   const [globalMinutesPerMatch, setGlobalMinutesPerMatch] = useState(30)
@@ -445,17 +453,28 @@ export default function SchedulePage() {
                 <tbody>
                   {DIVISIONS.map(div => {
                     const row = grid[div]
+                    const active = activeDivs[div]
                     const rowHasAny = GRID_COLS.some(c => (row.counts[c.key] ?? 0) >= 2)
                     return (
-                      <tr key={div} className={rowHasAny ? 'bg-blue-50/40' : ''}>
+                      <tr key={div} className={!active ? 'bg-gray-50 opacity-50' : rowHasAny ? 'bg-blue-50/40' : ''}>
                         <td className="py-1 px-2 border border-gray-200">
-                          <span className={`badge border text-xs ${divColors[div]}`}>{div}</span>
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={active}
+                              onChange={() => toggleDiv(div)}
+                              className="rounded accent-blue-600 cursor-pointer"
+                              title={active ? '참가 (클릭 시 제외)' : '비참가 (클릭 시 포함)'}
+                            />
+                            <span className={`badge border text-xs ${divColors[div]}`}>{div}</span>
+                          </label>
                         </td>
                         {totalDays > 1 && (
                           <td className="py-1 px-1 border border-gray-200">
                             <div className="flex items-center gap-0.5 justify-center">
                               <select
-                                className="text-xs border border-gray-200 rounded px-1 py-1 bg-white w-12"
+                                disabled={!active}
+                                className="text-xs border border-gray-200 rounded px-1 py-1 bg-white w-12 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 value={row.dayStart}
                                 onChange={e => setGridDayStart(div, Number(e.target.value))}
                               >
@@ -465,7 +484,8 @@ export default function SchedulePage() {
                               </select>
                               <span className="text-xs text-gray-400">~</span>
                               <select
-                                className="text-xs border border-gray-200 rounded px-1 py-1 bg-white w-12"
+                                disabled={!active}
+                                className="text-xs border border-gray-200 rounded px-1 py-1 bg-white w-12 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 value={row.dayEnd}
                                 onChange={e => setGridDayEnd(div, Number(e.target.value))}
                               >
@@ -482,7 +502,7 @@ export default function SchedulePage() {
                           </td>
                         )}
                         <td className="py-1 px-1.5 border border-gray-200">
-                          <select className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white"
+                          <select disabled={!active} className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                             value={row.bracketFormat} onChange={e => setGridBracket(div, e.target.value as SmartBracketFormat)}>
                             {(Object.keys(BRACKET_LABELS) as SmartBracketFormat[]).map(k => (
                               <option key={k} value={k}>{BRACKET_LABELS[k]}</option>
@@ -493,8 +513,8 @@ export default function SchedulePage() {
                           const val = row.counts[col.key] ?? 0
                           return (
                             <td key={col.key} className="py-1 px-1 border border-gray-200 text-center">
-                              <input type="number" min="0" max="512"
-                                className={`w-14 text-center text-sm border rounded px-1 py-1 ${val >= 2 ? 'border-blue-300 bg-blue-50 font-medium text-blue-700' : 'border-gray-200 bg-white text-gray-300'}`}
+                              <input type="number" min="0" max="512" disabled={!active}
+                                className={`w-14 text-center text-sm border rounded px-1 py-1 disabled:bg-gray-100 disabled:cursor-not-allowed ${val >= 2 ? 'border-blue-300 bg-blue-50 font-medium text-blue-700' : 'border-gray-200 bg-white text-gray-300'}`}
                                 value={val || ''} placeholder="—"
                                 onChange={e => setGridCount(div, col.key, Number(e.target.value))}
                               />
@@ -509,7 +529,7 @@ export default function SchedulePage() {
                   <tr className="bg-gray-50">
                     <td colSpan={totalDays > 1 ? 3 : 2} className="py-1.5 px-2 text-xs text-gray-500 border border-gray-200 font-medium">참가 부문</td>
                     {GRID_COLS.map(col => {
-                      const cnt = DIVISIONS.reduce((s, div) => s + ((grid[div].counts[col.key] ?? 0) >= 2 ? 1 : 0), 0)
+                      const cnt = DIVISIONS.reduce((s, div) => s + (activeDivs[div] && (grid[div].counts[col.key] ?? 0) >= 2 ? 1 : 0), 0)
                       return (
                         <td key={col.key} className="py-1.5 px-1 border border-gray-200 text-center">
                           {cnt > 0 && <span className="text-xs font-bold text-blue-600">{cnt}부문</span>}
