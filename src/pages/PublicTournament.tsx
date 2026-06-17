@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore'
 import { getRoundName, calcStandings } from '../utils/bracketUtils'
 import type { TournamentEvent, BracketMatch } from '../types'
 import { QRCodeSVG } from 'qrcode.react'
+import { fetchTournament, subscribeTournament, SYNC_ENABLED } from '../lib/sync'
 
 // ─── 참가자 이름 맵 ──────────────────────────────────────
 function useParticipantMap() {
@@ -197,17 +198,40 @@ function EventView({ event, pMap }: {
 // ─── 메인 공개 페이지 ─────────────────────────────────────
 export default function PublicTournament() {
   const { id } = useParams<{ id: string }>()
-  const { tournaments, liveMatches } = useStore()
+  const { tournaments, liveMatches, updateTournament } = useStore()
   const pMap = useParticipantMap()
 
-  const tournament = tournaments.find(t => t.id === id)
+  const localTournament = tournaments.find(t => t.id === id)
+  const [remoteTournament, setRemoteTournament] = useState(localTournament ?? null)
+  const tournament = localTournament ?? remoteTournament
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
   const [showQR, setShowQR] = useState(false)
+  const [liveIndicator, setLiveIndicator] = useState(false)
+
+  // Fetch from Supabase if not in local store (shared device / spectator)
+  useEffect(() => {
+    if (!SYNC_ENABLED || !id || localTournament) return
+    fetchTournament(id).then(t => { if (t) setRemoteTournament(t) })
+  }, [id, localTournament])
+
+  // Subscribe to Realtime updates
+  useEffect(() => {
+    if (!SYNC_ENABLED || !id) return
+    const unsub = subscribeTournament(id, (updated) => {
+      setLiveIndicator(true)
+      setTimeout(() => setLiveIndicator(false), 3000)
+      if (localTournament) {
+        updateTournament(id, updated)
+      } else {
+        setRemoteTournament(updated)
+      }
+    })
+    return unsub
+  }, [id, localTournament, updateTournament])
 
   // 30초마다 자동 새로고침 (같은 기기에서 운영자가 점수입력 시 반영)
   useEffect(() => {
     const timer = setInterval(() => {
-      // Zustand persist는 store 자체가 자동 업데이트됨 — 강제 리렌더를 위한 state 트리거
       setActiveEventId(prev => prev)
     }, 30_000)
     return () => clearInterval(timer)
@@ -254,6 +278,14 @@ export default function PublicTournament() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {liveIndicator && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium animate-pulse">
+                ● 업데이트됨
+              </span>
+            )}
+            {SYNC_ENABLED && !liveIndicator && (
+              <span className="text-xs text-gray-300 flex items-center gap-1">● 실시간</span>
+            )}
             <div className="text-right">
               <div className="text-xs font-bold text-blue-600">{pct}%</div>
               <div className="text-xs text-gray-400">{doneMatches}/{totalMatches}</div>

@@ -6,6 +6,7 @@ import type {
 } from '../types'
 import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
 import { getGroupRankedIds } from '../utils/bracketUtils'
+import { uploadTournament, subscribeTournament, SYNC_ENABLED } from '../lib/sync'
 
 // 최초 1회만 생성 (모듈 로드 시점)
 const INIT_PLAYERS  = generatePlayers()
@@ -39,6 +40,7 @@ interface StoreState {
   liveMatches: LiveMatch[]
   matchCalls: MatchCall[]
   appSettings: AppSettings
+  syncStatus: 'idle' | 'syncing' | 'error'
 
   // Players
   addPlayer: (p: Player) => void
@@ -90,6 +92,9 @@ interface StoreState {
   // App settings
   updateAppSettings: (s: Partial<AppSettings>) => void
 
+  // Sync
+  syncTournament: (tournamentId: string) => Promise<void>
+
   // Backup & Restore
   resetAllData: () => void
   restoreBackup: (data: Partial<StoreState>) => void
@@ -97,7 +102,7 @@ interface StoreState {
 
 export const useStore = create<StoreState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       players: INIT_PLAYERS,
       pairs: INIT_PAIRS,
       teams: [],
@@ -107,6 +112,7 @@ export const useStore = create<StoreState>()(
       liveMatches: [],
       matchCalls: [],
       appSettings: DEFAULT_SETTINGS,
+      syncStatus: 'idle' as const,
 
       // Players
       addPlayer: (p) => set((s) => ({ players: [...s.players, p] })),
@@ -144,10 +150,15 @@ export const useStore = create<StoreState>()(
       deleteTeam: (id) => set((s) => ({ teams: s.teams.filter(t => t.id !== id) })),
 
       // Tournaments
-      addTournament: (t) => set((s) => ({ tournaments: [...s.tournaments, t] })),
-      updateTournament: (id, data) => set((s) => ({
-        tournaments: s.tournaments.map(t => t.id === id ? { ...t, ...data } : t)
-      })),
+      addTournament: (t) => {
+        set((s) => ({ tournaments: [...s.tournaments, t] }))
+        uploadTournament(t).catch(() => {})
+      },
+      updateTournament: (id, data) => {
+        set((s) => ({ tournaments: s.tournaments.map(t => t.id === id ? { ...t, ...data } : t) }))
+        const updated = get().tournaments.find(t => t.id === id)
+        if (updated) uploadTournament(updated).catch(() => {})
+      },
       deleteTournament: (id) => set((s) => ({
         tournaments: s.tournaments.filter(t => t.id !== id),
         scoreRecords: s.scoreRecords.filter(r => r.tournamentId !== id),
@@ -155,7 +166,8 @@ export const useStore = create<StoreState>()(
         matchCalls: s.matchCalls.filter(c => c.tournamentId !== id),
       })),
 
-      recordMatchResult: (tournamentId, eventId, matchId, result) => set((s) => ({
+      recordMatchResult: (tournamentId, eventId, matchId, result) => {
+       set((s) => ({
         tournaments: s.tournaments.map(t => {
           if (t.id !== tournamentId) return t
 
@@ -247,7 +259,10 @@ export const useStore = create<StoreState>()(
 
           return { ...t, events: newEvents, status: newTournamentStatus as Tournament['status'] }
         })
-      })),
+      }))
+       const updated2 = get().tournaments.find(t => t.id === tournamentId)
+       if (updated2) uploadTournament(updated2).catch(() => {})
+      },
 
       // Schedules
       addSchedule: (s) => set((st) => ({ schedules: [...st.schedules, s] })),
@@ -283,6 +298,19 @@ export const useStore = create<StoreState>()(
 
       // App settings
       updateAppSettings: (s) => set((st) => ({ appSettings: { ...st.appSettings, ...s } })),
+
+      // Sync
+      syncTournament: async (tournamentId) => {
+        const t = get().tournaments.find(x => x.id === tournamentId)
+        if (!t || !SYNC_ENABLED) return
+        set({ syncStatus: 'syncing' })
+        try {
+          await uploadTournament(t)
+          set({ syncStatus: 'idle' })
+        } catch {
+          set({ syncStatus: 'error' })
+        }
+      },
 
       // Backup & Restore
       resetAllData: () => set({

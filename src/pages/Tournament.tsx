@@ -1,12 +1,13 @@
 ﻿import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
+import { SYNC_ENABLED } from '../lib/sync'
 import {
   generateTournamentBracket, generateLeagueMatches, generateGroups,
   calcStandings, getRoundName, genId
 } from '../utils/bracketUtils'
 import {
   Plus, Trash2, Trophy, ChevronRight, X, Printer,
-  Shuffle, Users, Layers, Check, ChevronDown, ChevronUp, Info, Download
+  Shuffle, Users, Layers, Check, ChevronDown, ChevronUp, Info, Download, Upload, Cloud, CloudOff
 } from 'lucide-react'
 import type {
   Division, EventType, Gender, BracketFormat,
@@ -72,7 +73,7 @@ function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../t
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, addPlayerPoints, updatePlayerRating } = useStore()
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, addPlayerPoints, updatePlayerRating, syncTournament, syncStatus } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
@@ -484,6 +485,19 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord }
             className="btn-secondary flex items-center gap-1.5 text-sm">
             <Info size={14} /> 공개 링크
           </button>
+          {SYNC_ENABLED && (
+            <button
+              onClick={() => syncTournament(tournament.id)}
+              disabled={syncStatus === 'syncing'}
+              title={syncStatus === 'error' ? '동기화 실패 - 재시도' : '클라우드 동기화'}
+              className={`btn-secondary flex items-center gap-1.5 text-sm ${syncStatus === 'error' ? 'text-red-600' : ''}`}>
+              {syncStatus === 'syncing'
+                ? <><Cloud size={14} className="animate-pulse" /> 동기화 중…</>
+                : syncStatus === 'error'
+                ? <><CloudOff size={14} /> 동기화 실패</>
+                : <><Upload size={14} /> 동기화</>}
+            </button>
+          )}
           <button onClick={() => exportTournamentCSV(tournament, pMap)} className="btn-secondary flex items-center gap-1.5 text-sm">
             <Download size={14} /> 결과 CSV
           </button>
