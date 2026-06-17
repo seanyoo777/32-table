@@ -74,6 +74,10 @@ export default function Rankings() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 50
+  const [pairPage, setPairPage] = useState(1)
+  const PAIR_PAGE_SIZE = 30
+  const [teamPage, setTeamPage] = useState(1)
+  const TEAM_PAGE_SIZE = 30
 
   // Player form
   const [pForm, setPForm] = useState({ name: '', school: '', division: '초등' as Division, gender: '남' as '남' | '여', points: '0', registrationNo: '', phone: '', photoUrl: '' })
@@ -110,6 +114,12 @@ export default function Rankings() {
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
     .filter(p => !search || p.name.includes(search) || p.school.includes(search))
     .sort((a, b) => b.points - a.points)
+  const totalPairPages = Math.ceil(filteredPairs.length / PAIR_PAGE_SIZE)
+  const pagedPairs = filteredPairs.slice((pairPage - 1) * PAIR_PAGE_SIZE, pairPage * PAIR_PAGE_SIZE)
+
+  const sortedTeams = [...teams].sort((a, b) => b.points - a.points)
+  const totalTeamPages = Math.ceil(sortedTeams.length / TEAM_PAGE_SIZE)
+  const pagedTeams = sortedTeams.slice((teamPage - 1) * TEAM_PAGE_SIZE, teamPage * TEAM_PAGE_SIZE)
 
   const rankTitle = rankView === '통합' ? '통합 랭킹' : rankView === '남자' ? '남자 통합 랭킹' : rankView === '여자' ? '여자 통합 랭킹' : `${rankView} ${subGender === 'all' ? '전체' : subGender === '남' ? '남자' : '여자'} 랭킹`
 
@@ -244,6 +254,8 @@ export default function Rankings() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+      {/* Fixed top bar: header + tabs + search + filter */}
+      <div className="flex-shrink-0 px-5 pt-4 pb-3 space-y-3 bg-gray-50 border-b border-gray-200">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold flex items-center gap-2"><Trophy size={20} className="text-yellow-500" />랭킹 관리</h1>
@@ -267,13 +279,13 @@ export default function Rankings() {
 
       {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setTab('singles')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'singles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+        <button onClick={() => { setTab('singles'); setPage(1) }} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'singles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           <Trophy size={14} /> 단식 랭킹 <span className="text-xs opacity-70">({players.length}명)</span>
         </button>
-        <button onClick={() => setTab('doubles')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'doubles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+        <button onClick={() => { setTab('doubles'); setPairPage(1) }} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'doubles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           <Users size={14} /> 복식 페어 <span className="text-xs opacity-70">({pairs.length}페어)</span>
         </button>
-        <button onClick={() => setTab('teams')} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'teams' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+        <button onClick={() => { setTab('teams'); setTeamPage(1) }} className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${tab === 'teams' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           <Users size={14} /> 단체전 팀 <span className="text-xs opacity-70">({teams.length}팀)</span>
         </button>
       </div>
@@ -335,13 +347,17 @@ export default function Rankings() {
       {tab === 'doubles' && (
         <div className="flex gap-2 flex-wrap">
           {(['all', ...DIVISIONS] as const).map(d => (
-            <button key={d} onClick={() => setFilterPairDiv(d as any)}
+            <button key={d} onClick={() => { setFilterPairDiv(d as any); setPairPage(1) }}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${filterPairDiv === d ? (d === 'all' ? 'border-blue-500 bg-blue-50 text-blue-700' : divBorder[d as Division]) : 'border-gray-200 text-gray-500'}`}>
               {d === 'all' ? '전체' : d}
             </button>
           ))}
         </div>
       )}
+      </div>{/* /fixed-top-bar */}
+
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3">
 
       {/* Singles Table */}
       {tab === 'singles' && (
@@ -462,6 +478,10 @@ export default function Rankings() {
       {/* Doubles / Pairs Table */}
       {tab === 'doubles' && (
         <div className="card p-0 overflow-hidden">
+          <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between">
+            <span className="font-semibold text-gray-700 text-sm">복식 페어 랭킹</span>
+            <span className="text-xs text-gray-400">{filteredPairs.length}페어 · 포인트 순</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b">
@@ -477,9 +497,11 @@ export default function Rankings() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPairs.map((p, i) => (
-                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${i < 3 ? 'bg-yellow-50/20' : ''}`}>
-                    <td className="py-3 px-4 text-center"><RankIcon rank={i + 1} /></td>
+                {pagedPairs.map((p, i) => {
+                  const globalRank = (pairPage - 1) * PAIR_PAGE_SIZE + i + 1
+                  return (
+                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : ''}`}>
+                    <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4 font-medium">{p.name}</td>
                     <td className="py-3 px-4 text-gray-500 text-xs">{p.school}</td>
                     <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>
@@ -501,19 +523,50 @@ export default function Rankings() {
                       <button onClick={() => deletePair(p.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
                     </td>
                   </tr>
-                ))}
+                )})}
                 {filteredPairs.length === 0 && (
                   <tr><td colSpan={8} className="py-12 text-center text-gray-400">등록된 복식 페어가 없습니다<br /><span className="text-xs">우상단 '페어 등록' 버튼으로 추가하세요</span></td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          {totalPairPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+              <span className="text-xs text-gray-400">
+                {(pairPage-1)*PAIR_PAGE_SIZE+1}–{Math.min(pairPage*PAIR_PAGE_SIZE, filteredPairs.length)} / {filteredPairs.length}페어
+              </span>
+              <div className="flex gap-1">
+                <button onClick={() => setPairPage(1)} disabled={pairPage === 1}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">«</button>
+                <button onClick={() => setPairPage(p => p - 1)} disabled={pairPage === 1}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">‹</button>
+                {Array.from({ length: Math.min(5, totalPairPages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(pairPage - 2, totalPairPages - 4))
+                  const p = start + i
+                  return (
+                    <button key={p} onClick={() => setPairPage(p)}
+                      className={`px-2.5 py-1 text-xs rounded border ${pairPage === p ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'}`}>
+                      {p}
+                    </button>
+                  )
+                })}
+                <button onClick={() => setPairPage(p => p + 1)} disabled={pairPage === totalPairPages}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">›</button>
+                <button onClick={() => setPairPage(totalPairPages)} disabled={pairPage === totalPairPages}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">»</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Teams Table */}
       {tab === 'teams' && (
         <div className="card p-0 overflow-hidden">
+          <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between">
+            <span className="font-semibold text-gray-700 text-sm">단체전 팀 랭킹</span>
+            <span className="text-xs text-gray-400">{teams.length}팀 · 포인트 순</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b">
@@ -529,9 +582,11 @@ export default function Rankings() {
                 </tr>
               </thead>
               <tbody>
-                {[...teams].sort((a, b) => b.points - a.points).map((t, i) => (
-                  <tr key={t.id} className={`border-b last:border-0 hover:bg-gray-50`}>
-                    <td className="py-3 px-4 text-center"><RankIcon rank={i + 1} /></td>
+                {pagedTeams.map((t, i) => {
+                  const globalRank = (teamPage - 1) * TEAM_PAGE_SIZE + i + 1
+                  return (
+                  <tr key={t.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4 font-medium">{t.name}</td>
                     <td className="py-3 px-4 text-gray-500 text-xs">{t.school}</td>
                     <td className="py-3 px-4"><span className={`badge ${divColors[t.division]}`}>{t.division}</span></td>
@@ -544,13 +599,40 @@ export default function Rankings() {
                       <button onClick={() => deleteTeam(t.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
                     </td>
                   </tr>
-                ))}
+                )})}
                 {teams.length === 0 && (
                   <tr><td colSpan={8} className="py-12 text-center text-gray-400">등록된 팀이 없습니다<br /><span className="text-xs">우상단 '팀 등록' 버튼으로 추가하세요</span></td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          {totalTeamPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+              <span className="text-xs text-gray-400">
+                {(teamPage-1)*TEAM_PAGE_SIZE+1}–{Math.min(teamPage*TEAM_PAGE_SIZE, teams.length)} / {teams.length}팀
+              </span>
+              <div className="flex gap-1">
+                <button onClick={() => setTeamPage(1)} disabled={teamPage === 1}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">«</button>
+                <button onClick={() => setTeamPage(p => p - 1)} disabled={teamPage === 1}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">‹</button>
+                {Array.from({ length: Math.min(5, totalTeamPages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(teamPage - 2, totalTeamPages - 4))
+                  const p = start + i
+                  return (
+                    <button key={p} onClick={() => setTeamPage(p)}
+                      className={`px-2.5 py-1 text-xs rounded border ${teamPage === p ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'}`}>
+                      {p}
+                    </button>
+                  )
+                })}
+                <button onClick={() => setTeamPage(p => p + 1)} disabled={teamPage === totalTeamPages}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">›</button>
+                <button onClick={() => setTeamPage(totalTeamPages)} disabled={teamPage === totalTeamPages}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">»</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -579,6 +661,7 @@ export default function Rankings() {
           )
         })}
       </div>
+      </div>{/* /scrollable-content */}
 
       {/* Add Player Modal */}
       {showAdd && tab === 'singles' && (
