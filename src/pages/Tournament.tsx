@@ -513,8 +513,40 @@ function EventBracket({ event, pMap, onRecord }: {
     ? calcStandings(event.matches, event.participantIds)
     : {}
 
+  // Champion / runner-up calculation
+  const finalMatch = event.bracketFormat === '토너먼트'
+    ? event.matches.filter(m => m.round === maxRound && m.result && !m.isBye).sort((a, b) => b.position - a.position)[0]
+    : null
+  const champion = finalMatch?.result ? pMap[finalMatch.result.winnerId] : null
+  const runnerUp = finalMatch?.result ? pMap[finalMatch.result.loserId] : null
+  const leagueTop2 = (isLeague || isGrouped) && Object.keys(standings).length > 0
+    ? Object.entries(standings).sort((a, b) => b[1].wins - a[1].wins || a[1].losses - b[1].losses).slice(0, 2).map(([id]) => pMap[id])
+    : null
+
   return (
     <div className="space-y-4">
+      {/* Champion banner */}
+      {(champion || (leagueTop2 && leagueTop2[0])) && (
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl p-4 text-white">
+          <div className="flex items-center gap-6 flex-wrap justify-center sm:justify-start">
+            <div className="text-center">
+              <div className="text-3xl mb-1">🏆</div>
+              <div className="font-black text-xl">{(champion ?? leagueTop2![0])?.name ?? '?'}</div>
+              <div className="text-yellow-100 text-xs">{(champion ?? leagueTop2![0])?.school ?? ''}</div>
+              <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">우승</div>
+            </div>
+            {(runnerUp ?? leagueTop2?.[1]) && (
+              <div className="text-center">
+                <div className="text-2xl mb-1">🥈</div>
+                <div className="font-bold text-lg">{(runnerUp ?? leagueTop2![1])?.name ?? '?'}</div>
+                <div className="text-yellow-100 text-xs">{(runnerUp ?? leagueTop2![1])?.school ?? ''}</div>
+                <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">준우승</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Sub-tabs */}
       <div className="flex gap-2 items-center flex-wrap">
         <button onClick={() => setActiveView('bracket')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeView === 'bracket' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>

@@ -1,13 +1,32 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Play, Clock, CheckCircle, Trophy, Bell, BellOff, X } from 'lucide-react'
-import type { MatchCall } from '../types'
+import { LayoutDashboard, Play, Clock, CheckCircle, Trophy, Bell, BellOff, X, AlertTriangle, Download } from 'lucide-react'
+import type { MatchCall, ScoreRecord } from '../types'
+
+function exportScoreRecordsCSV(records: ScoreRecord[], pMap: Record<string, { name: string; school: string }>) {
+  const rows = ['일시,선수1,선수2,세트스코어,검증여부']
+  for (const r of [...records].reverse()) {
+    const p1 = pMap[r.participant1Id]?.name ?? r.participant1Id
+    const p2 = pMap[r.participant2Id]?.name ?? r.participant2Id
+    const score = `${r.p1Score}-${r.p2Score}`
+    const verified = r.verified ? '확인' : '미확인'
+    const at = new Date(r.recordedAt).toLocaleString('ko-KR')
+    rows.push([at, p1, p2, score, verified].join(','))
+  }
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `경기기록_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
 export default function DashboardPage() {
-  const { tournaments, players, pairs, scoreRecords, liveMatches, matchCalls, addMatchCall, acknowledgeMatchCall, removeMatchCall } = useStore()
+  const { tournaments, players, pairs, scoreRecords, liveMatches, matchCalls, addMatchCall, acknowledgeMatchCall, removeMatchCall, verifyScoreRecord } = useStore()
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   const [callTableNo, setCallTableNo] = useState(1)
@@ -60,6 +79,7 @@ export default function DashboardPage() {
   }
 
   const pendingCalls = matchCalls.filter(c => !c.acknowledged)
+  const unverifiedRecords = scoreRecords.filter(r => !r.verified)
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -68,7 +88,15 @@ export default function DashboardPage() {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <LayoutDashboard size={20} className="text-indigo-500" /> 운영 대시보드
         </h1>
-        <div className="text-2xl font-mono font-bold text-gray-700">{formatTime(now)}</div>
+        <div className="flex items-center gap-3">
+          {scoreRecords.length > 0 && (
+            <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap)}
+              className="btn-secondary text-sm flex items-center gap-1.5">
+              <Download size={14} /> 기록 CSV
+            </button>
+          )}
+          <div className="text-2xl font-mono font-bold text-gray-700">{formatTime(now)}</div>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -78,6 +106,46 @@ export default function DashboardPage() {
         <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="bg-green-50 border-green-200" />
         <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="bg-red-50 border-red-200" />
       </div>
+
+      {/* Unverified records alert */}
+      {unverifiedRecords.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-500" />
+              <span className="font-semibold text-amber-800">미확인 경기 기록 {unverifiedRecords.length}건</span>
+              <span className="text-amber-600 text-sm">— 검토 후 확인 처리하세요</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => unverifiedRecords.forEach(r => verifyScoreRecord(r.id))}
+                className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors">
+                전체 확인 처리
+              </button>
+              <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap)}
+                className="px-3 py-1.5 bg-white border border-amber-300 text-amber-700 text-xs font-medium rounded-lg hover:bg-amber-50 flex items-center gap-1 transition-colors">
+                <Download size={12} /> 기록 CSV
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
+            {unverifiedRecords.slice(0, 10).map(r => {
+              const p1 = pMap[r.participant1Id]?.name ?? '?'
+              const p2 = pMap[r.participant2Id]?.name ?? '?'
+              return (
+                <div key={r.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-amber-100 text-sm">
+                  <span className="flex-1 font-medium">{p1} <span className="text-gray-400">vs</span> {p2}</span>
+                  <span className="text-gray-500">{r.p1Score} - {r.p2Score}</span>
+                  <span className="text-xs text-gray-400">{new Date(r.recordedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  <button onClick={() => verifyScoreRecord(r.id)}
+                    className="flex-shrink-0 text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors">
+                    확인
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Live matches */}
       {liveMatches.length > 0 && (

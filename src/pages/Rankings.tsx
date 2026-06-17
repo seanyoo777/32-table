@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle } from 'lucide-react'
-import type { Player, Pair, Division, Gender } from '../types'
+import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2 } from 'lucide-react'
+import type { Player, Pair, Division, Gender, Tournament, ScoreRecord } from '../types'
 import { getRatingLabel, pointsToRating } from '../utils/ratingUtils'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
@@ -54,7 +54,7 @@ function parseCSV(text: string): ImportRow[] {
 }
 
 export default function Rankings() {
-  const { players, pairs, teams, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers, addTeam, deleteTeam } = useStore()
+  const { players, pairs, teams, tournaments, scoreRecords, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers, addTeam, deleteTeam } = useStore()
   const [tab, setTab] = useState<'singles' | 'doubles' | 'teams'>('singles')
   const [rankView, setRankView] = useState<RankView>('통합')
   const [subGender, setSubGender] = useState<'all' | '남' | '여'>('all')
@@ -66,6 +66,7 @@ export default function Rankings() {
   const [addPts, setAddPts] = useState('')
   const [addWin, setAddWin] = useState(true)
   const [editModal, setEditModal] = useState<Player | null>(null)
+  const [statsModal, setStatsModal] = useState<Player | null>(null)
   const [importModal, setImportModal] = useState(false)
   const [importRows, setImportRows] = useState<ImportRow[]>([])
   const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null)
@@ -397,6 +398,8 @@ export default function Rankings() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center gap-1">
+                        <button onClick={() => setStatsModal(p)}
+                          className="text-gray-400 hover:text-indigo-600 p-1" title="전적 보기"><BarChart2 size={13} /></button>
                         <button onClick={() => setPointsModal({ id: p.id, name: p.name })}
                           className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-medium">+P</button>
                         <button onClick={() => setEditModal({ ...p })} className="text-gray-400 hover:text-gray-700 p-1"><Edit2 size={13} /></button>
@@ -729,6 +732,16 @@ export default function Rankings() {
       )}
 
       {/* CSV Import Modal */}
+      {statsModal && (
+        <PlayerStatsModal
+          player={statsModal}
+          tournaments={tournaments}
+          scoreRecords={scoreRecords}
+          pMap={Object.fromEntries(players.map(p => [p.id, p.name]))}
+          onClose={() => setStatsModal(null)}
+        />
+      )}
+
       {importModal && (
         <Modal title="CSV 일괄 선수 등록" onClose={() => { setImportModal(false); setImportRows([]); setImportResult(null) }}>
           <div className="space-y-4">
@@ -818,6 +831,126 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="text-sm font-medium text-gray-700 block mb-1">{label}</label>
       {children}
+    </div>
+  )
+}
+
+function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: {
+  player: Player
+  tournaments: Tournament[]
+  scoreRecords: ScoreRecord[]
+  pMap: Record<string, string>
+  onClose: () => void
+}) {
+  const playerRecords = scoreRecords.filter(r => r.participant1Id === player.id || r.participant2Id === player.id)
+  const recentRecords = [...playerRecords].reverse().slice(0, 20)
+
+  const tourMatches = tournaments.flatMap(t =>
+    t.events.flatMap(ev =>
+      ev.matches
+        .filter(m => m.result && !m.isBye && (m.participant1Id === player.id || m.participant2Id === player.id))
+        .map(m => ({ match: m, tournamentName: t.name, eventLabel: ev.label }))
+    )
+  ).reverse().slice(0, 20)
+
+  const rLabel = getRatingLabel(player.rating ?? 1000)
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800 flex items-center gap-2"><BarChart2 size={16} /> {player.name} 전적</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+
+        {/* Player info */}
+        <div className="bg-gray-50 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold">
+              {player.name[0]}
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-lg">{player.name}</div>
+              <div className="text-sm text-gray-500">{player.school} · {player.division} · {player.gender}</div>
+            </div>
+            <div className="text-right">
+              <div className="font-bold text-blue-600 text-lg">{player.points.toLocaleString()}P</div>
+              <div className={`text-xs px-2 py-0.5 rounded-full ${rLabel.bg} ${rLabel.color}`}>{player.rating ?? 1000} ({rLabel.label})</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mt-4 text-center">
+            <div className="bg-white rounded-lg p-2">
+              <div className="font-bold text-green-600 text-lg">{player.wins}</div>
+              <div className="text-xs text-gray-400">승</div>
+            </div>
+            <div className="bg-white rounded-lg p-2">
+              <div className="font-bold text-red-500 text-lg">{player.losses}</div>
+              <div className="text-xs text-gray-400">패</div>
+            </div>
+            <div className="bg-white rounded-lg p-2">
+              <div className="font-bold text-gray-700 text-lg">{player.wins + player.losses > 0 ? Math.round(player.wins / (player.wins + player.losses) * 100) : 0}%</div>
+              <div className="text-xs text-gray-400">승률</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tournament match history */}
+        {tourMatches.length > 0 && (
+          <div className="mb-4">
+            <h4 className="font-semibold text-sm text-gray-700 mb-2">대회 경기 기록</h4>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {tourMatches.map(({ match, tournamentName, eventLabel }, idx) => {
+                const isP1 = match.participant1Id === player.id
+                const oppId = isP1 ? match.participant2Id! : match.participant1Id!
+                const oppName = pMap[oppId] ?? '?'
+                const isWin = match.result?.winnerId === player.id
+                const setStr = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
+                return (
+                  <div key={idx} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isWin ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                    <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>
+                      {isWin ? '승' : '패'}
+                    </span>
+                    <span className="flex-1 font-medium truncate">vs {oppName}</span>
+                    <span className="text-xs text-gray-400 truncate">{tournamentName} {eventLabel}</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">{setStr}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Score records */}
+        {recentRecords.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-sm text-gray-700 mb-2">점수 기록</h4>
+            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              {recentRecords.map(r => {
+                const isP1 = r.participant1Id === player.id
+                const oppId = isP1 ? r.participant2Id : r.participant1Id
+                const oppName = pMap[oppId] ?? '?'
+                const myScore = isP1 ? r.p1Score : r.p2Score
+                const oppScore = isP1 ? r.p2Score : r.p1Score
+                const isWin = myScore > oppScore
+                return (
+                  <div key={r.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isWin ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                    <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>
+                      {isWin ? '승' : '패'}
+                    </span>
+                    <span className="flex-1 font-medium truncate">vs {oppName}</span>
+                    <span className="text-xs font-medium">{myScore} - {oppScore}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0">{new Date(r.recordedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {tourMatches.length === 0 && recentRecords.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-6">아직 경기 기록이 없습니다</p>
+        )}
+      </div>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { generateSmartSlots, previewSmartPlan, calcDayCapacity, calcRoundsFromParticipants } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
-import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users } from 'lucide-react'
+import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
@@ -555,6 +555,23 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
 
   const endTime = plan.slots.reduce((latest, s) => s.endTime > latest ? s.endTime : latest, '')
 
+  function exportScheduleCSV() {
+    const rows = ['날짜,시작,종료,코트,종목,선수1,선수2,라운드']
+    for (const slot of filteredSlots) {
+      rows.push([
+        plan.date, slot.startTime, slot.endTime, `${slot.courtNo}번`,
+        slot.label, slot.participant1 ?? '', slot.participant2 ?? '', slot.round ?? ''
+      ].join(','))
+    }
+    const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `경기일정_${plan.name}_${plan.date}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const slotEventColors = (slot: ScheduleSlot) => {
     if (slot.type && slot.type !== 'match') return eventColors[slot.type] ?? 'bg-gray-400'
     return eventColors[slot.eventType] ?? 'bg-gray-400'
@@ -610,6 +627,7 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
         <div className="flex gap-2 no-print">
           <button onClick={() => setViewMode('time')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${viewMode === 'time' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>시간순</button>
           <button onClick={() => setViewMode('court')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
+          <button onClick={exportScheduleCSV} className="btn-secondary flex items-center gap-1.5"><Download size={14} /> CSV</button>
           <button onClick={() => window.print()} className="btn-secondary flex items-center gap-1.5"><Printer size={14} /> 인쇄</button>
         </div>
       </div>
