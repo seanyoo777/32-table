@@ -1,0 +1,227 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type {
+  Player, Pair, Team, Tournament, TournamentEvent,
+  SchedulePlan, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
+} from '../types'
+import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
+import { getGroupRankedIds } from '../utils/bracketUtils'
+
+// 최초 1회만 생성 (모듈 로드 시점)
+const INIT_PLAYERS  = generatePlayers()
+const INIT_PAIRS    = generatePairs(INIT_PLAYERS)
+const INIT_TOURS    = generateTournaments(INIT_PLAYERS, INIT_PAIRS)
+const INIT_SCHEDS   = generateSchedules()
+
+interface StoreState {
+  players: Player[]
+  pairs: Pair[]
+  teams: Team[]
+  tournaments: Tournament[]
+  schedules: SchedulePlan[]
+  scoreRecords: ScoreRecord[]
+  liveMatches: LiveMatch[]
+  matchCalls: MatchCall[]
+
+  // Players
+  addPlayer: (p: Player) => void
+  updatePlayer: (id: string, data: Partial<Player>) => void
+  deletePlayer: (id: string) => void
+  addPlayerPoints: (id: string, pts: number, win: boolean) => void
+
+  // Pairs
+  addPair: (p: Pair) => void
+  updatePair: (id: string, data: Partial<Pair>) => void
+  deletePair: (id: string) => void
+
+  // Teams
+  addTeam: (t: Team) => void
+  deleteTeam: (id: string) => void
+
+  // Tournaments
+  addTournament: (t: Tournament) => void
+  updateTournament: (id: string, data: Partial<Tournament>) => void
+  deleteTournament: (id: string) => void
+  recordMatchResult: (
+    tournamentId: string,
+    eventId: string,
+    matchId: string,
+    result: MatchResult
+  ) => void
+
+  // Schedules
+  addSchedule: (s: SchedulePlan) => void
+  deleteSchedule: (id: string) => void
+
+  // Score Records
+  addScoreRecord: (r: ScoreRecord) => void
+  verifyScoreRecord: (id: string) => void
+
+  // Live Matches
+  setLiveMatch: (m: LiveMatch) => void
+  removeLiveMatch: (matchId: string) => void
+
+  // Match Calls (콜링)
+  addMatchCall: (c: MatchCall) => void
+  acknowledgeMatchCall: (id: string) => void
+  removeMatchCall: (id: string) => void
+
+  // Rating & Check-in
+  updatePlayerRating: (id: string, newRating: number, gamesPlayed: number) => void
+}
+
+export const useStore = create<StoreState>()(
+  persist(
+    (set) => ({
+      players: INIT_PLAYERS,
+      pairs: INIT_PAIRS,
+      teams: [],
+      tournaments: INIT_TOURS,
+      schedules: INIT_SCHEDS,
+      scoreRecords: [],
+      liveMatches: [],
+      matchCalls: [],
+
+      // Players
+      addPlayer: (p) => set((s) => ({ players: [...s.players, p] })),
+      updatePlayer: (id, data) => set((s) => ({
+        players: s.players.map(p => p.id === id ? { ...p, ...data } : p)
+      })),
+      deletePlayer: (id) => set((s) => ({ players: s.players.filter(p => p.id !== id) })),
+      addPlayerPoints: (id, pts, win) => set((s) => ({
+        players: s.players.map(p => p.id === id
+          ? { ...p, points: p.points + pts, wins: win ? p.wins + 1 : p.wins, losses: win ? p.losses : p.losses + 1 }
+          : p)
+      })),
+
+      // Pairs
+      addPair: (p) => set((s) => ({ pairs: [...s.pairs, p] })),
+      updatePair: (id, data) => set((s) => ({
+        pairs: s.pairs.map(p => p.id === id ? { ...p, ...data } : p)
+      })),
+      deletePair: (id) => set((s) => ({ pairs: s.pairs.filter(p => p.id !== id) })),
+
+      // Teams
+      addTeam: (t) => set((s) => ({ teams: [...s.teams, t] })),
+      deleteTeam: (id) => set((s) => ({ teams: s.teams.filter(t => t.id !== id) })),
+
+      // Tournaments
+      addTournament: (t) => set((s) => ({ tournaments: [...s.tournaments, t] })),
+      updateTournament: (id, data) => set((s) => ({
+        tournaments: s.tournaments.map(t => t.id === id ? { ...t, ...data } : t)
+      })),
+      deleteTournament: (id) => set((s) => ({
+        tournaments: s.tournaments.filter(t => t.id !== id),
+        scoreRecords: s.scoreRecords.filter(r => r.tournamentId !== id),
+        liveMatches: s.liveMatches.filter(m => m.tournamentId !== id),
+        matchCalls: s.matchCalls.filter(c => c.tournamentId !== id),
+      })),
+
+      recordMatchResult: (tournamentId, eventId, matchId, result) => set((s) => ({
+        tournaments: s.tournaments.map(t => {
+          if (t.id !== tournamentId) return t
+
+          const newEvents = t.events.map(ev => {
+            if (ev.id !== eventId) return ev
+
+            // 1) Record the match result
+            let matches = ev.matches.map((m): BracketMatch =>
+              m.id === matchId ? { ...m, result } : m
+            )
+
+            // 2) Advance winner to next knockout round via nextMatchId
+            matches = matches.map((m): BracketMatch => {
+              const feeders = matches.filter(f => f.nextMatchId === m.id && f.result)
+              if (feeders.length === 0) return m
+              const updated = { ...m }
+              feeders.forEach(f => {
+                const allFeeders = matches.filter(x => x.nextMatchId === m.id)
+                const isFirst = allFeeders.indexOf(f) === 0
+                if (isFirst) updated.participant1Id = f.result!.winnerId
+                else updated.participant2Id = f.result!.winnerId
+              })
+              return updated
+            })
+
+            // 3) Group stage → Knockout wiring
+            // When all matches of a group are done, fill the knockout placeholder slots
+            if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
+              for (const group of ev.groups) {
+                const groupMatches = matches.filter(m => m.groupId === group.id)
+                const allDone = groupMatches.length > 0 && groupMatches.every(m => m.result)
+                if (!allDone) continue
+
+                // Get ranked participant IDs for this group
+                const rankedIds = getGroupRankedIds(groupMatches, group)
+
+                // Fill knockout slots for this group's advancers
+                for (let rank = 1; rank <= group.advanceCount; rank++) {
+                  const advancerId = rankedIds[rank - 1]
+                  if (!advancerId) continue
+                  const slotId = `ko-slot-${group.id}-r${rank}`
+                  // Replace placeholder id in knockout matches
+                  matches = matches.map((m): BracketMatch => {
+                    if (m.groupId) return m // skip group-stage matches
+                    const p1Updated = m.participant1Id === slotId ? advancerId : m.participant1Id
+                    const p2Updated = m.participant2Id === slotId ? advancerId : m.participant2Id
+                    return p1Updated !== m.participant1Id || p2Updated !== m.participant2Id
+                      ? { ...m, participant1Id: p1Updated, participant2Id: p2Updated }
+                      : m
+                  })
+                }
+              }
+            }
+
+            // 4) Auto-transition event status
+            const realMatches = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+            const allCompleted = realMatches.length > 0 && realMatches.every(m => m.result)
+            const newStatus = allCompleted ? 'completed' : ev.status === 'draft' ? 'ongoing' : ev.status
+
+            return { ...ev, matches, status: newStatus as TournamentEvent['status'] }
+          })
+
+          // 5) Auto-transition tournament status
+          const allEventsCompleted = newEvents.every(ev => ev.status === 'completed')
+          const newTournamentStatus = allEventsCompleted ? 'completed'
+            : t.status === 'draft' ? 'ongoing'
+            : t.status
+
+          return { ...t, events: newEvents, status: newTournamentStatus as Tournament['status'] }
+        })
+      })),
+
+      // Schedules
+      addSchedule: (s) => set((st) => ({ schedules: [...st.schedules, s] })),
+      deleteSchedule: (id) => set((s) => ({ schedules: s.schedules.filter(sc => sc.id !== id) })),
+
+      // Score Records
+      addScoreRecord: (r) => set((s) => ({ scoreRecords: [...s.scoreRecords, r] })),
+      verifyScoreRecord: (id) => set((s) => ({
+        scoreRecords: s.scoreRecords.map(r => r.id === id ? { ...r, verified: true } : r)
+      })),
+
+      // Live Matches
+      setLiveMatch: (m) => set((s) => ({
+        liveMatches: [...s.liveMatches.filter(x => x.matchId !== m.matchId), m]
+      })),
+      removeLiveMatch: (matchId) => set((s) => ({
+        liveMatches: s.liveMatches.filter(x => x.matchId !== matchId)
+      })),
+
+      // Match Calls (콜링)
+      addMatchCall: (c) => set((s) => ({ matchCalls: [...s.matchCalls, c] })),
+      acknowledgeMatchCall: (id) => set((s) => ({
+        matchCalls: s.matchCalls.map(c => c.id === id ? { ...c, acknowledged: true } : c)
+      })),
+      removeMatchCall: (id) => set((s) => ({
+        matchCalls: s.matchCalls.filter(c => c.id !== id)
+      })),
+
+      // Rating & Check-in
+      updatePlayerRating: (id, newRating, gamesPlayed) => set((s) => ({
+        players: s.players.map(p => p.id === id ? { ...p, rating: newRating, gamesPlayed } : p)
+      })),
+    }),
+    { name: 'pingpong-v3' }
+  )
+)
