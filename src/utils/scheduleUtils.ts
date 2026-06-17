@@ -42,7 +42,12 @@ export function matchMinutes(eventType: EventType, individualMin: number, teamMi
 
 // 하루 전체 코트-분 (코트 수 × 운영 시간) — 혼합 경기시간 정확 계산용
 export function calcDayCourtMinutes(day: DayConfig): number {
-  return Math.max(0, timeToMins(day.endTime) - timeToMins(day.startTime)) * day.courtCount
+  return calcDayOperatingMinutes(day) * day.courtCount
+}
+
+// 하루 운영 시간(벽시계, 분) — 코트 수와 무관
+export function calcDayOperatingMinutes(day: DayConfig): number {
+  return Math.max(0, timeToMins(day.endTime) - timeToMins(day.startTime))
 }
 
 // ─── 기본 단일 날 슬롯 생성 (기존 호환) ───────────────────

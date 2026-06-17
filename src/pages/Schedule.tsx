@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, matchMinutes, calcRoundsFromParticipants } from '../utils/scheduleUtils'
+import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
 import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
@@ -198,7 +198,8 @@ export default function SchedulePage() {
     [dayConfigs]
   )
 
-  const totalCapacityMin = dayCapacities.reduce((s, d) => s + d.capacityMin, 0)
+  const totalCapacityMin = dayCapacities.reduce((s, d) => s + d.capacityMin, 0)        // 총 코트-분 (수용 가능 작업량)
+  const totalOperatingMin = dayConfigs.reduce((s, d) => s + calcDayOperatingMinutes(d), 0) // 총 운영 시간(벽시계)
   // 필요 코트-분 = Σ(경기 수 × (종목별 경기시간 + 버퍼))
   const totalRequiredMin = useMemo(() =>
     smartEvents.reduce((s, ev) => {
@@ -215,6 +216,9 @@ export default function SchedulePage() {
     }, 0),
     [smartEvents]
   )
+  // 예상 소요 시간(벽시계) = 필요 작업량 ÷ 평균 코트 수 → 코트 늘수록 줄어듦
+  const estDurationMin = totalCapacityMin > 0 ? Math.round(totalRequiredMin * totalOperatingMin / totalCapacityMin) : 0
+  const overCapacity = totalRequiredMin > totalCapacityMin
 
   const maxCourts = useMemo(() => Math.max(1, ...dayConfigs.map(d => d.courtCount)), [dayConfigs])
   const hasTeamEvent = smartEvents.some(e => e.eventType === '단체전')
@@ -329,12 +333,12 @@ export default function SchedulePage() {
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">시작</th>
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">종료</th>
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">코트 수</th>
-                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">코트 운영시간<br/><span className="text-[10px] text-gray-400 font-normal">(코트수 × 운영시간)</span></th>
+                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">운영 시간<br/><span className="text-[10px] text-gray-400 font-normal">(종료 − 시작)</span></th>
                 </tr>
               </thead>
               <tbody>
                 {dayConfigs.map(d => {
-                  const capMin = calcDayCourtMinutes(d)
+                  const opMin = calcDayOperatingMinutes(d)
                   return (
                     <tr key={d.day} className="border-b last:border-0">
                       <td className="py-1.5 pr-3">
@@ -363,7 +367,8 @@ export default function SchedulePage() {
                         <input className="input py-1 text-sm w-14 text-center" type="number" min="1" max="20" value={d.courtCount} onChange={e => updateDayConfig(d.day, 'courtCount', Number(e.target.value))} />
                       </td>
                       <td className="py-1.5">
-                        <span className="font-bold text-sm text-green-600">{fmtCourtHours(capMin)}</span>
+                        <span className="font-bold text-sm text-green-600">{fmtCourtHours(opMin)}</span>
+                        <span className="text-[10px] text-gray-400 ml-1">× {d.courtCount}코트</span>
                       </td>
                     </tr>
                   )
@@ -371,16 +376,20 @@ export default function SchedulePage() {
               </tbody>
               <tfoot>
                 <tr className="border-t bg-gray-50">
-                  <td colSpan={5} className="py-2 pr-3 text-xs text-gray-500 font-medium">합계 (전체 일차)</td>
+                  <td colSpan={5} className="py-2 pr-3 text-xs text-gray-500 font-medium">예상 소요</td>
                   <td className="py-2">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-bold text-sm text-green-600">수용 {fmtCourtHours(totalCapacityMin)}</span>
-                      {totalRequiredMin > 0 && (
-                        <span className={`text-xs font-semibold ${totalRequiredMin > totalCapacityMin ? 'text-red-600' : 'text-blue-600'}`}>
-                          필요 {fmtCourtHours(totalRequiredMin)} ({totalRequiredMatches}경기){totalRequiredMin > totalCapacityMin ? ' ⚠ 초과' : ' ✓'}
+                    {totalRequiredMin > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className={`font-bold text-base ${overCapacity ? 'text-red-600' : 'text-green-600'}`}>
+                          약 {fmtCourtHours(estDurationMin)}{overCapacity && ' ⚠ 초과'}
                         </span>
-                      )}
-                    </div>
+                        <span className="text-[11px] text-gray-500">
+                          {totalRequiredMatches}경기 · 운영 {fmtCourtHours(totalOperatingMin)}{overCapacity ? ' 부족' : ' 내 완료 ✓'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">인원 입력 시 계산</span>
+                    )}
                   </td>
                 </tr>
               </tfoot>
@@ -558,6 +567,9 @@ export default function SchedulePage() {
               <div className="space-y-3">
                 {smartPreview.map(dayPlan => {
                   const dayConfig = dayConfigs.find(d => d.day === dayPlan.day)
+                  const courts = dayConfig?.courtCount ?? 1
+                  const dayEstMin = Math.round(dayPlan.assignedMinutes / courts)   // 그날 예상 소요시간(벽시계)
+                  const dayOpMin = dayConfig ? calcDayOperatingMinutes(dayConfig) : 0
                   const pct = dayPlan.capacityMinutes > 0 ? Math.min(100, Math.round(dayPlan.assignedMinutes / dayPlan.capacityMinutes * 100)) : 0
                   const over = dayPlan.assignedMinutes > dayPlan.capacityMinutes
                   const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-orange-400' : 'bg-green-500'
@@ -572,9 +584,10 @@ export default function SchedulePage() {
                         <div>
                           <span className="font-bold text-purple-700 text-sm">{dayPlan.day}일차</span>
                           {dayConfig?.date && <span className="text-xs text-gray-400 ml-2">({dayConfig.date})</span>}
+                          <span className="text-[10px] text-gray-400 ml-1.5">{courts}코트</span>
                         </div>
                         <span className={`text-sm font-bold ${textColor}`}>
-                          {fmtCourtHours(dayPlan.assignedMinutes)} / {fmtCourtHours(dayPlan.capacityMinutes)}{over && ' ⚠ 초과'}
+                          소요 {fmtCourtHours(dayEstMin)} / 운영 {fmtCourtHours(dayOpMin)}{over && ' ⚠ 초과'}
                         </span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -595,7 +608,7 @@ export default function SchedulePage() {
                       )}
                       {over && (
                         <div className="text-xs text-red-600 bg-red-50 rounded px-2 py-1.5 border border-red-200">
-                          ⚠ 코트 운영시간({fmtCourtHours(dayPlan.capacityMinutes)})을 초과합니다. 코트 수 또는 운영 시간을 늘려주세요.
+                          ⚠ 운영 시간({fmtCourtHours(dayOpMin)})을 초과합니다. 코트 수를 늘리면 소요 시간이 줄어듭니다.
                         </div>
                       )}
                     </div>
