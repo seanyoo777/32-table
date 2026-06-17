@@ -23,7 +23,8 @@ export default function LiveBoardPage() {
 
   // Build participant name map
   const nameMap: Record<string, string> = {}
-  players.forEach(p => { nameMap[p.id] = p.name })
+  const photoMap: Record<string, string> = {}
+  players.forEach(p => { nameMap[p.id] = p.name; if (p.photoUrl) photoMap[p.id] = p.photoUrl })
   pairs.forEach(p => { nameMap[p.id] = p.name })
 
   // Get pending + live matches for active tournament
@@ -58,9 +59,9 @@ export default function LiveBoardPage() {
   const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="h-full flex flex-col overflow-hidden bg-gray-950 text-white">
       {/* Control Bar */}
-      <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between print:hidden">
+      <div className="flex-shrink-0 bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <Monitor size={14} />
           <span>라이브 경기 현황판 — TV/프로젝터 모드</span>
@@ -85,7 +86,7 @@ export default function LiveBoardPage() {
         </div>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -133,6 +134,9 @@ export default function LiveBoardPage() {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 text-center">
+                        {photoMap[lm.participant1Id] && (
+                          <img src={photoMap[lm.participant1Id]} alt={p1Name} className="w-10 h-10 rounded-full object-cover mx-auto mb-1 border-2 border-blue-400" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        )}
                         <div className="text-xl font-black text-white">{p1Name}</div>
                         <div className="text-5xl font-black text-blue-400 my-1">{lm.currentSetScore[0]}</div>
                         <div className="text-sm text-gray-400">{p1Sets}세트</div>
@@ -144,6 +148,9 @@ export default function LiveBoardPage() {
                         </div>
                       </div>
                       <div className="flex-1 text-center">
+                        {photoMap[lm.participant2Id] && (
+                          <img src={photoMap[lm.participant2Id]} alt={p2Name} className="w-10 h-10 rounded-full object-cover mx-auto mb-1 border-2 border-orange-400" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        )}
                         <div className="text-xl font-black text-white">{p2Name}</div>
                         <div className="text-5xl font-black text-orange-400 my-1">{lm.currentSetScore[1]}</div>
                         <div className="text-sm text-gray-400">{p2Sets}세트</div>

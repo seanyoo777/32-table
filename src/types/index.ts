@@ -31,6 +31,7 @@ export interface Player {
   rating: number
   gamesPlayed: number
   checkedIn?: boolean  // 대회 당일 체크인 여부
+  photoUrl?: string    // 선수 사진 URL
 }
 
 export interface MatchCall {

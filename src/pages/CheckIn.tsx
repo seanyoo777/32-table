@@ -318,10 +318,11 @@ export default function CheckInPage() {
                     </span>
                     <span className="text-[10px] text-gray-400">{p.division}</span>
                   </div>
-                  <QRCodeDisplay
-                    value={playerQRValue(p.id)}
-                    size={80}
-                  />
+                  {p.photoUrl ? (
+                    <img src={p.photoUrl} alt={p.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-100" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  ) : (
+                    <QRCodeDisplay value={playerQRValue(p.id)} size={80} />
+                  )}
                   <div className="text-center">
                     <p className="font-bold text-sm text-gray-800">{p.name}</p>
                     <p className="text-[10px] text-gray-500">{p.school}</p>
