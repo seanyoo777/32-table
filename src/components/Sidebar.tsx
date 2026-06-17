@@ -1,22 +1,27 @@
 import { NavLink } from 'react-router-dom'
+import { useStore } from '../store/useStore'
 import {
   Home, Trophy, TableProperties, ClipboardList, Calendar,
   Zap, QrCode, Monitor, Settings, LayoutDashboard
 } from 'lucide-react'
 
-const navItems = [
-  { to: '/', label: '홈', icon: Home, exact: true },
-  { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
-  { to: '/rankings', label: '랭킹', icon: Trophy },
-  { to: '/tournament', label: '토너먼트', icon: TableProperties },
-  { to: '/league', label: '리그전', icon: ClipboardList },
-  { to: '/schedule', label: '경기일정', icon: Calendar },
-  { to: '/score', label: '점수입력', icon: Zap },
-  { to: '/checkin', label: 'QR 체크인', icon: QrCode },
-  { to: '/liveboard', label: '라이브보드', icon: Monitor },
-]
-
 export default function Sidebar() {
+  const { matchCalls, liveMatches, scoreRecords } = useStore()
+  const pendingCalls = matchCalls.filter(c => !c.acknowledged).length
+  const unverified = scoreRecords.filter(r => !r.verified).length
+
+  const navItems = [
+    { to: '/', label: '홈', icon: Home, exact: true, badge: 0 },
+    { to: '/dashboard', label: '대시보드', icon: LayoutDashboard, badge: pendingCalls + unverified },
+    { to: '/rankings', label: '랭킹', icon: Trophy, badge: 0 },
+    { to: '/tournament', label: '토너먼트', icon: TableProperties, badge: 0 },
+    { to: '/league', label: '리그전', icon: ClipboardList, badge: 0 },
+    { to: '/schedule', label: '경기일정', icon: Calendar, badge: 0 },
+    { to: '/score', label: '점수입력', icon: Zap, badge: liveMatches.length },
+    { to: '/checkin', label: 'QR 체크인', icon: QrCode, badge: 0 },
+    { to: '/liveboard', label: '라이브보드', icon: Monitor, badge: 0 },
+  ]
+
   return (
     <aside className="w-[220px] flex-shrink-0 h-screen bg-gray-900 flex flex-col select-none">
       {/* Logo */}
@@ -32,7 +37,7 @@ export default function Sidebar() {
 
       {/* Nav items */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ to, label, icon: Icon, exact }) => (
+        {navItems.map(({ to, label, icon: Icon, exact, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -45,7 +50,12 @@ export default function Sidebar() {
             }
           >
             <Icon size={16} strokeWidth={2} />
-            {label}
+            <span className="flex-1">{label}</span>
+            {badge > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                {badge > 99 ? '99+' : badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
