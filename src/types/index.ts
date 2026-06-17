@@ -12,6 +12,7 @@ export interface SmartEventInput {
   participantCount: number
   bracketFormat: SmartBracketFormat
   label: string
+  preferredDay?: number
 }
 
 export interface Player {

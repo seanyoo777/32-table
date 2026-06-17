@@ -9,8 +9,8 @@ export function nextPow2(n: number): number {
 interface Seeded { id: string; points: number }
 
 // ─── 토너먼트 (단일 제거) ─────────────────────────────────
-export function generateTournamentBracket(participants: Seeded[], options?: { thirdPlace?: boolean }): BracketMatch[] {
-  const sorted = [...participants].sort((a, b) => b.points - a.points)
+export function generateTournamentBracket(participants: Seeded[], options?: { thirdPlace?: boolean; preserveOrder?: boolean }): BracketMatch[] {
+  const sorted = options?.preserveOrder ? [...participants] : [...participants].sort((a, b) => b.points - a.points)
   const n = sorted.length
   const size = nextPow2(n)
   const totalRounds = Math.log2(size)

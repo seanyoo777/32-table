@@ -202,6 +202,10 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
   const [events, setEvents] = useState<TournamentEvent[]>([])
   const [showEventForm, setShowEventForm] = useState(false)
 
+  // Seeding state
+  const [seedCount, setSeedCount] = useState(4)
+  const [seedOrderIds, setSeedOrderIds] = useState<string[]>([])
+
   // Event form state
   const [ef, setEf] = useState({
     division: '고등' as Division, eventType: '단식' as EventType,
@@ -235,11 +239,31 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
   }, [players, pairs, teams, ef.division, ef.gender, ef.eventType, isDoubles, isTeam])
 
   function autoSelect() {
-    setEf(f => ({ ...f, selectedIds: availableParticipants.sort((a, b) => b.points - a.points).map(p => p.id) }))
+    const sorted = availableParticipants.sort((a, b) => b.points - a.points).map(p => p.id)
+    setEf(f => ({ ...f, selectedIds: sorted }))
+    setSeedOrderIds(sorted)
   }
 
   function toggleId(id: string) {
     setEf(f => ({ ...f, selectedIds: f.selectedIds.includes(id) ? f.selectedIds.filter(x => x !== id) : [...f.selectedIds, id] }))
+    setSeedOrderIds([])
+  }
+
+  function autoSeedByRanking() {
+    const sorted = availableParticipants
+      .filter(p => ef.selectedIds.includes(p.id))
+      .sort((a, b) => b.points - a.points)
+      .map(p => p.id)
+    setSeedOrderIds(sorted)
+  }
+
+  function drawNonSeeds() {
+    const base = seedOrderIds.length > 0
+      ? seedOrderIds.filter(id => ef.selectedIds.includes(id))
+      : availableParticipants.filter(p => ef.selectedIds.includes(p.id)).sort((a, b) => b.points - a.points).map(p => p.id)
+    const seeds = base.slice(0, seedCount)
+    const rest = [...base.slice(seedCount)].sort(() => Math.random() - 0.5)
+    setSeedOrderIds([...seeds, ...rest])
   }
 
   function addEvent() {
@@ -247,10 +271,17 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
     const label = `${ef.division} ${ef.gender !== '혼합' ? ef.gender + '자 ' : ''}${ef.eventType}`
     let matches: BracketMatch[] = []
     let groups: import('../types').Group[] = []
-    const seeded = availableParticipants.filter(p => ef.selectedIds.includes(p.id)).sort((a, b) => b.points - a.points)
+
+    // 시드 순서가 지정된 경우 그대로 사용, 아니면 랭킹순 정렬
+    const finalOrder = seedOrderIds.length > 0
+      ? seedOrderIds.filter(id => ef.selectedIds.includes(id))
+      : null
+    const seeded = finalOrder
+      ? finalOrder.map(id => availableParticipants.find(p => p.id === id)!).filter(Boolean)
+      : availableParticipants.filter(p => ef.selectedIds.includes(p.id)).sort((a, b) => b.points - a.points)
 
     if (ef.format === '토너먼트') {
-      matches = generateTournamentBracket(seeded, { thirdPlace: ef.thirdPlace })
+      matches = generateTournamentBracket(seeded, { thirdPlace: ef.thirdPlace, preserveOrder: !!finalOrder })
     } else if (ef.format === '리그') {
       matches = generateLeagueMatches(seeded)
     } else {
@@ -327,20 +358,20 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">부문</label>
-                <select className="select" value={ef.division} onChange={e => setEf(f => ({ ...f, division: e.target.value as Division, selectedIds: [] }))}>
+                <select className="select" value={ef.division} onChange={e => { setEf(f => ({ ...f, division: e.target.value as Division, selectedIds: [] })); setSeedOrderIds([]) }}>
                   {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">종목</label>
-                <select className="select" value={ef.eventType} onChange={e => setEf(f => ({ ...f, eventType: e.target.value as EventType, selectedIds: [] }))}>
+                <select className="select" value={ef.eventType} onChange={e => { setEf(f => ({ ...f, eventType: e.target.value as EventType, selectedIds: [] })); setSeedOrderIds([]) }}>
                   {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">성별</label>
                 <select className="select" value={ef.gender}
-                  onChange={e => setEf(f => ({ ...f, gender: e.target.value as Gender, selectedIds: [] }))}
+                  onChange={e => { setEf(f => ({ ...f, gender: e.target.value as Gender, selectedIds: [] })); setSeedOrderIds([]) }}
                   disabled={ef.eventType === '혼합복식'}
                 >
                   {(ef.eventType === '혼합복식' ? ['혼합'] : GENDERS).map(g => <option key={g} value={g}>{g}</option>)}
@@ -411,11 +442,81 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
               )}
             </div>
 
+            {/* 시드 배정 패널 (토너먼트 2명 이상 선택 시) */}
+            {ef.selectedIds.length >= 2 && (
+              <div className="border rounded-xl p-3 bg-yellow-50/60 border-yellow-200 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Trophy size={14} className="text-yellow-600" />
+                    <span className="text-sm font-semibold text-yellow-700">시드 배정</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">시드 수:</span>
+                      <select
+                        className="text-xs border border-yellow-300 rounded px-1 py-0.5 bg-white"
+                        value={seedCount}
+                        onChange={e => setSeedCount(Number(e.target.value))}
+                      >
+                        {[0, 1, 2, 3, 4, 8].filter(n => n <= ef.selectedIds.length).map(n => (
+                          <option key={n} value={n}>{n}명</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={autoSeedByRanking}
+                      className="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center gap-1"
+                    >
+                      <Users size={11} /> 랭킹순 배정
+                    </button>
+                    <button
+                      onClick={drawNonSeeds}
+                      className="text-xs px-2.5 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 flex items-center gap-1"
+                    >
+                      <Shuffle size={11} /> 추첨
+                    </button>
+                  </div>
+                </div>
+
+                {seedOrderIds.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic py-1">
+                    「랭킹순 배정」으로 시드 자동 배정 후 「추첨」으로 나머지를 무작위 배정합니다
+                  </p>
+                ) : (
+                  <div className="max-h-44 overflow-y-auto space-y-0.5 mt-1">
+                    {seedOrderIds.filter(id => ef.selectedIds.includes(id)).map((id, i) => {
+                      const p = availableParticipants.find(x => x.id === id)
+                      if (!p) return null
+                      const isSeeded = i < seedCount
+                      return (
+                        <div key={id} className={`flex items-center gap-2 px-2 py-1 rounded text-sm ${isSeeded ? 'bg-yellow-100 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
+                          <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
+                          {isSeeded ? (
+                            <span className="text-[10px] px-1 py-0.5 bg-yellow-500 text-white rounded font-bold min-w-[22px] text-center">S{i + 1}</span>
+                          ) : (
+                            <span className="text-[10px] px-1 py-0.5 bg-gray-100 text-gray-400 rounded min-w-[22px] text-center">추첨</span>
+                          )}
+                          <span className="font-medium flex-1 truncate">{p.name}</span>
+                          <span className="text-xs text-gray-400 truncate">{p.school}</span>
+                          <span className="text-xs text-gray-500 font-medium">{p.points.toLocaleString()}P</span>
+                        </div>
+                      )
+                    })}
+                    {seedCount > 0 && (
+                      <div className="text-[10px] text-gray-400 pt-1 px-1">
+                        * S1·S2는 결승에서만 만남 · S3·S4는 각 준결승 반대편에 배치
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button className="btn-primary flex-1" onClick={addEvent} disabled={ef.selectedIds.length < 2}>
                 종목 추가 ({ef.selectedIds.length}명)
               </button>
-              <button className="btn-secondary px-4" onClick={() => setShowEventForm(false)}>취소</button>
+              <button className="btn-secondary px-4" onClick={() => { setShowEventForm(false); setSeedOrderIds([]) }}>취소</button>
             </div>
           </div>
         )}

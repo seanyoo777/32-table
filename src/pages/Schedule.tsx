@@ -24,10 +24,10 @@ const GRID_COLS: GridColDef[] = [
   { key: 'F-단체',  label: '여자단체',  eventType: '단체전',  gender: '여' },
 ]
 
-type GridRow = { bracketFormat: SmartBracketFormat; counts: Record<string, number> }
+type GridRow = { bracketFormat: SmartBracketFormat; counts: Record<string, number>; day: number }
 type GridState = Record<Division, GridRow>
 const initGrid = (): GridState =>
-  Object.fromEntries(DIVISIONS.map(d => [d, { bracketFormat: 'single' as SmartBracketFormat, counts: {} }])) as GridState
+  Object.fromEntries(DIVISIONS.map(d => [d, { bracketFormat: 'single' as SmartBracketFormat, counts: {}, day: 1 }])) as GridState
 
 const divColors: Record<Division, string> = {
   초등: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -77,6 +77,22 @@ export default function SchedulePage() {
   function setGridBracket(div: Division, fmt: SmartBracketFormat) {
     setGrid(prev => ({ ...prev, [div]: { ...prev[div], bracketFormat: fmt } }))
   }
+  function setGridDay(div: Division, day: number) {
+    setGrid(prev => ({ ...prev, [div]: { ...prev[div], day } }))
+  }
+
+  const [fillRow, setFillRow] = useState<Record<string, string>>({})
+  function applyFill(colKey: string) {
+    const val = Number(fillRow[colKey])
+    if (!val || val < 0) return
+    setGrid(prev => {
+      const next = { ...prev }
+      for (const div of DIVISIONS) {
+        next[div] = { ...next[div], counts: { ...next[div].counts, [colKey]: val } }
+      }
+      return next
+    })
+  }
 
   const smartEvents = useMemo<SmartEventInput[]>(() => {
     const result: SmartEventInput[] = []
@@ -94,6 +110,7 @@ export default function SchedulePage() {
             participantCount: count,
             bracketFormat: row.bracketFormat,
             label: `${div} ${gLabel}${col.eventType}`,
+            preferredDay: row.day,
           })
         }
       }
@@ -297,11 +314,34 @@ export default function SchedulePage() {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="text-left py-1.5 px-2 font-medium text-gray-600 border border-gray-200 text-xs w-16">부문</th>
+                    {totalDays > 1 && (
+                      <th className="text-center py-1.5 px-1 font-medium text-gray-600 border border-gray-200 text-xs w-16">일차</th>
+                    )}
                     <th className="text-center py-1.5 px-2 font-medium text-gray-600 border border-gray-200 text-xs w-24">대진방식</th>
                     {GRID_COLS.map(col => (
                       <th key={col.key} className="text-center py-1.5 px-1 font-medium text-gray-600 border border-gray-200 text-xs min-w-[60px]">
                         {col.label}
                       </th>
+                    ))}
+                  </tr>
+                  {/* 일괄입력 행 */}
+                  <tr className="bg-amber-50">
+                    <td className={`py-1 px-2 border border-amber-200 text-xs font-semibold text-amber-700 whitespace-nowrap${totalDays > 1 ? '' : ''}`}
+                      colSpan={totalDays > 1 ? 3 : 2}>
+                      ⚡ 일괄입력
+                    </td>
+                    {GRID_COLS.map(col => (
+                      <td key={col.key} className="py-1 px-1 border border-amber-200 text-center">
+                        <input
+                          type="number" min="0" max="512"
+                          placeholder="전체"
+                          className="w-14 text-center text-xs border rounded px-1 py-1 border-amber-300 bg-white text-amber-700 placeholder-amber-300"
+                          value={fillRow[col.key] ?? ''}
+                          onChange={e => setFillRow(prev => ({ ...prev, [col.key]: e.target.value }))}
+                          onBlur={() => applyFill(col.key)}
+                          onKeyDown={e => { if (e.key === 'Enter') { applyFill(col.key); setFillRow(prev => ({ ...prev, [col.key]: '' })) } }}
+                        />
+                      </td>
                     ))}
                   </tr>
                 </thead>
@@ -314,6 +354,19 @@ export default function SchedulePage() {
                         <td className="py-1 px-2 border border-gray-200">
                           <span className={`badge border text-xs ${divColors[div]}`}>{div}</span>
                         </td>
+                        {totalDays > 1 && (
+                          <td className="py-1 px-1 border border-gray-200 text-center">
+                            <select
+                              className="w-14 text-xs border border-gray-200 rounded px-1 py-1 bg-white"
+                              value={row.day}
+                              onChange={e => setGridDay(div, Number(e.target.value))}
+                            >
+                              {dayConfigs.map(d => (
+                                <option key={d.day} value={d.day}>{d.day}일차</option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
                         <td className="py-1 px-1.5 border border-gray-200">
                           <select className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white"
                             value={row.bracketFormat} onChange={e => setGridBracket(div, e.target.value as SmartBracketFormat)}>
@@ -340,7 +393,7 @@ export default function SchedulePage() {
                 </tbody>
                 <tfoot>
                   <tr className="bg-gray-50">
-                    <td colSpan={2} className="py-1.5 px-2 text-xs text-gray-500 border border-gray-200 font-medium">참가 부문</td>
+                    <td colSpan={totalDays > 1 ? 3 : 2} className="py-1.5 px-2 text-xs text-gray-500 border border-gray-200 font-medium">참가 부문</td>
                     {GRID_COLS.map(col => {
                       const cnt = DIVISIONS.reduce((s, div) => s + ((grid[div].counts[col.key] ?? 0) >= 2 ? 1 : 0), 0)
                       return (

@@ -323,13 +323,27 @@ export function previewSmartPlan(
   minutesPerMatch: number,
   bufferMinutes: number,
 ): { day: number; rounds: RoundPlan[]; assignedMatches: number; capacity: number }[] {
-  const allRounds = events.flatMap(e => calcRoundsFromParticipants(e))
   const capacities = days.map(d => calcDayCapacity(d, minutesPerMatch, bufferMinutes))
   const remaining = [...capacities]
   const roundDayAssign: { round: RoundPlan; day: number }[] = []
 
-  const earlyRounds = allRounds.filter(r => !r.isLate)
-  const lateRounds = allRounds.filter(r => r.isLate)
+  // 1) 일차 지정된 종목 먼저 배정
+  const pinnedEvents = events.filter(e => e.preferredDay)
+  const autoEvents = events.filter(e => !e.preferredDay)
+
+  for (const ev of pinnedEvents) {
+    const dayIdx = days.findIndex(d => d.day === ev.preferredDay)
+    if (dayIdx < 0) continue
+    for (const r of calcRoundsFromParticipants(ev)) {
+      roundDayAssign.push({ round: r, day: ev.preferredDay! })
+      remaining[dayIdx] -= r.matchCount
+    }
+  }
+
+  // 2) 나머지 자동 배정 (기존 로직)
+  const allAutoRounds = autoEvents.flatMap(e => calcRoundsFromParticipants(e))
+  const earlyRounds = allAutoRounds.filter(r => !r.isLate)
+  const lateRounds = allAutoRounds.filter(r => r.isLate)
 
   let di = 0
   for (const r of earlyRounds) {
