@@ -516,14 +516,14 @@ function EventBracket({ event, pMap, onRecord }: {
             <MatchList
               matches={roundMatches}
               pMap={pMap}
-              onClickMatch={(m) => !m.result && setResultModal(m)}
+              onClickMatch={(m) => setResultModal(m)}
               groupMap={Object.fromEntries(event.groups.map(g => [g.id, g.name]))}
             />
           ) : (
             <BracketTree
               event={event}
               pMap={pMap}
-              onClickMatch={(m) => !m.result && setResultModal(m)}
+              onClickMatch={(m) => setResultModal(m)}
             />
           )}
         </>
@@ -825,6 +825,23 @@ function ResultModal({ match, pMap, onSubmit, onClose }: {
         <div className="flex gap-2">
           <button className="btn-primary flex-1" onClick={handleSubmit} disabled={!hasWinner}>결과 저장</button>
           <button className="btn-secondary flex-1" onClick={onClose}>취소</button>
+        </div>
+
+        {/* 부전승 처리 */}
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-400 mb-2 text-center">한 선수가 기권/불참한 경우</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { if (!match.participant1Id || !match.participant2Id) return; onSubmit({ winnerId: match.participant1Id, loserId: match.participant2Id, winnerScore: 1, loserScore: 0, walkedOver: true }) }}
+              className="flex-1 text-xs py-2 px-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-center">
+              <span className="font-medium text-blue-600">{p1?.name ?? '-'}</span> 부전승
+            </button>
+            <button
+              onClick={() => { if (!match.participant1Id || !match.participant2Id) return; onSubmit({ winnerId: match.participant2Id, loserId: match.participant1Id, winnerScore: 1, loserScore: 0, walkedOver: true }) }}
+              className="flex-1 text-xs py-2 px-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-center">
+              <span className="font-medium text-red-500">{p2?.name ?? '-'}</span> 부전승
+            </button>
+          </div>
         </div>
       </div>
     </div>

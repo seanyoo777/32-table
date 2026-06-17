@@ -9,6 +9,7 @@ import Score from './pages/Score'
 import Dashboard from './pages/Dashboard'
 import CheckIn from './pages/CheckIn'
 import LiveBoard from './pages/LiveBoard'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/score" element={<Score />} />
             <Route path="/checkin" element={<CheckIn />} />
             <Route path="/liveboard" element={<LiveBoard />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
         <footer className="text-center text-xs text-gray-400 py-3 border-t mt-auto">

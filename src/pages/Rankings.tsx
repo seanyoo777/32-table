@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp } from 'lucide-react'
+import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle } from 'lucide-react'
 import type { Player, Pair, Division, Gender } from '../types'
 import { getRatingLabel, pointsToRating } from '../utils/ratingUtils'
 
@@ -25,8 +25,36 @@ type SortBy = 'points' | 'elo'
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
+type ImportRow = { name: string; school: string; division: Division; gender: '남' | '여'; points: number; error?: string }
+
+function parseCSV(text: string): ImportRow[] {
+  const lines = text.trim().split('\n').filter(l => l.trim())
+  const validDivs = new Set<string>(['초등', '중등', '고등', '대학', '일반', '생활체육'])
+  const rows: ImportRow[] = []
+  const startIdx = lines[0].includes('이름') ? 1 : 0
+  for (let i = startIdx; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+    const [name, school, division, gender, pointsStr] = cols
+    const points = Number(pointsStr ?? 0) || 0
+    const errors: string[] = []
+    if (!name) errors.push('이름 없음')
+    if (!school) errors.push('학교 없음')
+    if (!validDivs.has(division)) errors.push(`부문 오류(${division})`)
+    if (gender !== '남' && gender !== '여') errors.push(`성별 오류(${gender})`)
+    rows.push({
+      name: name || '',
+      school: school || '',
+      division: (validDivs.has(division) ? division : '일반') as Division,
+      gender: (gender === '남' || gender === '여') ? gender : '남',
+      points,
+      error: errors.length ? errors.join(', ') : undefined,
+    })
+  }
+  return rows
+}
+
 export default function Rankings() {
-  const { players, pairs, addPlayer, deletePlayer, addPlayerPoints, addPair, deletePair } = useStore()
+  const { players, pairs, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers } = useStore()
   const [tab, setTab] = useState<'singles' | 'doubles'>('singles')
   const [rankView, setRankView] = useState<RankView>('통합')
   const [subGender, setSubGender] = useState<'all' | '남' | '여'>('all')
@@ -37,6 +65,11 @@ export default function Rankings() {
   const [pointsModal, setPointsModal] = useState<{ id: string; name: string } | null>(null)
   const [addPts, setAddPts] = useState('')
   const [addWin, setAddWin] = useState(true)
+  const [editModal, setEditModal] = useState<Player | null>(null)
+  const [importModal, setImportModal] = useState(false)
+  const [importRows, setImportRows] = useState<ImportRow[]>([])
+  const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Player form
   const [pForm, setPForm] = useState({ name: '', school: '', division: '초등' as Division, gender: '남' as '남' | '여', points: '0' })
@@ -104,6 +137,64 @@ export default function Rankings() {
     setPointsModal(null); setAddPts('')
   }
 
+  function handleEditSave() {
+    if (!editModal) return
+    updatePlayer(editModal.id, {
+      name: editModal.name, school: editModal.school,
+      division: editModal.division, gender: editModal.gender,
+      points: editModal.points, rating: pointsToRating(editModal.points),
+    })
+    setEditModal(null)
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      setImportRows(parseCSV(text))
+      setImportModal(true)
+      setImportResult(null)
+    }
+    reader.readAsText(file, 'utf-8')
+    e.target.value = ''
+  }
+
+  function handleImportConfirm() {
+    const validRows = importRows.filter(r => !r.error)
+    const newPlayers = validRows.map(r => ({
+      id: Math.random().toString(36).slice(2, 10),
+      ...r,
+      wins: 0, losses: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      rating: pointsToRating(r.points), gamesPlayed: 0,
+    }))
+    const result = importPlayers(newPlayers)
+    setImportResult(result)
+    setImportRows([])
+  }
+
+  function exportCSV() {
+    const header = '이름,학교,부문,성별,포인트,승,패,Elo등급\n'
+    const rows = filteredPlayers.map(p =>
+      `${p.name},${p.school},${p.division},${p.gender},${p.points},${p.wins},${p.losses},${p.rating ?? 1000}`
+    ).join('\n')
+    const blob = new Blob(['﻿' + header + rows], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url
+    a.download = `선수명단_${new Date().toISOString().split('T')[0]}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
+  function downloadTemplate() {
+    const content = '이름,학교,부문,성별,포인트\n홍길동,서울초등학교,초등,남,100\n김영희,부산중학교,중등,여,50\n'
+    const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url
+    a.download = '선수등록_양식.csv'; a.click(); URL.revokeObjectURL(url)
+  }
+
   // Available players for pair form
   const availForPair1 = players.filter(p => {
     if (pairForm.pairType === '남복') return p.gender === '남'
@@ -124,9 +215,22 @@ export default function Rankings() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold flex items-center gap-2"><Trophy size={20} className="text-yellow-500" />랭킹 관리</h1>
-        <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-1.5">
-          <Plus size={15} /> {tab === 'singles' ? '선수 등록' : '페어 등록'}
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          {tab === 'singles' && (
+            <>
+              <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
+              <button onClick={() => fileInputRef.current?.click()} className="btn-secondary flex items-center gap-1.5 text-sm">
+                <Upload size={14} /> CSV 가져오기
+              </button>
+              <button onClick={exportCSV} className="btn-secondary flex items-center gap-1.5 text-sm">
+                <Download size={14} /> CSV 내보내기
+              </button>
+            </>
+          )}
+          <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-1.5">
+            <Plus size={15} /> {tab === 'singles' ? '선수 등록' : '페어 등록'}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -267,6 +371,7 @@ export default function Rankings() {
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => setPointsModal({ id: p.id, name: p.name })}
                           className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-medium">+P</button>
+                        <button onClick={() => setEditModal({ ...p })} className="text-gray-400 hover:text-gray-700 p-1"><Edit2 size={13} /></button>
                         <button onClick={() => deletePlayer(p.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
                       </div>
                     </td>
@@ -447,6 +552,100 @@ export default function Rankings() {
               <button className="btn-primary flex-1" onClick={handleAddPoints}>적용</button>
               <button className="btn-secondary flex-1" onClick={() => setPointsModal(null)}>취소</button>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Edit Player Modal */}
+      {editModal && (
+        <Modal title="선수 정보 수정" onClose={() => setEditModal(null)}>
+          <div className="space-y-3">
+            <Field label="이름 *">
+              <input className="input" value={editModal.name} onChange={e => setEditModal(m => m ? { ...m, name: e.target.value } : m)} />
+            </Field>
+            <Field label="학교/소속 *">
+              <input className="input" value={editModal.school} onChange={e => setEditModal(m => m ? { ...m, school: e.target.value } : m)} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="부문">
+                <select className="select" value={editModal.division} onChange={e => setEditModal(m => m ? { ...m, division: e.target.value as Division } : m)}>
+                  {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </Field>
+              <Field label="성별">
+                <select className="select" value={editModal.gender} onChange={e => setEditModal(m => m ? { ...m, gender: e.target.value as '남' | '여' } : m)}>
+                  <option value="남">남</option><option value="여">여</option>
+                </select>
+              </Field>
+            </div>
+            <Field label="포인트">
+              <input className="input" type="number" value={editModal.points} onChange={e => setEditModal(m => m ? { ...m, points: Number(e.target.value) } : m)} />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <button className="btn-primary flex-1" onClick={handleEditSave}>저장</button>
+              <button className="btn-secondary flex-1" onClick={() => setEditModal(null)}>취소</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* CSV Import Modal */}
+      {importModal && (
+        <Modal title="CSV 일괄 선수 등록" onClose={() => { setImportModal(false); setImportRows([]); setImportResult(null) }}>
+          <div className="space-y-4">
+            {importResult ? (
+              <div className="space-y-3">
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">{importResult.added}명 등록</div>
+                  {importResult.skipped > 0 && <div className="text-sm text-gray-500 mt-1">{importResult.skipped}명 중복 건너뜀</div>}
+                </div>
+                <button className="btn-primary w-full" onClick={() => { setImportModal(false); setImportRows([]); setImportResult(null) }}>확인</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">{importRows.length}행 인식됨 · {importRows.filter(r => !r.error).length}행 유효</span>
+                  <button onClick={downloadTemplate} className="text-xs text-blue-600 hover:underline flex items-center gap-1"><Download size={11} />양식 다운로드</button>
+                </div>
+                <div className="border rounded-lg overflow-auto max-h-64">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-2 py-1.5 text-left">이름</th>
+                        <th className="px-2 py-1.5 text-left">학교</th>
+                        <th className="px-2 py-1.5">부문</th>
+                        <th className="px-2 py-1.5">성별</th>
+                        <th className="px-2 py-1.5 text-right">포인트</th>
+                        <th className="px-2 py-1.5">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importRows.map((r, i) => (
+                        <tr key={i} className={r.error ? 'bg-red-50' : 'hover:bg-gray-50'}>
+                          <td className="px-2 py-1">{r.name}</td>
+                          <td className="px-2 py-1">{r.school}</td>
+                          <td className="px-2 py-1 text-center">{r.division}</td>
+                          <td className="px-2 py-1 text-center">{r.gender}</td>
+                          <td className="px-2 py-1 text-right">{r.points}</td>
+                          <td className="px-2 py-1 text-center">
+                            {r.error
+                              ? <span className="text-red-500 flex items-center gap-0.5"><AlertCircle size={10} />{r.error}</span>
+                              : <span className="text-green-500">✓</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-400">CSV 형식: 이름,학교,부문(초등/중등/고등/대학/일반/생활체육),성별(남/여),포인트</p>
+                <div className="flex gap-2">
+                  <button className="btn-primary flex-1" onClick={handleImportConfirm} disabled={importRows.filter(r => !r.error).length === 0}>
+                    유효한 {importRows.filter(r => !r.error).length}명 등록
+                  </button>
+                  <button className="btn-secondary flex-1" onClick={() => { setImportModal(false); setImportRows([]) }}>취소</button>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
       )}

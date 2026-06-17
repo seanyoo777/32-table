@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Trophy, TableProperties, ClipboardList, Calendar, Users, LayoutDashboard, QrCode, Monitor } from 'lucide-react'
+import { Home, Trophy, TableProperties, ClipboardList, Calendar, Users, LayoutDashboard, QrCode, Monitor, Settings } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: '홈', icon: Home, exact: true },
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/score', label: '점수입력', icon: Users },
   { to: '/checkin', label: 'QR체크인', icon: QrCode },
   { to: '/liveboard', label: '라이브보드', icon: Monitor },
+  { to: '/settings', label: '설정', icon: Settings },
 ]
 
 export default function Navbar() {

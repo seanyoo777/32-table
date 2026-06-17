@@ -13,6 +13,22 @@ const INIT_PAIRS    = generatePairs(INIT_PLAYERS)
 const INIT_TOURS    = generateTournaments(INIT_PLAYERS, INIT_PAIRS)
 const INIT_SCHEDS   = generateSchedules()
 
+export interface AppSettings {
+  venueName: string
+  organizerName: string
+  season: string
+  contactPhone: string
+  contactEmail: string
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  venueName: '',
+  organizerName: '',
+  season: new Date().getFullYear().toString(),
+  contactPhone: '',
+  contactEmail: '',
+}
+
 interface StoreState {
   players: Player[]
   pairs: Pair[]
@@ -22,12 +38,14 @@ interface StoreState {
   scoreRecords: ScoreRecord[]
   liveMatches: LiveMatch[]
   matchCalls: MatchCall[]
+  appSettings: AppSettings
 
   // Players
   addPlayer: (p: Player) => void
   updatePlayer: (id: string, data: Partial<Player>) => void
   deletePlayer: (id: string) => void
   addPlayerPoints: (id: string, pts: number, win: boolean) => void
+  importPlayers: (ps: Player[]) => { added: number; skipped: number }
 
   // Pairs
   addPair: (p: Pair) => void
@@ -68,6 +86,13 @@ interface StoreState {
 
   // Rating & Check-in
   updatePlayerRating: (id: string, newRating: number, gamesPlayed: number) => void
+
+  // App settings
+  updateAppSettings: (s: Partial<AppSettings>) => void
+
+  // Backup & Restore
+  resetAllData: () => void
+  restoreBackup: (data: Partial<StoreState>) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -81,6 +106,7 @@ export const useStore = create<StoreState>()(
       scoreRecords: [],
       liveMatches: [],
       matchCalls: [],
+      appSettings: DEFAULT_SETTINGS,
 
       // Players
       addPlayer: (p) => set((s) => ({ players: [...s.players, p] })),
@@ -93,6 +119,18 @@ export const useStore = create<StoreState>()(
           ? { ...p, points: p.points + pts, wins: win ? p.wins + 1 : p.wins, losses: win ? p.losses : p.losses + 1 }
           : p)
       })),
+      importPlayers: (newPlayers) => {
+        let added = 0; let skipped = 0
+        set((s) => {
+          const existing = new Set(s.players.map(p => `${p.name}|${p.school}`))
+          const toAdd = newPlayers.filter(p => {
+            if (existing.has(`${p.name}|${p.school}`)) { skipped++; return false }
+            added++; return true
+          })
+          return { players: [...s.players, ...toAdd] }
+        })
+        return { added, skipped }
+      },
 
       // Pairs
       addPair: (p) => set((s) => ({ pairs: [...s.pairs, p] })),
@@ -220,6 +258,24 @@ export const useStore = create<StoreState>()(
       // Rating & Check-in
       updatePlayerRating: (id, newRating, gamesPlayed) => set((s) => ({
         players: s.players.map(p => p.id === id ? { ...p, rating: newRating, gamesPlayed } : p)
+      })),
+
+      // App settings
+      updateAppSettings: (s) => set((st) => ({ appSettings: { ...st.appSettings, ...s } })),
+
+      // Backup & Restore
+      resetAllData: () => set({
+        players: [], pairs: [], teams: [], tournaments: [],
+        schedules: [], scoreRecords: [], liveMatches: [], matchCalls: [],
+      }),
+      restoreBackup: (data) => set((s) => ({
+        players: data.players ?? s.players,
+        pairs: data.pairs ?? s.pairs,
+        teams: data.teams ?? s.teams,
+        tournaments: data.tournaments ?? s.tournaments,
+        schedules: data.schedules ?? s.schedules,
+        scoreRecords: data.scoreRecords ?? s.scoreRecords,
+        appSettings: data.appSettings ?? s.appSettings,
       })),
     }),
     { name: 'pingpong-v3' }
