@@ -72,7 +72,7 @@ function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../t
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, teams, tournaments, addTournament, deleteTournament, recordMatchResult, addPlayerPoints, updatePlayerRating } = useStore()
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, addPlayerPoints, updatePlayerRating } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
@@ -94,6 +94,7 @@ export default function TournamentPage() {
       tournament={selected}
       pMap={pMap}
       onBack={() => setView('list')}
+      onStatusChange={(status) => updateTournament(selected.id, { status })}
       onRecord={(evId, mId, result) => {
         recordMatchResult(selected.id, evId, mId, result)
         // Points: winner gets event.pointsForWin, loser gets 20%
@@ -433,10 +434,11 @@ function CreateForm({ players, pairs, onCancel, onCreate }: {
 }
 
 // ─── 대회 상세 (종목 탭) ──────────────────────────────────
-function TournamentDetail({ tournament, pMap, onBack, onRecord }: {
+function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord }: {
   tournament: Tournament
   pMap: Record<string, { name: string; school: string; points: number; gender: string }>
   onBack: () => void
+  onStatusChange: (status: Tournament['status']) => void
   onRecord: (evId: string, mId: string, result: MatchResult) => void
 }) {
   const [activeEventId, setActiveEventId] = useState(tournament.events[0]?.id ?? '')
@@ -453,7 +455,19 @@ function TournamentDetail({ tournament, pMap, onBack, onRecord }: {
             <p className="text-sm text-gray-400">{tournament.date}{tournament.venue ? ` · ${tournament.venue}` : ''}</p>
           </div>
         </div>
-        <div className="flex gap-2 no-print">
+        <div className="flex gap-2 no-print flex-wrap">
+          {tournament.status === 'ongoing' && (
+            <button onClick={() => onStatusChange('completed')}
+              className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 flex items-center gap-1.5">
+              <Check size={14} /> 대회 종료
+            </button>
+          )}
+          {tournament.status === 'completed' && (
+            <button onClick={() => onStatusChange('ongoing')}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 flex items-center gap-1.5">
+              <Shuffle size={14} /> 대회 재개
+            </button>
+          )}
           <button onClick={() => exportTournamentCSV(tournament, pMap)} className="btn-secondary flex items-center gap-1.5 text-sm">
             <Download size={14} /> 결과 CSV
           </button>

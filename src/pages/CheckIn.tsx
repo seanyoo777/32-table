@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore'
 import { parseQR, playerQRValue } from '../components/QRCodeDisplay'
 import QRCodeDisplay from '../components/QRCodeDisplay'
 import { getRatingLabel } from '../utils/ratingUtils'
-import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi } from 'lucide-react'
+import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi, Download } from 'lucide-react'
 import type { Player } from '../types'
 
 export default function CheckInPage() {
@@ -64,6 +64,20 @@ export default function CheckInPage() {
 
   function resetAll() {
     players.forEach(p => updatePlayer(p.id, { checkedIn: false }))
+  }
+
+  function exportAttendanceCSV() {
+    const rows = ['이름,소속,부문,성별,레이팅,체크인']
+    for (const p of [...players].sort((a, b) => a.name.localeCompare(b.name))) {
+      rows.push([p.name, p.school, p.division, p.gender, p.rating ?? 1000, p.checkedIn ? 'O' : 'X'].join(','))
+    }
+    const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `체크인현황_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const tabs = [
@@ -227,6 +241,11 @@ export default function CheckInPage() {
       {/* ── 체크인 현황 ── */}
       {tab === 'list' && (
         <div className="space-y-3">
+          <div className="flex justify-end">
+            <button onClick={exportAttendanceCSV} className="btn-secondary text-sm flex items-center gap-1.5">
+              <Download size={14} /> 출석 CSV
+            </button>
+          </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 rounded-full transition-all"
