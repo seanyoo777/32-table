@@ -217,6 +217,10 @@ export default function Home() {
                 {topPlayers.map((p, i) => (
                   <div key={p.id} className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-0">
                     <RankBadge rank={i + 1} />
+                    {p.photoUrl
+                      ? <img src={p.photoUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      : <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 flex-shrink-0 font-bold">{p.name[0]}</div>
+                    }
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm flex items-center gap-1.5 truncate">
                         {p.name}
