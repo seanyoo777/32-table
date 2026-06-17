@@ -75,7 +75,7 @@ export default function Rankings() {
   const PAGE_SIZE = 50
 
   // Player form
-  const [pForm, setPForm] = useState({ name: '', school: '', division: '초등' as Division, gender: '남' as '남' | '여', points: '0' })
+  const [pForm, setPForm] = useState({ name: '', school: '', division: '초등' as Division, gender: '남' as '남' | '여', points: '0', registrationNo: '', phone: '' })
   // Pair form
   const [pairForm, setPairForm] = useState({
     player1Id: '', player2Id: '', division: '초등' as Division,
@@ -119,8 +119,10 @@ export default function Rankings() {
       id: genId(), ...pForm, points: pts, wins: 0, losses: 0,
       createdAt: new Date().toISOString().split('T')[0],
       rating: pointsToRating(pts), gamesPlayed: 0,
+      registrationNo: pForm.registrationNo || undefined,
+      phone: pForm.phone || undefined,
     })
-    setPForm({ name: '', school: '', division: '초등', gender: '남', points: '0' })
+    setPForm({ name: '', school: '', division: '초등', gender: '남', points: '0', registrationNo: '', phone: '' })
     setShowAdd(false)
   }
 
@@ -168,6 +170,8 @@ export default function Rankings() {
       name: editModal.name, school: editModal.school,
       division: editModal.division, gender: editModal.gender,
       points: editModal.points, rating: pointsToRating(editModal.points),
+      registrationNo: editModal.registrationNo || undefined,
+      phone: editModal.phone || undefined,
     })
     setEditModal(null)
   }
@@ -584,6 +588,10 @@ export default function Rankings() {
               </Field>
             </div>
             <Field label="초기 포인트"><input className="input" type="number" placeholder="0" value={pForm.points} onChange={e => setPForm(f => ({ ...f, points: e.target.value }))} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="등록번호 (선택)"><input className="input" placeholder="예: KR-001" value={pForm.registrationNo} onChange={e => setPForm(f => ({ ...f, registrationNo: e.target.value }))} /></Field>
+              <Field label="연락처 (선택)"><input className="input" placeholder="010-0000-0000" value={pForm.phone} onChange={e => setPForm(f => ({ ...f, phone: e.target.value }))} /></Field>
+            </div>
             <div className="flex gap-2 pt-2">
               <button className="btn-primary flex-1" onClick={handleAddPlayer}>등록</button>
               <button className="btn-secondary flex-1" onClick={() => setShowAdd(false)}>취소</button>
@@ -682,6 +690,14 @@ export default function Rankings() {
             <Field label="포인트">
               <input className="input" type="number" value={editModal.points} onChange={e => setEditModal(m => m ? { ...m, points: Number(e.target.value) } : m)} />
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="등록번호">
+                <input className="input" placeholder="예: KR-001" value={editModal.registrationNo ?? ''} onChange={e => setEditModal(m => m ? { ...m, registrationNo: e.target.value } : m)} />
+              </Field>
+              <Field label="연락처">
+                <input className="input" placeholder="010-0000-0000" value={editModal.phone ?? ''} onChange={e => setEditModal(m => m ? { ...m, phone: e.target.value } : m)} />
+              </Field>
+            </div>
             <div className="flex gap-2 pt-2">
               <button className="btn-primary flex-1" onClick={handleEditSave}>저장</button>
               <button className="btn-secondary flex-1" onClick={() => setEditModal(null)}>취소</button>
