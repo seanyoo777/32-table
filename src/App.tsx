@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import Navbar from './components/Navbar'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Sidebar from './components/Sidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import Home from './pages/Home'
 import Rankings from './pages/Rankings'
@@ -28,9 +28,9 @@ const pages: { path: string; element: React.ReactElement; label: string }[] = [
 
 function MainLayout() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
+      <Sidebar />
+      <main className="flex-1 min-w-0 overflow-hidden">
         <Routes>
           {pages.map(({ path, element, label }) => (
             <Route
@@ -41,9 +41,6 @@ function MainLayout() {
           ))}
         </Routes>
       </main>
-      <footer className="text-center text-xs text-gray-400 py-3 border-t mt-auto">
-        🏓 탁구 대회 관리 시스템 v3.0 — USATT Elo 레이팅 · QR 체크인 · 라이브 보드
-      </footer>
     </div>
   )
 }

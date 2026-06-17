@@ -122,7 +122,8 @@ export default function TournamentPage() {
 
   // ── 목록 ──
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Trophy size={20} className="text-blue-500" /> 대회 관리
@@ -179,15 +180,18 @@ export default function TournamentPage() {
         </div>
       )}
     </div>
+  </div>
   )
 }
 
 // ─── 대회 생성 폼 ─────────────────────────────────────────
-function CreateForm({ players, pairs, onCancel, onCreate }: {
-  players: Player[]; pairs: Pair[]
+type CreateFormProps = {
+  players: Player[]
+  pairs: Pair[]
   onCancel: () => void
   onCreate: (t: Tournament) => void
-}) {
+}
+function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
   const { teams } = useStore()
   const [name, setName] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])

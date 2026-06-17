@@ -12,7 +12,7 @@ export default function LeaguePage() {
   )
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+    <div className="h-full overflow-y-auto px-6 py-5 space-y-4 bg-gray-50">
       <h1 className="text-xl font-bold flex items-center gap-2">
         <ClipboardList size={20} className="text-green-500" /> 리그전
       </h1>

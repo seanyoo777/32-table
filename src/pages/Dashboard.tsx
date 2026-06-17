@@ -58,17 +58,17 @@ export default function DashboardPage() {
   )
   const pendingMatches = allMatches.filter(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
   const completedMatches = allMatches.filter(m => m.result)
+  const pendingCalls = matchCalls.filter(c => !c.acknowledged)
+  const unverifiedRecords = scoreRecords.filter(r => !r.verified)
 
   const formatTime = (d: Date) =>
-    `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`
+    `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`
 
   function handleCallMatch() {
     if (!callMatchKey) return
     const [tournamentId, eventId, matchId] = callMatchKey.split('|')
     const match = allMatches.find(m => m.tournamentId === tournamentId && m.eventId === eventId && m.id === matchId)
     if (!match || !match.participant1Id || !match.participant2Id) return
-    const tournament = activeTournaments.find(t => t.id === tournamentId)
-    const ev = tournament?.events.find(e => e.id === eventId)
     const call: MatchCall = {
       id: genId(),
       matchId,
@@ -81,10 +81,8 @@ export default function DashboardPage() {
       calledAt: new Date().toISOString(),
       acknowledged: false,
     }
-    void ev
     addMatchCall(call)
     setCallMatchKey('')
-    // Browser notification for match call
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(`🏓 경기 호출 — ${callTableNo}번대`, {
         body: `${call.participant1Name} vs ${call.participant2Name} (${call.eventLabel})`,
@@ -93,296 +91,274 @@ export default function DashboardPage() {
     }
   }
 
-  function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
-  }
-
-  const pendingCalls = matchCalls.filter(c => !c.acknowledged)
-  const unverifiedRecords = scoreRecords.filter(r => !r.verified)
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <LayoutDashboard size={20} className="text-indigo-500" /> 운영 대시보드
+    <div className="page-shell">
+      {/* Page header */}
+      <div className="page-header">
+        <h1 className="text-base font-bold flex items-center gap-2">
+          <LayoutDashboard size={17} className="text-indigo-500" /> 운영 대시보드
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-3">
           {scoreRecords.length > 0 && (
             <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap, tournaments)}
-              className="btn-secondary text-sm flex items-center gap-1.5">
-              <Download size={14} /> 기록 CSV
+              className="btn-secondary flex items-center gap-1.5">
+              <Download size={13} /> 기록 CSV
             </button>
           )}
           {'Notification' in window && Notification.permission === 'default' && (
-            <button onClick={requestNotificationPermission}
-              className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-2 py-1 rounded-lg flex items-center gap-1">
+            <button onClick={() => Notification.requestPermission()}
+              className="text-xs text-gray-500 border border-gray-200 px-2 py-1.5 rounded-lg flex items-center gap-1 hover:bg-gray-50">
               <Bell size={12} /> 알림 허용
             </button>
           )}
-          <div className="text-2xl font-mono font-bold text-gray-700">{formatTime(now)}</div>
+          <div className="text-xl font-mono font-bold text-gray-700 tabular-nums">{formatTime(now)}</div>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="bg-blue-50 border-blue-200" />
-        <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="bg-yellow-50 border-yellow-200" />
-        <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="bg-green-50 border-green-200" />
-        <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="bg-red-50 border-red-200" />
+      <div className="flex-shrink-0 grid grid-cols-4 gap-3 px-4 py-3 bg-white border-b border-gray-100">
+        <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
+        <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
+        <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
+        <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
       </div>
 
-      {/* Unverified records alert */}
-      {unverifiedRecords.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-500" />
-              <span className="font-semibold text-amber-800">미확인 경기 기록 {unverifiedRecords.length}건</span>
-              <span className="text-amber-600 text-sm">— 검토 후 확인 처리하세요</span>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => unverifiedRecords.forEach(r => verifyScoreRecord(r.id))}
-                className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors">
-                전체 확인 처리
-              </button>
-              <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap, tournaments)}
-                className="px-3 py-1.5 bg-white border border-amber-300 text-amber-700 text-xs font-medium rounded-lg hover:bg-amber-50 flex items-center gap-1 transition-colors">
-                <Download size={12} /> 기록 CSV
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
-            {unverifiedRecords.slice(0, 10).map(r => {
-              const p1 = pMap[r.participant1Id]?.name ?? '?'
-              const p2 = pMap[r.participant2Id]?.name ?? '?'
-              return (
-                <div key={r.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-amber-100 text-sm">
-                  <span className="flex-1 font-medium">{p1} <span className="text-gray-400">vs</span> {p2}</span>
-                  <span className="text-gray-500">{r.p1Score} - {r.p2Score}</span>
-                  <span className="text-xs text-gray-400">{new Date(r.recordedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
-                  <button onClick={() => verifyScoreRecord(r.id)}
-                    className="flex-shrink-0 text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors">
-                    확인
+      {/* 3-column content */}
+      <div className="flex-1 min-h-0 grid grid-cols-3 gap-3 p-4">
+
+        {/* ── Col 1: Unverified + Live matches ── */}
+        <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+          {unverifiedRecords.length > 0 && (
+            <div className="flex-shrink-0 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+                  <AlertTriangle size={13} className="text-amber-500" />
+                  미확인 기록 {unverifiedRecords.length}건
+                </div>
+                <div className="flex gap-1.5">
+                  <button onClick={() => unverifiedRecords.forEach(r => verifyScoreRecord(r.id))}
+                    className="px-2 py-1 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600">전체 확인</button>
+                  <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap, tournaments)}
+                    className="px-2 py-1 bg-white border border-amber-300 text-amber-700 text-xs rounded-lg flex items-center gap-1 hover:bg-amber-50">
+                    <Download size={11} /> CSV
                   </button>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+              </div>
+              <div className="space-y-1 max-h-28 overflow-y-auto">
+                {unverifiedRecords.slice(0, 8).map(r => {
+                  const p1 = pMap[r.participant1Id]?.name ?? '?'
+                  const p2 = pMap[r.participant2Id]?.name ?? '?'
+                  return (
+                    <div key={r.id} className="flex items-center gap-2 bg-white rounded px-2 py-1.5 border border-amber-100 text-xs">
+                      <span className="flex-1 font-medium truncate">{p1} vs {p2}</span>
+                      <span className="text-gray-500">{r.p1Score}-{r.p2Score}</span>
+                      <button onClick={() => verifyScoreRecord(r.id)}
+                        className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200">확인</button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-      {/* Live matches */}
-      {liveMatches.length > 0 && (
-        <div className="card">
-          <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Play size={16} className="text-red-500" /> 실시간 진행중
-            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {liveMatches.map(lm => {
-              const p1 = pMap[lm.participant1Id]
-              const p2 = pMap[lm.participant2Id]
-              const sets1 = lm.completedSets.filter(([a, b]) => a > b).length
-              const sets2 = lm.completedSets.filter(([a, b]) => b > a).length
-              return (
-                <div key={lm.matchId} className="border-2 border-red-200 rounded-xl p-4 bg-red-50 cursor-pointer hover:shadow-md"
-                  onClick={() => navigate('/score')}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-red-500">탁구대 {lm.tableNo}번</span>
-                    <span className="text-xs text-gray-400">{lm.completedSets.length + 1}세트</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 text-center">
-                      <div className="font-bold text-sm truncate">{p1?.name ?? '?'}</div>
-                      <div className="text-3xl font-black text-blue-600">{lm.currentSetScore[0]}</div>
-                      <div className="text-sm text-gray-500">세트 {sets1}</div>
+          <div className="card flex-1 min-h-0 flex flex-col overflow-hidden">
+            <h2 className="font-semibold text-sm text-gray-700 mb-2 flex-shrink-0 flex items-center gap-2">
+              <Play size={13} className="text-red-500" /> 실시간 진행중
+              {liveMatches.length > 0 && (
+                <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>
+              )}
+            </h2>
+            {liveMatches.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-sm text-gray-300">진행중 없음</div>
+            ) : (
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+                {liveMatches.map(lm => {
+                  const p1 = pMap[lm.participant1Id]
+                  const p2 = pMap[lm.participant2Id]
+                  const sets1 = lm.completedSets.filter(([a, b]) => a > b).length
+                  const sets2 = lm.completedSets.filter(([a, b]) => b > a).length
+                  return (
+                    <div key={lm.matchId}
+                      className="border-2 border-red-200 rounded-xl p-3 bg-red-50 cursor-pointer hover:shadow-md"
+                      onClick={() => navigate('/score')}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-red-500">탁구대 {lm.tableNo}번</span>
+                        <span className="text-xs text-gray-400">{lm.completedSets.length + 1}세트</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-center">
+                        <div className="flex-1">
+                          <div className="font-bold text-xs truncate">{p1?.name ?? '?'}</div>
+                          <div className="text-2xl font-black text-blue-600">{lm.currentSetScore[0]}</div>
+                          <div className="text-xs text-gray-400">세트 {sets1}</div>
+                        </div>
+                        <div className="text-gray-300 font-bold">:</div>
+                        <div className="flex-1">
+                          <div className="font-bold text-xs truncate">{p2?.name ?? '?'}</div>
+                          <div className="text-2xl font-black text-red-500">{lm.currentSetScore[1]}</div>
+                          <div className="text-xs text-gray-400">세트 {sets2}</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-300 font-bold">:</div>
-                    <div className="flex-1 text-center">
-                      <div className="font-bold text-sm truncate">{p2?.name ?? '?'}</div>
-                      <div className="text-3xl font-black text-red-500">{lm.currentSetScore[1]}</div>
-                      <div className="text-sm text-gray-500">세트 {sets2}</div>
-                    </div>
-                  </div>
-                  {lm.completedSets.length > 0 && (
-                    <div className="mt-2 text-center text-xs text-gray-400">
-                      {lm.completedSets.map(([a, b], i) => `${a}-${b}`).join(' · ')}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Pending matches */}
-      <div className="card">
-        <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <Clock size={16} className="text-yellow-500" /> 대기중인 경기 ({pendingMatches.length})
-        </h2>
-        {pendingMatches.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">대기중인 경기가 없습니다</p>
-        ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {pendingMatches.slice(0, 20).map(m => {
-              const p1 = m.participant1Id ? pMap[m.participant1Id] : null
-              const p2 = m.participant2Id ? pMap[m.participant2Id] : null
-              return (
-                <div key={`${m.tournamentId}-${m.eventId}-${m.id}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
-                  {m.tableNo && <span className="text-xs bg-gray-200 px-2 py-0.5 rounded font-mono">{m.tableNo}번대</span>}
-                  <span className="text-xs text-gray-400 font-medium flex-shrink-0">{m.eventLabel}</span>
-                  <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
-                  {m.scheduledTime && <span className="text-xs text-blue-500 flex-shrink-0">{m.scheduledTime}</span>}
-                  <button onClick={() => navigate('/score')} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded flex-shrink-0">
-                    점수입력
-                  </button>
-                </div>
-              )
-            })}
-            {pendingMatches.length > 20 && (
-              <p className="text-xs text-center text-gray-400">+{pendingMatches.length - 20}개 더</p>
+                  )
+                })}
+              </div>
             )}
           </div>
-        )}
-      </div>
-
-      {/* Match Call (콜링) */}
-      <div className="card">
-        <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <Bell size={16} className="text-orange-500" /> 경기 호출 (콜링)
-          {pendingCalls.length > 0 && (
-            <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full animate-pulse">
-              {pendingCalls.length}건 대기
-            </span>
-          )}
-        </h2>
-
-        {/* 호출 입력 */}
-        <div className="flex gap-2 mb-4 flex-wrap">
-          <select
-            className="select flex-1 min-w-0"
-            value={callMatchKey}
-            onChange={e => setCallMatchKey(e.target.value)}
-          >
-            <option value="">경기 선택...</option>
-            {pendingMatches.slice(0, 30).map(m => {
-              const p1 = m.participant1Id ? pMap[m.participant1Id]?.name : '?'
-              const p2 = m.participant2Id ? pMap[m.participant2Id]?.name : '?'
-              const key = `${m.tournamentId}|${m.eventId}|${m.id}`
-              return (
-                <option key={key} value={key}>
-                  [{m.eventLabel}] {p1} vs {p2}
-                </option>
-              )
-            })}
-          </select>
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs text-gray-500 whitespace-nowrap">탁구대</label>
-            <input
-              className="input w-16 text-center"
-              type="number" min={1} max={30}
-              value={callTableNo}
-              onChange={e => setCallTableNo(Number(e.target.value))}
-            />
-          </div>
-          <button
-            onClick={handleCallMatch}
-            disabled={!callMatchKey}
-            className="btn-primary flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <Bell size={14} /> 호출
-          </button>
         </div>
 
-        {/* 현재 호출 목록 */}
-        {matchCalls.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">호출된 경기가 없습니다</p>
-        ) : (
-          <div className="space-y-2">
-            {[...matchCalls].reverse().map(c => (
-              <div key={c.id} className={`flex items-center gap-3 p-3 rounded-lg border text-sm ${c.acknowledged ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-orange-50 border-orange-200'}`}>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'}`}>
-                  {c.tableNo}번대
-                </span>
-                <span className="text-xs text-gray-400 flex-shrink-0">{c.eventLabel}</span>
-                <span className="flex-1 font-medium truncate">{c.participant1Name} vs {c.participant2Name}</span>
-                <span className="text-xs text-gray-400 flex-shrink-0">
-                  {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                {!c.acknowledged ? (
-                  <button onClick={() => acknowledgeMatchCall(c.id)} className="flex-shrink-0 text-xs bg-green-100 text-green-700 px-2 py-1 rounded flex items-center gap-1">
-                    <BellOff size={11} /> 확인
-                  </button>
-                ) : (
-                  <button onClick={() => removeMatchCall(c.id)} className="flex-shrink-0 text-gray-300 hover:text-red-400 p-1">
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Progress by event */}
-      {activeTournaments.length > 0 && (
-        <div className="card">
-          <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Trophy size={16} className="text-blue-500" /> 종목별 진행률
+        {/* ── Col 2: Pending matches ── */}
+        <div className="card flex flex-col min-h-0 overflow-hidden">
+          <h2 className="font-semibold text-sm text-gray-700 mb-2 flex-shrink-0 flex items-center gap-2">
+            <Clock size={13} className="text-yellow-500" /> 대기중인 경기
+            <span className="text-xs text-gray-400 font-normal">({pendingMatches.length})</span>
           </h2>
-          <div className="space-y-3">
-            {activeTournaments.flatMap(t =>
-              t.events.map(ev => {
-                const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
-                const done = ev.matches.filter(m => m.result && !m.result.walkedOver).length
-                const pct = total > 0 ? Math.round(done / total * 100) : 0
-                return { key: `${t.id}-${ev.id}`, tournamentName: t.name, label: ev.label, total, done, pct }
-              })
-            ).map(({ key, label, total, done, pct }) => (
-              <div key={key}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">{label}</span>
-                  <span className="text-gray-400">{done}/{total}경기 ({pct}%)</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                    style={{ width: `${pct}%` }} />
-                </div>
+          {pendingMatches.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-sm text-gray-300">대기중 없음</div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
+              {pendingMatches.map(m => {
+                const p1 = m.participant1Id ? pMap[m.participant1Id] : null
+                const p2 = m.participant2Id ? pMap[m.participant2Id] : null
+                return (
+                  <div key={`${m.tournamentId}-${m.eventId}-${m.id}`}
+                    className="flex items-center gap-2 px-2.5 py-2 bg-gray-50 rounded-lg text-xs">
+                    <span className="text-gray-400 font-medium w-16 truncate flex-shrink-0">{m.eventLabel}</span>
+                    <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
+                    {m.scheduledTime && (
+                      <span className="text-blue-500 flex-shrink-0">{m.scheduledTime}</span>
+                    )}
+                    <button onClick={() => navigate('/score')}
+                      className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-200 flex-shrink-0">
+                      입력
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Col 3: Match calling + progress + recent results ── */}
+        <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+          {/* Match calling */}
+          <div className="card flex-shrink-0">
+            <h2 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+              <Bell size={13} className="text-orange-500" /> 경기 호출
+              {pendingCalls.length > 0 && (
+                <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full animate-pulse">
+                  {pendingCalls.length}건
+                </span>
+              )}
+            </h2>
+            <div className="flex gap-1.5 mb-2">
+              <select className="select flex-1 min-w-0 py-1" value={callMatchKey}
+                onChange={e => setCallMatchKey(e.target.value)}>
+                <option value="">경기 선택...</option>
+                {pendingMatches.slice(0, 30).map(m => {
+                  const p1 = m.participant1Id ? pMap[m.participant1Id]?.name : '?'
+                  const p2 = m.participant2Id ? pMap[m.participant2Id]?.name : '?'
+                  const key = `${m.tournamentId}|${m.eventId}|${m.id}`
+                  return <option key={key} value={key}>[{m.eventLabel}] {p1} vs {p2}</option>
+                })}
+              </select>
+              <input className="input w-14 text-center py-1" type="number" min={1} max={30}
+                value={callTableNo} onChange={e => setCallTableNo(Number(e.target.value))} />
+              <button onClick={handleCallMatch} disabled={!callMatchKey}
+                className="px-2.5 py-1 bg-blue-600 text-white text-xs rounded-lg disabled:opacity-50 flex items-center gap-1 hover:bg-blue-700">
+                <Bell size={11} /> 호출
+              </button>
+            </div>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {matchCalls.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-2">호출 없음</p>
+              ) : (
+                [...matchCalls].reverse().map(c => (
+                  <div key={c.id}
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${c.acknowledged ? 'bg-gray-50 opacity-60' : 'bg-orange-50 border border-orange-200'}`}>
+                    <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'}`}>
+                      {c.tableNo}번
+                    </span>
+                    <span className="flex-1 truncate font-medium">{c.participant1Name} vs {c.participant2Name}</span>
+                    <span className="text-gray-400 flex-shrink-0">
+                      {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {!c.acknowledged ? (
+                      <button onClick={() => acknowledgeMatchCall(c.id)}
+                        className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200 flex items-center gap-0.5">
+                        <BellOff size={10} /> 확인
+                      </button>
+                    ) : (
+                      <button onClick={() => removeMatchCall(c.id)} className="text-gray-300 hover:text-red-400 p-0.5">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Event progress */}
+          {activeTournaments.length > 0 && (
+            <div className="card flex-shrink-0">
+              <h2 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+                <Trophy size={13} className="text-blue-500" /> 종목별 진행률
+              </h2>
+              <div className="space-y-1.5">
+                {activeTournaments.flatMap(t =>
+                  t.events.map(ev => {
+                    const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                    const done = ev.matches.filter(m => m.result && !m.result.walkedOver).length
+                    const pct = total > 0 ? Math.round(done / total * 100) : 0
+                    return { key: `${t.id}-${ev.id}`, label: ev.label, total, done, pct }
+                  })
+                ).slice(0, 10).map(({ key, label, total, done, pct }) => (
+                  <div key={key}>
+                    <div className="flex justify-between text-xs mb-0.5">
+                      <span className="font-medium truncate flex-1 mr-2">{label}</span>
+                      <span className="text-gray-400 flex-shrink-0">{done}/{total} ({pct}%)</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                        style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* Recent results */}
+          <div className="card flex-1 min-h-0 flex flex-col overflow-hidden">
+            <h2 className="font-semibold text-sm text-gray-700 mb-2 flex-shrink-0 flex items-center gap-2">
+              <CheckCircle size={13} className="text-green-500" /> 최근 완료 경기
+            </h2>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
+              {scoreRecords.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-4">완료된 경기 없음</p>
+              ) : (
+                [...scoreRecords].reverse().slice(0, 20).map(r => {
+                  const n1 = pMap[r.participant1Id]?.name ?? '?'
+                  const n2 = pMap[r.participant2Id]?.name ?? '?'
+                  const winner = r.p1Score > r.p2Score ? n1 : n2
+                  return (
+                    <div key={r.id} className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded text-xs">
+                      <Trophy size={10} className="text-yellow-500 flex-shrink-0" />
+                      <span className="font-medium text-blue-700 flex-shrink-0">{winner}</span>
+                      <span className="flex-1 text-gray-400 truncate">
+                        ({n1} {r.p1Score}-{r.p2Score} {n2})
+                      </span>
+                      <span className="text-gray-300 flex-shrink-0">
+                        {new Date(r.recordedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Recent results */}
-      <div className="card">
-        <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <CheckCircle size={16} className="text-green-500" /> 최근 완료 경기
-        </h2>
-        {scoreRecords.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">아직 완료된 경기가 없습니다</p>
-        ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {[...scoreRecords].reverse().slice(0, 10).map(r => {
-              const n1 = pMap[r.participant1Id]?.name ?? '?'
-              const n2 = pMap[r.participant2Id]?.name ?? '?'
-              const winner = r.p1Score > r.p2Score ? n1 : n2
-              return (
-                <div key={r.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg text-sm">
-                  <Trophy size={12} className="text-yellow-500 flex-shrink-0" />
-                  <span className="font-medium text-blue-700 flex-shrink-0">{winner}</span>
-                  <span className="text-gray-400 flex-shrink-0">승</span>
-                  <span className="flex-1 text-gray-500 truncate">({n1} {r.p1Score}-{r.p2Score} {n2})</span>
-                  <span className="text-xs text-gray-300 flex-shrink-0">{new Date(r.recordedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
       </div>
     </div>
   )
@@ -390,8 +366,8 @@ export default function DashboardPage() {
 
 function DashCard({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
   return (
-    <div className={`card border-2 ${color} text-center py-4`}>
-      <div className="text-2xl mb-1">{icon}</div>
+    <div className={`border-2 rounded-xl p-3 text-center ${color}`}>
+      <div className="text-xl mb-0.5">{icon}</div>
       <div className="text-2xl font-bold text-gray-800">{value}</div>
       <div className="text-xs text-gray-500">{label}</div>
     </div>

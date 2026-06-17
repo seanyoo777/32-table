@@ -87,7 +87,7 @@ export default function CheckInPage() {
   ]
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50 px-5 py-4 gap-3">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold flex items-center gap-2">
           <QrCode size={20} className="text-blue-500" />

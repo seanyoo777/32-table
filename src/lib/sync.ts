@@ -1,4 +1,5 @@
 import { supabase, SYNC_ENABLED } from './supabase'
+export { SYNC_ENABLED }
 import type { Tournament } from '../types'
 
 // ─── 단일 대회 업로드 ────────────────────────────────────

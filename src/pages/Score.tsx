@@ -556,7 +556,7 @@ export default function ScorePage() {
   const [mode, setMode] = useState<'live' | 'manual'>('live')
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+    <div className="h-full overflow-y-auto px-5 py-4 space-y-4 bg-gray-50">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold flex items-center gap-2">
           <ClipboardList size={20} className="text-red-500" /> 점수 입력

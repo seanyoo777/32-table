@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900 font-sans;
@@ -10,41 +15,51 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors text-sm;
   }
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-medium transition-colors text-sm;
   }
   .btn-danger {
-    @apply bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors text-sm;
   }
   .btn-green {
-    @apply bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors text-sm;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-5;
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4;
   }
   .input {
-    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full;
+    @apply border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full;
   }
   .select {
-    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full bg-white;
+    @apply border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full bg-white;
   }
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  /* Page layout helpers */
+  .page-shell {
+    @apply h-full flex flex-col overflow-hidden bg-gray-50;
+  }
+  .page-header {
+    @apply flex-shrink-0 bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3;
+  }
+  .page-body {
+    @apply flex-1 min-h-0 overflow-hidden p-4;
   }
 }
 
 /* Bracket styles */
 .bracket-match {
   @apply border-2 border-gray-300 rounded-lg bg-white overflow-hidden;
-  min-width: 180px;
+  min-width: 170px;
 }
 .bracket-match.winner-determined {
   @apply border-blue-400;
 }
 .bracket-player {
-  @apply px-3 py-2 text-sm flex items-center justify-between gap-2;
+  @apply px-2.5 py-1.5 text-sm flex items-center justify-between gap-2;
 }
 .bracket-player.winner {
   @apply bg-blue-50 font-semibold text-blue-700;
@@ -59,11 +74,12 @@
 /* Print styles */
 @media print {
   .no-print { display: none !important; }
-  nav, footer { display: none !important; }
-  body { background: white; font-size: 11px; }
+  nav, aside, footer { display: none !important; }
+  body { background: white; font-size: 11px; height: auto !important; overflow: visible !important; }
+  html, #root { height: auto !important; overflow: visible !important; }
   .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; break-inside: avoid; }
-  .bracket-match { min-width: 140px !important; font-size: 10px; }
-  .bracket-player { padding: 4px 6px !important; }
+  .bracket-match { min-width: 130px !important; font-size: 10px; }
+  .bracket-player { padding: 3px 5px !important; }
   h1 { font-size: 16px !important; }
   h2 { font-size: 13px !important; }
   @page { margin: 1cm; size: A4 landscape; }

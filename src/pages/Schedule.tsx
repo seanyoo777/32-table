@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { generateSmartSlots, previewSmartPlan, calcDayCapacity, calcRoundsFromParticipants } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
-import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download } from 'lucide-react'
+import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
@@ -50,6 +50,14 @@ const eventColors: Record<string, string> = {
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
+function formatTime12h(time: string): string {
+  if (!time) return ''
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return `${period} ${hour}:${m.toString().padStart(2, '0')}`
+}
+
 export default function SchedulePage() {
   const { schedules, addSchedule, deleteSchedule } = useStore()
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
@@ -58,7 +66,6 @@ export default function SchedulePage() {
   const [planName, setPlanName] = useState('')
   const [planDate, setPlanDate] = useState(new Date().toISOString().split('T')[0])
 
-  // ── 종목/인원 그리드 ────────────────────────────────
   const [grid, setGrid] = useState<GridState>(initGrid)
 
   function setGridCount(div: Division, colKey: string, val: number) {
@@ -94,7 +101,6 @@ export default function SchedulePage() {
     return result
   }, [grid])
 
-  // ── 멀티데이 운영 설정 ───────────────────────────────
   const [totalDays, setTotalDays] = useState(1)
   const [globalMinutesPerMatch, setGlobalMinutesPerMatch] = useState(30)
   const [globalBuffer, setGlobalBuffer] = useState(5)
@@ -113,13 +119,7 @@ export default function SchedulePage() {
         else {
           const baseDate = new Date(planDate)
           baseDate.setDate(baseDate.getDate() + i - 1)
-          next.push({
-            day: i,
-            date: baseDate.toISOString().split('T')[0],
-            startTime: '09:00',
-            endTime: '20:00',
-            courtCount: 4,
-          })
+          next.push({ day: i, date: baseDate.toISOString().split('T')[0], startTime: '09:00', endTime: '20:00', courtCount: 4 })
         }
       }
       return next
@@ -142,7 +142,6 @@ export default function SchedulePage() {
 
   const totalCapacity = dayCapacities.reduce((s, d) => s + d.capacity, 0)
 
-  // Smart preview — compute per-day plan
   const smartPreview = useMemo(() => {
     if (smartEvents.length === 0 || dayConfigs.length === 0) return null
     return previewSmartPlan(smartEvents, dayConfigs, globalMinutesPerMatch, globalBuffer)
@@ -150,35 +149,20 @@ export default function SchedulePage() {
 
   function handleGenerate() {
     if (!planName || smartEvents.length === 0) return
-
     const slots: ScheduleSlot[] = generateSmartSlots(smartEvents, dayConfigs, globalMinutesPerMatch, globalBuffer)
-
-    // Derive ScheduleEvent[] from smartEvents (one per event, matchCount = sum of all rounds)
     const derivedEvents: ScheduleEvent[] = smartEvents.map(se => {
       const rounds = calcRoundsFromParticipants(se)
       const totalMatches = rounds.reduce((s, r) => s + r.matchCount, 0)
       return {
-        id: se.id,
-        label: se.label,
-        division: se.division,
-        eventType: se.eventType,
-        gender: se.gender,
-        matchCount: totalMatches,
-        minutesPerMatch: globalMinutesPerMatch,
-        courtCount: dayConfigs[0]?.courtCount ?? 4,
-        bufferMinutes: globalBuffer,
-        type: 'match' as const,
+        id: se.id, label: se.label, division: se.division, eventType: se.eventType,
+        gender: se.gender, matchCount: totalMatches, minutesPerMatch: globalMinutesPerMatch,
+        courtCount: dayConfigs[0]?.courtCount ?? 4, bufferMinutes: globalBuffer, type: 'match' as const,
       }
     })
-
     const plan: SchedulePlan = {
-      id: genId(),
-      name: planName,
-      date: planDate,
+      id: genId(), name: planName, date: planDate,
       startTime: dayConfigs[0]?.startTime ?? '09:00',
-      events: derivedEvents,
-      slots,
-      createdAt: new Date().toISOString(),
+      events: derivedEvents, slots, createdAt: new Date().toISOString(),
     }
     addSchedule(plan)
     setSelectedId(plan.id)
@@ -193,70 +177,65 @@ export default function SchedulePage() {
 
   if (view === 'create') {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setView('list')} className="btn-secondary py-1.5 text-sm">← 목록</button>
-          <h1 className="text-xl font-bold">경기일정 생성</h1>
+      <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+        <div className="flex-shrink-0 bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3">
+          <button onClick={() => setView('list')} className="btn-secondary py-1.5 text-sm flex items-center gap-1">
+            <ChevronLeft size={14} /> 목록
+          </button>
+          <h1 className="text-lg font-bold">경기일정 생성</h1>
         </div>
 
-        {/* Section 1 - 기본 정보 */}
-        <div className="card space-y-4">
-          <h2 className="font-semibold text-gray-700">① 기본 정보</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-1">
-              <label className="text-sm font-medium text-gray-700 block mb-1">일정표 이름 *</label>
-              <input className="input" placeholder="예: 2024 춘계 탁구대회 일정표" value={planName} onChange={e => setPlanName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">대회 시작 날짜</label>
-              <input className="input" type="date" value={planDate} onChange={e => {
-                setPlanDate(e.target.value)
-                updateDayCount(totalDays)
-              }} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">대회 일수</label>
-              <div className="flex items-center gap-2">
-                <input className="input w-20 text-center" type="number" min="1" max="7" value={totalDays}
-                  onChange={e => updateDayCount(Number(e.target.value))} />
-                <span className="text-sm text-gray-500">일 (최대 7일)</span>
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+          {/* ① 기본 정보 */}
+          <div className="card space-y-3">
+            <h2 className="font-semibold text-gray-700 text-sm">① 기본 정보</h2>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-1">
+                <label className="text-xs font-medium text-gray-600 block mb-1">일정표 이름 *</label>
+                <input className="input text-sm" placeholder="예: 2024 춘계 탁구대회" value={planName} onChange={e => setPlanName(e.target.value)} />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2 - 일자별 운영 시간 */}
-        <div className="card space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="font-semibold text-gray-700 flex items-center gap-2">
-              <Sun size={16} className="text-orange-500" /> ② 일자별 운영 시간 설정
-            </h2>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <label className="text-gray-600">경기당</label>
-                <input className="input w-16 text-center py-1 text-sm" type="number" min="10" max="120"
-                  value={globalMinutesPerMatch} onChange={e => setGlobalMinutesPerMatch(Number(e.target.value))} />
-                <span className="text-gray-500">분</span>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">대회 시작 날짜</label>
+                <input className="input text-sm" type="date" value={planDate} onChange={e => { setPlanDate(e.target.value); updateDayCount(totalDays) }} />
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-gray-600">여유</label>
-                <input className="input w-14 text-center py-1 text-sm" type="number" min="0" max="30"
-                  value={globalBuffer} onChange={e => setGlobalBuffer(Number(e.target.value))} />
-                <span className="text-gray-500">분</span>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">대회 일수</label>
+                <div className="flex items-center gap-2">
+                  <input className="input w-16 text-center text-sm" type="number" min="1" max="7" value={totalDays} onChange={e => updateDayCount(Number(e.target.value))} />
+                  <span className="text-sm text-gray-500">일 (최대 7일)</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* ② 일자별 운영 시간 */}
+          <div className="card space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+                <Sun size={14} className="text-orange-500" /> ② 일자별 운영 시간
+              </h2>
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-gray-600">경기당</label>
+                  <input className="input w-14 text-center py-1 text-sm" type="number" min="10" max="120" value={globalMinutesPerMatch} onChange={e => setGlobalMinutesPerMatch(Number(e.target.value))} />
+                  <span className="text-xs text-gray-500">분</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-gray-600">여유</label>
+                  <input className="input w-12 text-center py-1 text-sm" type="number" min="0" max="30" value={globalBuffer} onChange={e => setGlobalBuffer(Number(e.target.value))} />
+                  <span className="text-xs text-gray-500">분</span>
+                </div>
+              </div>
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 pr-3 font-medium text-gray-600 whitespace-nowrap">일차</th>
-                  <th className="text-left py-2 pr-3 font-medium text-gray-600">날짜</th>
-                  <th className="text-left py-2 pr-3 font-medium text-gray-600">시작</th>
-                  <th className="text-left py-2 pr-3 font-medium text-gray-600">종료</th>
-                  <th className="text-left py-2 pr-3 font-medium text-gray-600">코트 수</th>
-                  <th className="text-left py-2 font-medium text-gray-600">수용 경기</th>
+                  <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs whitespace-nowrap">일차</th>
+                  <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">날짜</th>
+                  <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">시작</th>
+                  <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">종료</th>
+                  <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">코트 수</th>
+                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">수용 경기</th>
                 </tr>
               </thead>
               <tbody>
@@ -264,29 +243,23 @@ export default function SchedulePage() {
                   const cap = calcDayCapacity(d, globalMinutesPerMatch, globalBuffer)
                   return (
                     <tr key={d.day} className="border-b last:border-0">
-                      <td className="py-2 pr-3">
+                      <td className="py-1.5 pr-3">
                         <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded text-xs">{d.day}일차</span>
                       </td>
-                      <td className="py-2 pr-3">
-                        <input className="input py-1 text-sm w-36" type="date" value={d.date ?? ''} onChange={e => updateDayConfig(d.day, 'date', e.target.value)} />
+                      <td className="py-1.5 pr-3">
+                        <input className="input py-1 text-sm w-32" type="date" value={d.date ?? ''} onChange={e => updateDayConfig(d.day, 'date', e.target.value)} />
                       </td>
-                      <td className="py-2 pr-3">
+                      <td className="py-1.5 pr-3">
                         <input className="input py-1 text-sm w-24" type="time" value={d.startTime} onChange={e => updateDayConfig(d.day, 'startTime', e.target.value)} />
                       </td>
-                      <td className="py-2 pr-3">
+                      <td className="py-1.5 pr-3">
                         <input className="input py-1 text-sm w-24" type="time" value={d.endTime} onChange={e => updateDayConfig(d.day, 'endTime', e.target.value)} />
                       </td>
-                      <td className="py-2 pr-3">
-                        <input className="input py-1 text-sm w-16 text-center" type="number" min="1" max="20" value={d.courtCount} onChange={e => updateDayConfig(d.day, 'courtCount', Number(e.target.value))} />
+                      <td className="py-1.5 pr-3">
+                        <input className="input py-1 text-sm w-14 text-center" type="number" min="1" max="20" value={d.courtCount} onChange={e => updateDayConfig(d.day, 'courtCount', Number(e.target.value))} />
                       </td>
-                      <td className="py-2">
-                        <span className="font-bold text-sm text-green-600">{cap}경기 가능</span>
-                        <div className="text-[10px] text-gray-400 mt-0.5">
-                          {d.courtCount}코트 × {Math.floor((
-                            parseInt(d.endTime.split(':')[0]) * 60 + parseInt(d.endTime.split(':')[1]) -
-                            parseInt(d.startTime.split(':')[0]) * 60 - parseInt(d.startTime.split(':')[1])
-                          ) / (globalMinutesPerMatch + globalBuffer))}슬롯
-                        </div>
+                      <td className="py-1.5">
+                        <span className="font-bold text-sm text-green-600">{cap}경기</span>
                       </td>
                     </tr>
                   )
@@ -294,229 +267,205 @@ export default function SchedulePage() {
               </tbody>
               <tfoot>
                 <tr className="border-t bg-gray-50">
-                  <td colSpan={5} className="py-2 pr-3 text-xs text-gray-500 font-medium">전체 합계</td>
-                  <td className="py-2">
-                    <span className="font-bold text-blue-700">{totalCapacity}경기 가능</span>
-                  </td>
+                  <td colSpan={5} className="py-1.5 pr-3 text-xs text-gray-500 font-medium">합계</td>
+                  <td className="py-1.5"><span className="font-bold text-blue-700 text-sm">{totalCapacity}경기</span></td>
                 </tr>
               </tfoot>
             </table>
           </div>
-        </div>
 
-        {/* Section 3 - 종목 및 인원 입력 (그리드) */}
-        <div className="card space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="font-semibold text-gray-700 flex items-center gap-2">
-              <Users size={16} className="text-blue-500" /> ③ 종목 및 인원 입력
-            </h2>
-            <p className="text-xs text-gray-400">인원 수 입력 시 라운드·경기 수 자동 계산 · 빈칸=미참가</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left py-2 px-3 font-medium text-gray-600 border border-gray-200 whitespace-nowrap w-[72px]">부문</th>
-                  <th className="text-center py-2 px-2 font-medium text-gray-600 border border-gray-200 whitespace-nowrap w-[110px]">대진방식</th>
-                  {GRID_COLS.map(col => (
-                    <th key={col.key} className="text-center py-2 px-1 font-medium text-gray-600 border border-gray-200 whitespace-nowrap min-w-[72px] text-xs">
-                      {col.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {DIVISIONS.map(div => {
-                  const row = grid[div]
-                  const rowHasAny = GRID_COLS.some(c => (row.counts[c.key] ?? 0) >= 2)
-                  return (
-                    <tr key={div} className={rowHasAny ? 'bg-blue-50/40' : ''}>
-                      <td className="py-2 px-3 border border-gray-200">
-                        <span className={`badge border text-xs ${divColors[div]}`}>{div}</span>
-                      </td>
-                      <td className="py-1.5 px-2 border border-gray-200">
-                        <select
-                          className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white"
-                          value={row.bracketFormat}
-                          onChange={e => setGridBracket(div, e.target.value as SmartBracketFormat)}
-                        >
-                          {(Object.keys(BRACKET_LABELS) as SmartBracketFormat[]).map(k => (
-                            <option key={k} value={k}>{BRACKET_LABELS[k]}</option>
-                          ))}
-                        </select>
-                      </td>
-                      {GRID_COLS.map(col => {
-                        const val = row.counts[col.key] ?? 0
-                        return (
-                          <td key={col.key} className="py-1 px-1.5 border border-gray-200 text-center">
-                            <input
-                              type="number" min="0" max="512"
-                              className={`w-[64px] text-center text-sm border rounded px-1 py-1 ${val >= 2 ? 'border-blue-300 bg-blue-50 font-medium text-blue-700' : 'border-gray-200 bg-white text-gray-300'}`}
-                              value={val || ''}
-                              placeholder="—"
-                              onChange={e => setGridCount(div, col.key, Number(e.target.value))}
-                            />
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-50">
-                  <td colSpan={2} className="py-2 px-3 text-xs text-gray-500 border border-gray-200 font-medium">참가 부문</td>
-                  {GRID_COLS.map(col => {
-                    const cnt = DIVISIONS.reduce((s, div) => s + ((grid[div].counts[col.key] ?? 0) >= 2 ? 1 : 0), 0)
+          {/* ③ 종목 및 인원 */}
+          <div className="card space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+                <Users size={14} className="text-blue-500" /> ③ 종목 및 인원
+              </h2>
+              <p className="text-xs text-gray-400">인원 수 입력 시 라운드·경기 수 자동 계산</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left py-1.5 px-2 font-medium text-gray-600 border border-gray-200 text-xs w-16">부문</th>
+                    <th className="text-center py-1.5 px-2 font-medium text-gray-600 border border-gray-200 text-xs w-24">대진방식</th>
+                    {GRID_COLS.map(col => (
+                      <th key={col.key} className="text-center py-1.5 px-1 font-medium text-gray-600 border border-gray-200 text-xs min-w-[60px]">
+                        {col.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {DIVISIONS.map(div => {
+                    const row = grid[div]
+                    const rowHasAny = GRID_COLS.some(c => (row.counts[c.key] ?? 0) >= 2)
                     return (
-                      <td key={col.key} className="py-2 px-1 border border-gray-200 text-center">
-                        {cnt > 0 && <span className="text-xs font-bold text-blue-600">{cnt}부문</span>}
-                      </td>
+                      <tr key={div} className={rowHasAny ? 'bg-blue-50/40' : ''}>
+                        <td className="py-1 px-2 border border-gray-200">
+                          <span className={`badge border text-xs ${divColors[div]}`}>{div}</span>
+                        </td>
+                        <td className="py-1 px-1.5 border border-gray-200">
+                          <select className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white"
+                            value={row.bracketFormat} onChange={e => setGridBracket(div, e.target.value as SmartBracketFormat)}>
+                            {(Object.keys(BRACKET_LABELS) as SmartBracketFormat[]).map(k => (
+                              <option key={k} value={k}>{BRACKET_LABELS[k]}</option>
+                            ))}
+                          </select>
+                        </td>
+                        {GRID_COLS.map(col => {
+                          const val = row.counts[col.key] ?? 0
+                          return (
+                            <td key={col.key} className="py-1 px-1 border border-gray-200 text-center">
+                              <input type="number" min="0" max="512"
+                                className={`w-14 text-center text-sm border rounded px-1 py-1 ${val >= 2 ? 'border-blue-300 bg-blue-50 font-medium text-blue-700' : 'border-gray-200 bg-white text-gray-300'}`}
+                                value={val || ''} placeholder="—"
+                                onChange={e => setGridCount(div, col.key, Number(e.target.value))}
+                              />
+                            </td>
+                          )
+                        })}
+                      </tr>
                     )
                   })}
-                </tr>
-              </tfoot>
-            </table>
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-50">
+                    <td colSpan={2} className="py-1.5 px-2 text-xs text-gray-500 border border-gray-200 font-medium">참가 부문</td>
+                    {GRID_COLS.map(col => {
+                      const cnt = DIVISIONS.reduce((s, div) => s + ((grid[div].counts[col.key] ?? 0) >= 2 ? 1 : 0), 0)
+                      return (
+                        <td key={col.key} className="py-1.5 px-1 border border-gray-200 text-center">
+                          {cnt > 0 && <span className="text-xs font-bold text-blue-600">{cnt}부문</span>}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            {smartEvents.length > 0 && (
+              <div className="text-xs text-gray-500 bg-blue-50 rounded-lg px-3 py-2 flex items-center gap-2">
+                <span>총</span>
+                <span className="font-bold text-blue-700">{smartEvents.length}개 종목</span>
+                <span>·</span>
+                <span className="font-bold text-blue-700">{smartEvents.reduce((s, e) => s + e.participantCount, 0)}명</span>
+                <span>참가</span>
+              </div>
+            )}
           </div>
-          {smartEvents.length > 0 && (
-            <div className="text-xs text-gray-500 bg-blue-50 rounded-lg px-3 py-2 flex items-center gap-2">
-              <span>총</span>
-              <span className="font-bold text-blue-700">{smartEvents.length}개 종목</span>
-              <span>·</span>
-              <span className="font-bold text-blue-700">{smartEvents.reduce((s, e) => s + e.participantCount, 0)}명</span>
-              <span>참가</span>
+
+          {/* ④ 미리보기 */}
+          {smartPreview && smartEvents.length > 0 && (
+            <div className="card space-y-3">
+              <h2 className="font-semibold text-gray-700 text-sm">📊 ④ 스마트 자동 배정 미리보기</h2>
+              <div className="space-y-3">
+                {smartPreview.map(dayPlan => {
+                  const dayConfig = dayConfigs.find(d => d.day === dayPlan.day)
+                  const pct = dayPlan.capacity > 0 ? Math.min(100, Math.round(dayPlan.assignedMatches / dayPlan.capacity * 100)) : 0
+                  const over = dayPlan.assignedMatches > dayPlan.capacity
+                  const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-orange-400' : 'bg-green-500'
+                  const textColor = over ? 'text-red-600' : pct >= 70 ? 'text-orange-600' : 'text-green-600'
+                  const byEvent = new Map<string, typeof dayPlan.rounds>()
+                  for (const r of dayPlan.rounds) {
+                    byEvent.set(r.eventLabel, [...(byEvent.get(r.eventLabel) ?? []), r])
+                  }
+                  return (
+                    <div key={dayPlan.day} className="border rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-bold text-purple-700 text-sm">{dayPlan.day}일차</span>
+                          {dayConfig?.date && <span className="text-xs text-gray-400 ml-2">({dayConfig.date})</span>}
+                        </div>
+                        <span className={`text-sm font-bold ${textColor}`}>
+                          {dayPlan.assignedMatches} / {dayPlan.capacity}경기{over && ' ⚠ 초과'}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      {dayPlan.rounds.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">배정된 라운드 없음</p>
+                      ) : (
+                        <div className="space-y-0.5">
+                          {Array.from(byEvent.entries()).map(([evLabel, rounds]) => (
+                            <div key={evLabel} className="text-xs text-gray-600">
+                              <span className="font-medium text-gray-700">{evLabel}</span>
+                              {' — '}
+                              {rounds.map(r => `${r.roundName} (${r.matchCount}경기)`).join(', ')}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {over && (
+                        <div className="text-xs text-red-600 bg-red-50 rounded px-2 py-1.5 border border-red-200">
+                          ⚠ 코트 수용 가능({dayPlan.capacity}경기)을 초과합니다. 코트 수 또는 운영 시간을 늘려주세요.
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Section 4 - 스마트 자동 배정 미리보기 */}
-        {smartPreview && smartEvents.length > 0 && (
-          <div className="card space-y-4">
-            <h2 className="font-semibold text-gray-700 flex items-center gap-2">
-              📊 ④ 스마트 자동 배정 미리보기
-            </h2>
-            <div className="space-y-4">
-              {smartPreview.map(dayPlan => {
-                const dayConfig = dayConfigs.find(d => d.day === dayPlan.day)
-                const pct = dayPlan.capacity > 0 ? Math.min(100, Math.round(dayPlan.assignedMatches / dayPlan.capacity * 100)) : 0
-                const over = dayPlan.assignedMatches > dayPlan.capacity
-                const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-orange-400' : 'bg-green-500'
-                const textColor = over ? 'text-red-600' : pct >= 70 ? 'text-orange-600' : 'text-green-600'
-
-                // Group rounds by event label
-                const byEvent = new Map<string, typeof dayPlan.rounds>()
-                for (const r of dayPlan.rounds) {
-                  const existing = byEvent.get(r.eventLabel) ?? []
-                  byEvent.set(r.eventLabel, [...existing, r])
-                }
-
-                return (
-                  <div key={dayPlan.day} className="border rounded-xl p-4 space-y-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <span className="font-bold text-purple-700 text-sm">{dayPlan.day}일차</span>
-                        {dayConfig?.date && (
-                          <span className="text-xs text-gray-400 ml-2">({dayConfig.date})</span>
-                        )}
-                      </div>
-                      <span className={`text-sm font-bold ${textColor}`}>
-                        {dayPlan.assignedMatches} / {dayPlan.capacity}경기
-                        {over && ' ⚠ 초과'}
-                      </span>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${barColor}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-
-                    {/* Round list grouped by event */}
-                    {dayPlan.rounds.length === 0 ? (
-                      <p className="text-xs text-gray-400 italic">배정된 라운드 없음</p>
-                    ) : (
-                      <div className="space-y-1">
-                        {Array.from(byEvent.entries()).map(([evLabel, rounds]) => (
-                          <div key={evLabel} className="text-xs text-gray-600">
-                            <span className="font-medium text-gray-700">{evLabel}</span>
-                            {' — '}
-                            {rounds.map(r => `${r.roundName} (${r.matchCount}경기)`).join(', ')}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {over && (
-                      <div className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
-                        ⚠ 이 날의 경기 수가 코트 수용 가능 경기({dayPlan.capacity}경기)를 초과합니다. 코트 수를 늘리거나 운영 시간을 늘려주세요.
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+          <div className="flex gap-2 pb-2">
+            <button className="btn-primary flex-1 text-base" onClick={handleGenerate} disabled={!planName || smartEvents.length === 0}>
+              📅 일정표 자동생성
+            </button>
+            <button className="btn-secondary" onClick={() => setView('list')}>취소</button>
           </div>
-        )}
-
-        <div className="flex gap-2">
-          <button
-            className="btn-primary flex-1 text-base"
-            onClick={handleGenerate}
-            disabled={!planName || smartEvents.length === 0}
-          >
-            📅 일정표 자동생성
-          </button>
-          <button className="btn-secondary" onClick={() => setView('list')}>취소</button>
         </div>
       </div>
     )
   }
 
+  // List view
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold flex items-center gap-2"><Calendar size={20} className="text-purple-500" />경기 일정표</h1>
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+        <h1 className="text-xl font-bold flex items-center gap-2">
+          <Calendar size={20} className="text-purple-500" />경기 일정표
+        </h1>
         <button onClick={() => setView('create')} className="btn-primary flex items-center gap-1.5">
           <Plus size={15} /> 일정 생성
         </button>
       </div>
-
-      {schedules.length === 0 ? (
-        <div className="card text-center py-16">
-          <Calendar size={48} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-400 mb-4">생성된 일정표가 없습니다</p>
-          <button onClick={() => setView('create')} className="btn-primary">첫 일정표 만들기</button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {schedules.map(s => (
-            <div key={s.id} className="card hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setSelectedId(s.id); setView('detail') }}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{s.name}</h3>
-                  <p className="text-xs text-gray-400 mt-1">{s.date} · 시작 {s.startTime}</p>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        {schedules.length === 0 ? (
+          <div className="card text-center py-16">
+            <Calendar size={48} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-gray-400 mb-4">생성된 일정표가 없습니다</p>
+            <button onClick={() => setView('create')} className="btn-primary">첫 일정표 만들기</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {schedules.map(s => (
+              <div key={s.id} className="card hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setSelectedId(s.id); setView('detail') }}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold">{s.name}</h3>
+                    <p className="text-xs text-gray-400 mt-1">{s.date} · {formatTime12h(s.startTime)} 시작</p>
+                  </div>
+                  <span className="badge bg-purple-100 text-purple-700">{s.slots.length}경기</span>
                 </div>
-                <span className="badge bg-purple-100 text-purple-700">{s.slots.length}경기</span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1">
-                {s.events.map(e => (
-                  <span key={e.id} className={`badge border text-xs ${e.type && e.type !== 'match' ? 'bg-gray-100 text-gray-600 border-gray-200' : divColors[e.division]}`}>
-                    {e.type && e.type !== 'match' ? e.label : `${e.division} ${e.eventType}`}
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {s.events.map(e => (
+                    <span key={e.id} className={`badge border text-xs ${e.type && e.type !== 'match' ? 'bg-gray-100 text-gray-600 border-gray-200' : divColors[e.division]}`}>
+                      {e.type && e.type !== 'match' ? e.label : `${e.division} ${e.eventType}`}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">
+                    {s.slots.length > 0 ? `코트 ${Math.max(...s.slots.map(sl => sl.courtNo))}개` : '특별일정만'}
                   </span>
-                ))}
+                  <button onClick={ev => { ev.stopPropagation(); deleteSchedule(s.id) }} className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded">삭제</button>
+                </div>
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-xs text-gray-400">
-                  {s.slots.length > 0 ? `코트 ${Math.max(...s.slots.map(sl => sl.courtNo))}개` : '특별일정만'}
-                </span>
-                <button onClick={ev => { ev.stopPropagation(); deleteSchedule(s.id) }} className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded">삭제</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -528,17 +477,12 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
   const [assignTourId, setAssignTourId] = useState<string>('')
   const [assignResult, setAssignResult] = useState<string | null>(null)
 
-  const courts = [...new Set(plan.slots.map(s => s.courtNo))].sort()
-  void courts
-
-  // Detect days
   const days = [...new Set([
     ...plan.slots.map(s => s.day ?? 1),
     ...plan.events.map(e => e.day ?? 1),
   ])].sort()
   const hasMultipleDays = days.length > 1
 
-  // Filter slots by active day
   const filteredSlots = activeDay !== null
     ? plan.slots.filter(s => (s.day ?? 1) === activeDay)
     : plan.slots
@@ -547,10 +491,8 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
   const filteredTimes = [...new Set(filteredSlots.map(s => s.startTime))].sort()
   const byTime = filteredTimes.map(t => ({ time: t, slots: filteredSlots.filter(s => s.startTime === t) }))
 
-  // Special events for current day
   const specialEvents = plan.events.filter(e =>
-    e.type && e.type !== 'match' &&
-    (activeDay === null || (e.day ?? 1) === activeDay)
+    e.type && e.type !== 'match' && (activeDay === null || (e.day ?? 1) === activeDay)
   )
 
   const endTime = plan.slots.reduce((latest, s) => s.endTime > latest ? s.endTime : latest, '')
@@ -558,17 +500,12 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
   function exportScheduleCSV() {
     const rows = ['날짜,시작,종료,코트,종목,선수1,선수2,라운드']
     for (const slot of filteredSlots) {
-      rows.push([
-        plan.date, slot.startTime, slot.endTime, `${slot.courtNo}번`,
-        slot.label, slot.participant1 ?? '', slot.participant2 ?? '', slot.round ?? ''
-      ].join(','))
+      rows.push([plan.date, slot.startTime, slot.endTime, `${slot.courtNo}번`, slot.label, slot.participant1 ?? '', slot.participant2 ?? '', slot.round ?? ''].join(','))
     }
     const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = `경기일정_${plan.name}_${plan.date}.csv`
-    a.click()
+    a.href = url; a.download = `경기일정_${plan.name}_${plan.date}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -577,12 +514,10 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
     return eventColors[slot.eventType] ?? 'bg-gray-400'
   }
 
-  // ── 대회 경기에 시간 배정 ──────────────────────────────
   function handleAssignTimes() {
     if (!assignTourId) return
     const tour = tournaments.find(t => t.id === assignTourId)
     if (!tour) return
-
     const pendingMatches: Array<{ evId: string; matchId: string }> = []
     for (const ev of tour.events) {
       for (const m of ev.matches) {
@@ -591,164 +526,141 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
         }
       }
     }
-
     const matchSlots = plan.slots.filter(s => !s.type || s.type === 'match')
     const assigned = Math.min(pendingMatches.length, matchSlots.length)
     if (assigned === 0) { setAssignResult('배정할 경기 또는 슬롯이 없습니다.'); return }
-
-    const newEvents = tour.events.map(ev => {
-      const newMatches = ev.matches.map(m => {
+    const newEvents = tour.events.map(ev => ({
+      ...ev,
+      matches: ev.matches.map(m => {
         const idx = pendingMatches.findIndex(pm => pm.evId === ev.id && pm.matchId === m.id)
         if (idx < 0 || idx >= matchSlots.length) return m
         const slot = matchSlots[idx]
-        return {
-          ...m,
-          scheduledTime: slot.startTime,
-          tableNo: slot.courtNo,
-        }
+        return { ...m, scheduledTime: slot.startTime, tableNo: slot.courtNo }
       })
-      return { ...ev, matches: newMatches }
-    })
-
+    }))
     updateTournament(assignTourId, { events: newEvents })
     setAssignResult(`${assigned}개 경기에 시간이 배정되었습니다.`)
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3 no-print">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="btn-secondary py-1.5 text-sm">← 목록</button>
-          <div>
-            <h1 className="text-xl font-bold">{plan.name}</h1>
-            <p className="text-sm text-gray-400">{plan.date} · 시작 {plan.startTime} ~ 종료 {endTime}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 no-print">
-          <button onClick={() => setViewMode('time')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${viewMode === 'time' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>시간순</button>
-          <button onClick={() => setViewMode('court')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
-          <button onClick={exportScheduleCSV} className="btn-secondary flex items-center gap-1.5"><Download size={14} /> CSV</button>
-          <button onClick={() => window.print()} className="btn-secondary flex items-center gap-1.5"><Printer size={14} /> 인쇄</button>
-        </div>
-      </div>
-
-      {/* Day tabs */}
-      {hasMultipleDays && (
-        <div className="flex gap-2 flex-wrap no-print">
-          <button onClick={() => setActiveDay(null)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${activeDay === null ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-            전체
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+      {/* Header */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-2.5 flex items-center justify-between gap-3 no-print">
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={onBack} className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 flex-shrink-0">
+            <ChevronLeft size={13} /> 목록
           </button>
-          {days.map(d => (
-            <button key={d} onClick={() => setActiveDay(d)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${activeDay === d ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-              {d}일차
-            </button>
-          ))}
+          <div className="min-w-0">
+            <h1 className="font-bold text-base truncate leading-tight">{plan.name}</h1>
+            <p className="text-xs text-gray-400">{plan.date} · {formatTime12h(plan.startTime)} ~ {formatTime12h(endTime)}</p>
+          </div>
         </div>
-      )}
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
-        <StatCard label="총 경기 수" value={`${filteredSlots.length}경기`} icon="🏓" />
-        <StatCard label="코트 수" value={`${filteredCourts.length}개`} icon="🏟️" />
-        <StatCard label="종목 수" value={`${plan.events.length}개`} icon="📋" />
-        <StatCard label="예상 종료" value={endTime || '-'} icon="⏰" />
-      </div>
-
-      {/* Assign times to tournament matches */}
-      {tournaments.length > 0 && (
-        <div className="card no-print space-y-3">
-          <h3 className="font-semibold text-gray-700 text-sm flex items-center gap-2"><Link size={14} /> 대회 경기에 시간 배정</h3>
-          <div className="flex gap-2 items-center flex-wrap">
-            <select
-              className="select flex-1 min-w-40"
-              value={assignTourId}
-              onChange={e => { setAssignTourId(e.target.value); setAssignResult(null) }}
-            >
-              <option value="">대회 선택...</option>
-              {tournaments.map(t => (
-                <option key={t.id} value={t.id}>{t.name} ({t.date})</option>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {hasMultipleDays && (
+            <div className="flex gap-1 mr-1">
+              <button onClick={() => setActiveDay(null)} className={`px-2 py-1 rounded text-xs font-medium ${activeDay === null ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>전체</button>
+              {days.map(d => (
+                <button key={d} onClick={() => setActiveDay(d)} className={`px-2 py-1 rounded text-xs font-medium ${activeDay === d ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{d}일차</button>
               ))}
-            </select>
-            <button
-              className="btn-primary flex items-center gap-1.5 text-sm py-1.5"
-              onClick={handleAssignTimes}
-              disabled={!assignTourId}
-            >
-              <Clock size={13} /> 시간 자동배정
-            </button>
-          </div>
-          {assignResult && (
-            <p className="text-sm text-green-600 font-medium">{assignResult}</p>
-          )}
-          {assignTourId && (
-            <p className="text-xs text-gray-400">
-              이 일정표의 슬롯을 선택한 대회의 미배정 경기(scheduledTime 없는 경기)에 순서대로 배정합니다.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Special events for the day */}
-      {specialEvents.length > 0 && (
-        <div className="card no-print">
-          <h3 className="font-semibold text-gray-700 mb-3 text-sm">특별 일정</h3>
-          <div className="flex flex-wrap gap-3">
-            {specialEvents.map(e => (
-              <div key={e.id} className="flex items-center gap-2 bg-gray-50 border rounded-lg px-3 py-2">
-                <div className={`w-2 h-2 rounded-full ${eventColors[e.type ?? 'break']}`} />
-                <span className="text-sm font-medium">{e.label}</span>
-                <span className="text-xs text-gray-400">{e.minutesPerMatch}분</span>
-                {e.day && hasMultipleDays && <span className="text-xs text-gray-300">{e.day}일차</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Legend */}
-      <div className="card no-print">
-        <div className="flex flex-wrap gap-3">
-          {plan.events.filter(e => !e.type || e.type === 'match').map(e => (
-            <div key={e.id} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${eventColors[e.eventType] ?? 'bg-gray-400'}`} />
-              <span className={`badge border ${divColors[e.division]}`}>{e.division} {e.eventType}({e.gender})</span>
-              <span className="text-xs text-gray-400">{e.minutesPerMatch}분</span>
             </div>
-          ))}
+          )}
+          <button onClick={() => setViewMode('time')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'time' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>시간순</button>
+          <button onClick={() => setViewMode('court')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
+          <button onClick={exportScheduleCSV} className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1"><Download size={12} /> CSV</button>
+          <button onClick={() => window.print()} className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1"><Printer size={12} /> 인쇄</button>
         </div>
       </div>
 
-      {/* Time Table */}
-      {viewMode === 'time' && (
-        <div className="card p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+      {/* Stats bar */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-6 no-print">
+        <StatMini label="총 경기" value={`${filteredSlots.length}경기`} />
+        <StatMini label="코트 수" value={`${filteredCourts.length}개`} />
+        <StatMini label="종목 수" value={`${plan.events.length}개`} />
+        <StatMini label="예상 종료" value={formatTime12h(endTime) || '-'} />
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 min-h-0 flex overflow-hidden">
+        {/* Left sidebar */}
+        <div className="w-52 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-y-auto no-print">
+          {/* Legend */}
+          <div className="p-3 border-b border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-500 mb-2">종목 범례</h4>
+            <div className="space-y-1.5">
+              {plan.events.filter(e => !e.type || e.type === 'match').map(e => (
+                <div key={e.id} className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${eventColors[e.eventType] ?? 'bg-gray-400'}`} />
+                  <span className={`badge border text-[10px] ${divColors[e.division]}`}>{e.division} {e.eventType}({e.gender})</span>
+                  <span className="text-[10px] text-gray-400 ml-auto">{e.minutesPerMatch}분</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Special events */}
+          {specialEvents.length > 0 && (
+            <div className="p-3 border-b border-gray-100">
+              <h4 className="text-xs font-semibold text-gray-500 mb-2">특별 일정</h4>
+              <div className="space-y-1">
+                {specialEvents.map(e => (
+                  <div key={e.id} className="flex items-center gap-1.5 bg-gray-50 rounded px-2 py-1">
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${eventColors[e.type ?? 'break']}`} />
+                    <span className="text-xs">{e.label}</span>
+                    <span className="text-[10px] text-gray-400 ml-auto">{e.minutesPerMatch}분</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Assign to tournament */}
+          {tournaments.length > 0 && (
+            <div className="p-3">
+              <h4 className="text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1">
+                <Link size={11} /> 대회 경기 배정
+              </h4>
+              <select className="select text-xs w-full mb-2" value={assignTourId}
+                onChange={e => { setAssignTourId(e.target.value); setAssignResult(null) }}>
+                <option value="">대회 선택...</option>
+                {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <button className="btn-primary w-full text-xs py-1.5 flex items-center justify-center gap-1"
+                onClick={handleAssignTimes} disabled={!assignTourId}>
+                <Clock size={11} /> 시간 자동배정
+              </button>
+              {assignResult && <p className="text-xs text-green-600 mt-1.5">{assignResult}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 overflow-auto p-3">
+          {viewMode === 'time' && (
+            <table className="text-sm border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
+              <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="py-3 px-4 text-left font-semibold text-gray-600 w-24">시간</th>
+                  <th className="py-2 px-3 text-left font-semibold text-gray-600 w-24 border border-gray-200 bg-gray-100 whitespace-nowrap">시간</th>
                   {filteredCourts.map(c => (
-                    <th key={c} className="py-3 px-4 text-center font-semibold text-gray-600 min-w-32">코트 {c}</th>
+                    <th key={c} className="py-2 px-2 text-center font-semibold text-gray-600 min-w-[120px] border border-gray-200 bg-gray-100 whitespace-nowrap">코트 {c}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {byTime.map(({ time, slots }) => (
-                  <tr key={time} className="border-b last:border-0">
-                    <td className="py-3 px-4 font-mono text-gray-500 font-medium align-top">{time}</td>
+                  <tr key={time}>
+                    <td className="py-2 px-3 font-mono text-xs text-blue-700 font-semibold align-top border border-gray-200 whitespace-nowrap bg-blue-50">{formatTime12h(time)}</td>
                     {filteredCourts.map(c => {
                       const slot = slots.find(s => s.courtNo === c)
-                      if (!slot) return <td key={c} className="py-3 px-4" />
+                      if (!slot) return <td key={c} className="py-2 px-2 border border-gray-100 bg-white" />
                       return (
-                        <td key={c} className="py-2 px-3">
-                          <div className={`rounded-lg p-2 border ${divColors[slot.division]}`}>
-                            <div className="flex items-center gap-1 mb-1">
-                              <div className={`w-2 h-2 rounded-full ${slotEventColors(slot)}`} />
-                              <span className="font-medium text-xs">{slot.division} {slot.eventType}</span>
+                        <td key={c} className="py-1.5 px-2 border border-gray-100">
+                          <div className={`rounded p-1.5 border ${divColors[slot.division]}`}>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
+                              <span className="font-semibold text-[11px]">{slot.division} {slot.eventType}</span>
                             </div>
-                            <div className="text-xs text-gray-500">{slot.gender} · {slot.matchNo}번째 경기</div>
-                            <div className="text-xs text-gray-400 mt-0.5">{slot.startTime}~{slot.endTime}</div>
+                            <div className="text-[10px] text-gray-500">{slot.gender} · {slot.matchNo}번</div>
+                            <div className="text-[10px] text-gray-400">{formatTime12h(slot.startTime)}~{formatTime12h(slot.endTime)}</div>
                           </div>
                         </td>
                       )
@@ -757,49 +669,57 @@ function ScheduleDetail({ plan, onBack }: { plan: SchedulePlan; onBack: () => vo
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
+          )}
 
-      {viewMode === 'court' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCourts.map(c => {
-            const courtSlots = filteredSlots.filter(s => s.courtNo === c).sort((a, b) => a.startTime.localeCompare(b.startTime))
-            return (
-              <div key={c} className="card">
-                <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <Building2 size={16} /> 코트 {c}
-                  <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
-                </h3>
-                <div className="space-y-2">
-                  {courtSlots.map(slot => (
-                    <div key={slot.id} className={`flex gap-2 p-2 rounded-lg border ${divColors[slot.division]}`}>
-                      <div className="font-mono text-xs text-gray-500 w-10 flex-shrink-0 pt-0.5">{slot.startTime}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
-                          <span className="font-medium text-xs">{slot.division} {slot.eventType}({slot.gender})</span>
+          {viewMode === 'court' && (
+            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+              {filteredCourts.map(c => {
+                const courtSlots = filteredSlots.filter(s => s.courtNo === c).sort((a, b) => a.startTime.localeCompare(b.startTime))
+                return (
+                  <div key={c} className="card">
+                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm">
+                      <Building2 size={14} /> 코트 {c}
+                      <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
+                    </h3>
+                    <div className="space-y-1.5">
+                      {courtSlots.map(slot => (
+                        <div key={slot.id} className={`flex gap-2 p-1.5 rounded border ${divColors[slot.division]}`}>
+                          <div className="font-mono text-[11px] text-blue-700 font-semibold w-16 flex-shrink-0 pt-0.5">{formatTime12h(slot.startTime)}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
+                              <span className="font-medium text-[11px]">{slot.division} {slot.eventType}({slot.gender})</span>
+                            </div>
+                            <div className="text-[10px] text-gray-400">~{formatTime12h(slot.endTime)} · {slot.matchNo}번</div>
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-400">~{slot.endTime} · {slot.matchNo}번</div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {filteredSlots.length === 0 && (
+            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+              <div className="text-center">
+                <Calendar size={40} className="mx-auto mb-2 opacity-30" />
+                <p>이 날의 배정된 경기가 없습니다</p>
               </div>
-            )
-          })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: string }) {
+function StatMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card text-center py-4">
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="font-bold text-gray-700">{value}</div>
-      <div className="text-xs text-gray-400">{label}</div>
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-gray-400">{label}</span>
+      <span className="font-bold text-sm text-gray-700">{value}</span>
     </div>
   )
 }

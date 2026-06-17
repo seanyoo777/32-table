@@ -240,7 +240,7 @@ export default function Rankings() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold flex items-center gap-2"><Trophy size={20} className="text-yellow-500" />랭킹 관리</h1>
