@@ -232,7 +232,7 @@ export default function Home() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold text-blue-600 text-sm">{p.points.toLocaleString()}P</div>
-                      <div className="text-xs text-gray-400">{p.wins}승 {p.losses}패</div>
+                      <div className="text-xs text-gray-500 font-mono">Elo {p.rating}</div>
                     </div>
                   </div>
                 ))}

@@ -318,8 +318,6 @@ export default function PublicTournament() {
               {liveTournamentMatches.map(lm => {
                 const p1 = pMap[lm.participant1Id]
                 const p2 = pMap[lm.participant2Id]
-                const p1Sets = lm.completedSets.filter(([a, b]) => a > b).length + (lm.currentSetScore[0] > lm.currentSetScore[1] ? 0 : 0)
-                const p2Sets = lm.completedSets.filter(([a, b]) => b > a).length
                 const p1Total = lm.completedSets.filter(([a, b]) => a > b).length
                 const p2Total = lm.completedSets.filter(([a, b]) => b > a).length
                 return (
