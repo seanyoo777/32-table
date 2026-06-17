@@ -53,7 +53,7 @@ function genId() { return Math.random().toString(36).slice(2, 10) }
 function formatTime12h(time: string): string {
   if (!time) return ''
   const [h, m] = time.split(':').map(Number)
-  const period = h >= 12 ? 'PM' : 'AM'
+  const period = h >= 12 ? '오후' : '오전'
   const hour = h === 0 ? 12 : h > 12 ? h - 12 : h
   return `${period} ${hour}:${m.toString().padStart(2, '0')}`
 }
@@ -250,10 +250,20 @@ export default function SchedulePage() {
                         <input className="input py-1 text-sm w-32" type="date" value={d.date ?? ''} onChange={e => updateDayConfig(d.day, 'date', e.target.value)} />
                       </td>
                       <td className="py-1.5 pr-3">
-                        <input className="input py-1 text-sm w-24" type="time" value={d.startTime} onChange={e => updateDayConfig(d.day, 'startTime', e.target.value)} />
+                        <div className="flex items-center gap-1.5">
+                          <input className="input py-1 text-sm w-24" type="time" value={d.startTime} onChange={e => updateDayConfig(d.day, 'startTime', e.target.value)} />
+                          <span className={`text-xs font-medium whitespace-nowrap px-1.5 py-0.5 rounded ${Number(d.startTime.split(':')[0]) >= 12 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'}`}>
+                            {formatTime12h(d.startTime)}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-1.5 pr-3">
-                        <input className="input py-1 text-sm w-24" type="time" value={d.endTime} onChange={e => updateDayConfig(d.day, 'endTime', e.target.value)} />
+                        <div className="flex items-center gap-1.5">
+                          <input className="input py-1 text-sm w-24" type="time" value={d.endTime} onChange={e => updateDayConfig(d.day, 'endTime', e.target.value)} />
+                          <span className={`text-xs font-medium whitespace-nowrap px-1.5 py-0.5 rounded ${Number(d.endTime.split(':')[0]) >= 12 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'}`}>
+                            {formatTime12h(d.endTime)}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-1.5 pr-3">
                         <input className="input py-1 text-sm w-14 text-center" type="number" min="1" max="20" value={d.courtCount} onChange={e => updateDayConfig(d.day, 'courtCount', Number(e.target.value))} />
