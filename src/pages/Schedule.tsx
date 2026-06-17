@@ -181,6 +181,13 @@ export default function SchedulePage() {
   )
 
   const totalCapacity = dayCapacities.reduce((s, d) => s + d.capacity, 0)
+  const totalRequiredMatches = useMemo(() =>
+    smartEvents.reduce((s, ev) => {
+      const rounds = calcRoundsFromParticipants(ev)
+      return s + rounds.reduce((rs, r) => rs + r.matchCount, 0)
+    }, 0),
+    [smartEvents]
+  )
 
   const smartPreview = useMemo(() => {
     if (smartEvents.length === 0 || dayConfigs.length === 0) return null
@@ -275,7 +282,7 @@ export default function SchedulePage() {
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">시작</th>
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">종료</th>
                   <th className="text-left py-1.5 pr-3 font-medium text-gray-600 text-xs">코트 수</th>
-                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">수용 경기</th>
+                  <th className="text-left py-1.5 font-medium text-gray-600 text-xs">최대 수용 경기<br/><span className="text-[10px] text-gray-400 font-normal">(코트×시간슬롯)</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -317,8 +324,17 @@ export default function SchedulePage() {
               </tbody>
               <tfoot>
                 <tr className="border-t bg-gray-50">
-                  <td colSpan={5} className="py-1.5 pr-3 text-xs text-gray-500 font-medium">합계</td>
-                  <td className="py-1.5"><span className="font-bold text-blue-700 text-sm">{totalCapacity}경기</span></td>
+                  <td colSpan={5} className="py-2 pr-3 text-xs text-gray-500 font-medium">합계 (전체 일차)</td>
+                  <td className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-bold text-sm text-green-600">수용 {totalCapacity}경기</span>
+                      {totalRequiredMatches > 0 && (
+                        <span className={`text-xs font-semibold ${totalRequiredMatches > totalCapacity ? 'text-red-600' : 'text-blue-600'}`}>
+                          필요 {totalRequiredMatches}경기{totalRequiredMatches > totalCapacity ? ' ⚠ 초과' : ' ✓'}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               </tfoot>
             </table>
