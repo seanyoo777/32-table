@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { ClipboardList, Check, X, Zap, Keyboard } from 'lucide-react'
 import type { ScoreRecord, MatchResult, MatchFormat, LiveMatch } from '../types'
@@ -13,9 +13,9 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
   const { tournaments, players, pairs, teams, liveMatches, setLiveMatch, removeLiveMatch, recordMatchResult, addScoreRecord, addPlayerPoints, updatePlayerRating } = useStore()
 
   const pMap = Object.fromEntries([
-    ...players.map(p => [p.id, { name: p.name, school: p.school }]),
-    ...pairs.map(p => [p.id, { name: p.name, school: p.school }]),
-    ...teams.map(t => [t.id, { name: t.name, school: t.school }]),
+    ...players.map(p => [p.id, { name: p.name, school: p.school, photoUrl: p.photoUrl }]),
+    ...pairs.map(p => [p.id, { name: p.name, school: p.school, photoUrl: undefined }]),
+    ...teams.map(t => [t.id, { name: t.name, school: t.school, photoUrl: undefined }]),
   ])
 
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
@@ -144,6 +144,20 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
     return `R${round}`
   }
 
+  // Keyboard shortcuts: [ = P1+1, ] = P2+1, z = P1 undo, x = P2 undo
+  useEffect(() => {
+    if (!activeLM) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
+      if (e.key === '[') addPoint(activeLM, 0)
+      else if (e.key === ']') addPoint(activeLM, 1)
+      else if (e.key === 'z') undoPoint(activeLM, 0)
+      else if (e.key === 'x') undoPoint(activeLM, 1)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [activeLM])
+
   // suppress unused warning
   void p1; void p2; void setsToWin; void onClose
 
@@ -226,6 +240,9 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
             <div className="flex items-center gap-2">
               <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium animate-pulse">LIVE</span>
               <span className="text-sm text-gray-500">탁구대 {activeLM.tableNo}번 · {activeLM.matchFormat.sets}세트제 {activeLM.matchFormat.pointsPerGame}점</span>
+              <span className="hidden sm:inline text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded font-mono">
+                <Keyboard size={10} className="inline mr-1" />[ ] 점수 · z x 취소
+              </span>
             </div>
             <button onClick={() => removeLiveMatch(activeLM.matchId)} className="text-xs text-red-400 hover:text-red-600 border border-red-200 px-2 py-1 rounded">
               경기 취소
@@ -267,6 +284,9 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
                 <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${servicePlayer === 0 ? 'bg-blue-100 text-blue-700' : 'text-gray-400'}`}>
                   {servicePlayer === 0 ? '🏓 서브' : '리시브'}
                 </div>
+                {pMap[activeLM.participant1Id]?.photoUrl && (
+                  <img src={pMap[activeLM.participant1Id].photoUrl!} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-blue-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                )}
                 <div className="font-semibold text-sm text-gray-700 truncate max-w-full text-center">
                   {pMap[activeLM.participant1Id]?.name ?? '선수1'}
                 </div>
@@ -290,6 +310,9 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
                 <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${servicePlayer === 1 ? 'bg-red-100 text-red-700' : 'text-gray-400'}`}>
                   {servicePlayer === 1 ? '🏓 서브' : '리시브'}
                 </div>
+                {pMap[activeLM.participant2Id]?.photoUrl && (
+                  <img src={pMap[activeLM.participant2Id].photoUrl!} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-red-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                )}
                 <div className="font-semibold text-sm text-gray-700 truncate max-w-full text-center">
                   {pMap[activeLM.participant2Id]?.name ?? '선수2'}
                 </div>
