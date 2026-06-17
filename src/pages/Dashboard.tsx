@@ -2,17 +2,25 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Play, Clock, CheckCircle, Trophy, Bell, BellOff, X, AlertTriangle, Download } from 'lucide-react'
-import type { MatchCall, ScoreRecord } from '../types'
+import type { MatchCall, ScoreRecord, Tournament } from '../types'
 
-function exportScoreRecordsCSV(records: ScoreRecord[], pMap: Record<string, { name: string; school: string }>) {
-  const rows = ['일시,선수1,선수2,세트스코어,검증여부']
+function exportScoreRecordsCSV(records: ScoreRecord[], pMap: Record<string, { name: string; school: string }>, tournaments: Tournament[]) {
+  const tourMap: Record<string, string> = {}
+  const eventMap: Record<string, string> = {}
+  for (const t of tournaments) {
+    tourMap[t.id] = t.name
+    for (const ev of t.events) eventMap[t.id + '|' + ev.id] = ev.label
+  }
+  const rows = ['일시,대회명,종목,선수1,선수2,세트스코어,입력자,검증여부']
   for (const r of [...records].reverse()) {
     const p1 = pMap[r.participant1Id]?.name ?? r.participant1Id
     const p2 = pMap[r.participant2Id]?.name ?? r.participant2Id
     const score = `${r.p1Score}-${r.p2Score}`
     const verified = r.verified ? '확인' : '미확인'
     const at = new Date(r.recordedAt).toLocaleString('ko-KR')
-    rows.push([at, p1, p2, score, verified].join(','))
+    const tourName = tourMap[r.tournamentId] ?? ''
+    const evLabel = eventMap[r.tournamentId + '|' + r.eventId] ?? ''
+    rows.push([at, tourName, evLabel, p1, p2, score, r.recordedBy ?? '', verified].join(','))
   }
   const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -103,7 +111,7 @@ export default function DashboardPage() {
         </h1>
         <div className="flex items-center gap-3">
           {scoreRecords.length > 0 && (
-            <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap)}
+            <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap, tournaments)}
               className="btn-secondary text-sm flex items-center gap-1.5">
               <Download size={14} /> 기록 CSV
             </button>
@@ -140,7 +148,7 @@ export default function DashboardPage() {
                 className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-colors">
                 전체 확인 처리
               </button>
-              <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap)}
+              <button onClick={() => exportScoreRecordsCSV(scoreRecords, pMap, tournaments)}
                 className="px-3 py-1.5 bg-white border border-amber-300 text-amber-700 text-xs font-medium rounded-lg hover:bg-amber-50 flex items-center gap-1 transition-colors">
                 <Download size={12} /> 기록 CSV
               </button>
