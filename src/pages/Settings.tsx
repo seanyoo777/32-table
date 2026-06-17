@@ -4,7 +4,7 @@ import { Save, Download, Upload, Trash2, AlertTriangle, CheckCircle, Info, Datab
 
 export default function Settings() {
   const {
-    players, pairs, tournaments, schedules, scoreRecords,
+    players, pairs, teams, tournaments, schedules, scoreRecords,
     appSettings, updateAppSettings, resetAllData, restoreBackup,
   } = useStore()
 
@@ -25,7 +25,7 @@ export default function Settings() {
       version: '3.0',
       exportedAt: new Date().toISOString(),
       appSettings,
-      players, pairs, tournaments, schedules, scoreRecords,
+      players, pairs, teams, tournaments, schedules, scoreRecords,
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -61,10 +61,12 @@ export default function Settings() {
   const stats = [
     { label: '선수', value: players.length, color: 'text-blue-600' },
     { label: '복식 페어', value: pairs.length, color: 'text-purple-600' },
+    { label: '단체팀', value: teams.length, color: 'text-indigo-600' },
     { label: '대회', value: tournaments.length, color: 'text-green-600' },
     { label: '일정', value: schedules.length, color: 'text-orange-600' },
     { label: '점수 기록', value: scoreRecords.length, color: 'text-gray-600' },
     { label: '진행중 대회', value: tournaments.filter(t => t.status === 'ongoing').length, color: 'text-red-600' },
+    { label: '완료 대회', value: tournaments.filter(t => t.status === 'completed').length, color: 'text-teal-600' },
   ]
 
   return (
