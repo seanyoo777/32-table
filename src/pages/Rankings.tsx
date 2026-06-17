@@ -25,7 +25,7 @@ type SortBy = 'points' | 'elo'
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
-type ImportRow = { name: string; school: string; division: Division; gender: '남' | '여'; points: number; error?: string }
+type ImportRow = { name: string; school: string; division: Division; gender: '남' | '여'; points: number; photoUrl?: string; error?: string }
 
 function parseCSV(text: string): ImportRow[] {
   const lines = text.trim().split('\n').filter(l => l.trim())
@@ -34,7 +34,7 @@ function parseCSV(text: string): ImportRow[] {
   const startIdx = lines[0].includes('이름') ? 1 : 0
   for (let i = startIdx; i < lines.length; i++) {
     const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''))
-    const [name, school, division, gender, pointsStr] = cols
+    const [name, school, division, gender, pointsStr, , , , , , photoUrl] = cols
     const points = Number(pointsStr ?? 0) || 0
     const errors: string[] = []
     if (!name) errors.push('이름 없음')
@@ -47,6 +47,7 @@ function parseCSV(text: string): ImportRow[] {
       division: (validDivs.has(division) ? division : '일반') as Division,
       gender: (gender === '남' || gender === '여') ? gender : '남',
       points,
+      photoUrl: photoUrl || undefined,
       error: errors.length ? errors.join(', ') : undefined,
     })
   }
@@ -207,9 +208,9 @@ export default function Rankings() {
   }
 
   function exportCSV() {
-    const header = '이름,학교,부문,성별,포인트,승,패,Elo등급,등록번호,연락처\n'
+    const header = '이름,학교,부문,성별,포인트,승,패,Elo등급,등록번호,연락처,사진URL\n'
     const rows = filteredPlayers.map(p =>
-      `${p.name},${p.school},${p.division},${p.gender},${p.points},${p.wins},${p.losses},${p.rating ?? 1000},${p.registrationNo ?? ''},${p.phone ?? ''}`
+      `${p.name},${p.school},${p.division},${p.gender},${p.points},${p.wins},${p.losses},${p.rating ?? 1000},${p.registrationNo ?? ''},${p.phone ?? ''},${p.photoUrl ?? ''}`
     ).join('\n')
     const blob = new Blob(['﻿' + header + rows], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -379,7 +380,15 @@ export default function Rankings() {
                   return (
                   <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : ''}`}>
                     <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
-                    <td className="py-3 px-4 font-medium">{p.name}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {p.photoUrl
+                          ? <img src={p.photoUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                          : <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 flex-shrink-0 font-bold">{p.name[0]}</div>
+                        }
+                        <span className="font-medium">{p.name}</span>
+                      </div>
+                    </td>
                     <td className="py-3 px-4 text-gray-500">{p.school}</td>
                     {showDiv && <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>}
                     {showGender && (
