@@ -99,6 +99,7 @@ interface StoreState {
   // Backup & Restore
   resetAllData: () => void
   restoreBackup: (data: Partial<StoreState>) => void
+  resetSeasonStats: () => void
 }
 
 export const useStore = create<StoreState>()(
@@ -365,6 +366,14 @@ export const useStore = create<StoreState>()(
         schedules: data.schedules ?? s.schedules,
         scoreRecords: data.scoreRecords ?? s.scoreRecords,
         appSettings: data.appSettings ?? s.appSettings,
+      })),
+      resetSeasonStats: () => set((s) => ({
+        players: s.players.map(p => ({ ...p, points: 0, wins: 0, losses: 0, rating: 1000, gamesPlayed: 0 })),
+        pairs: s.pairs.map(p => ({ ...p, points: 0, wins: 0, losses: 0 })),
+        teams: s.teams.map(t => ({ ...t, points: 0, wins: 0, losses: 0 })),
+        scoreRecords: [],
+        liveMatches: [],
+        matchCalls: [],
       })),
     }),
     { name: 'pingpong-v3' }

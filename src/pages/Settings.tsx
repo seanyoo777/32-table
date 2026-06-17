@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { Save, Download, Upload, Trash2, AlertTriangle, CheckCircle, Info, Database, Settings as SettingsIcon } from 'lucide-react'
+import { Save, Download, Upload, Trash2, AlertTriangle, CheckCircle, Info, Database, Settings as SettingsIcon, RefreshCw } from 'lucide-react'
 
 export default function Settings() {
   const {
     players, pairs, teams, tournaments, schedules, scoreRecords,
-    appSettings, updateAppSettings, resetAllData, restoreBackup,
+    appSettings, updateAppSettings, resetAllData, restoreBackup, resetSeasonStats,
   } = useStore()
 
   const [form, setForm] = useState({ ...appSettings })
   const [saved, setSaved] = useState(false)
   const [resetConfirm, setResetConfirm] = useState(false)
+  const [seasonConfirm, setSeasonConfirm] = useState(false)
   const [restoreMsg, setRestoreMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -148,6 +149,34 @@ export default function Settings() {
               <Info size={11} className="mt-0.5 flex-shrink-0" />
               백업 파일에는 선수 정보, 대회 결과, 랭킹 데이터가 포함됩니다. 중요 대회 전에 백업하세요.
             </div>
+          </section>
+
+          {/* Season reset */}
+          <section className="card border-orange-100 space-y-2">
+            <h2 className="font-semibold text-orange-600 text-sm flex items-center gap-2">
+              <RefreshCw size={14} /> 시즌 초기화
+            </h2>
+            <p className="text-xs text-gray-600">선수 프로필·이름·소속은 유지하고 포인트·승패·Elo 레이팅만 초기화합니다. 새 시즌 시작 시 사용하세요.</p>
+            {!seasonConfirm ? (
+              <button onClick={() => setSeasonConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-orange-300 text-orange-600 hover:bg-orange-50 text-sm font-medium transition-colors">
+                <RefreshCw size={13} /> 시즌 통계 초기화
+              </button>
+            ) : (
+              <div className="bg-orange-50 rounded-lg p-3 space-y-2">
+                <p className="text-sm font-semibold text-orange-700">포인트·승패·Elo를 모두 0/1000으로 초기화하시겠습니까?</p>
+                <div className="flex gap-2">
+                  <button onClick={() => { resetSeasonStats(); setSeasonConfirm(false); setRestoreMsg('시즌 통계가 초기화되었습니다.') }}
+                    className="px-3 py-1.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
+                    네, 초기화합니다
+                  </button>
+                  <button onClick={() => setSeasonConfirm(false)}
+                    className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+                    취소
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Reset */}
