@@ -73,7 +73,7 @@ function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../t
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, addPlayerPoints, updatePlayerRating, syncTournament, syncStatus } = useStore()
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult, addPlayerPoints, updatePlayerRating, syncTournament, syncStatus } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
@@ -117,6 +117,7 @@ export default function TournamentPage() {
           updatePlayerRating(loser.id, newB, loser.gamesPlayed + 1)
         }
       }}
+      onClearResult={(evId, mId) => clearMatchResult(selected.id, evId, mId)}
     />
   }
 
@@ -447,12 +448,13 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
 }
 
 // ─── 대회 상세 (종목 탭) ──────────────────────────────────
-function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord }: {
+function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, onClearResult }: {
   tournament: Tournament
   pMap: Record<string, { name: string; school: string; points: number; gender: string }>
   onBack: () => void
   onStatusChange: (status: Tournament['status']) => void
   onRecord: (evId: string, mId: string, result: MatchResult) => void
+  onClearResult: (evId: string, mId: string) => void
 }) {
   const [activeEventId, setActiveEventId] = useState(tournament.events[0]?.id ?? '')
   const activeEvent = tournament.events.find(e => e.id === activeEventId)
@@ -528,17 +530,23 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord }
 
       {/* Active event bracket */}
       {activeEvent && (
-        <EventBracket event={activeEvent} pMap={pMap} onRecord={(mId, result) => onRecord(activeEvent.id, mId, result)} />
+        <EventBracket
+          event={activeEvent}
+          pMap={pMap}
+          onRecord={(mId, result) => onRecord(activeEvent.id, mId, result)}
+          onClearResult={(mId) => onClearResult(activeEvent.id, mId)}
+        />
       )}
     </div>
   )
 }
 
 // ─── 종목 대진표 ──────────────────────────────────────────
-function EventBracket({ event, pMap, onRecord }: {
+function EventBracket({ event, pMap, onRecord, onClearResult }: {
   event: TournamentEvent
   pMap: Record<string, { name: string; school: string; points: number; gender: string }>
   onRecord: (matchId: string, result: MatchResult) => void
+  onClearResult: (matchId: string) => void
 }) {
   const [activeView, setActiveView] = useState<'bracket' | 'standings'>('bracket')
   const [selectedRound, setSelectedRound] = useState(1)
@@ -652,6 +660,7 @@ function EventBracket({ event, pMap, onRecord }: {
               matches={roundMatches}
               pMap={pMap}
               onClickMatch={(m) => setResultModal(m)}
+              onClearResult={onClearResult}
               groupMap={Object.fromEntries(event.groups.map(g => [g.id, g.name]))}
             />
           ) : (
@@ -659,6 +668,7 @@ function EventBracket({ event, pMap, onRecord }: {
               event={event}
               pMap={pMap}
               onClickMatch={(m) => setResultModal(m)}
+              onClearResult={onClearResult}
             />
           )}
         </>
@@ -679,10 +689,11 @@ function EventBracket({ event, pMap, onRecord }: {
 }
 
 // ─── 대진표 트리 (≤32명) ─────────────────────────────────
-function BracketTree({ event, pMap, onClickMatch }: {
+function BracketTree({ event, pMap, onClickMatch, onClearResult }: {
   event: TournamentEvent
   pMap: Record<string, any>
   onClickMatch: (m: BracketMatch) => void
+  onClearResult: (matchId: string) => void
 }) {
   const mainMatches = event.matches.filter(m => !m.isThirdPlace)
   const thirdPlaceMatch = event.matches.find(m => m.isThirdPlace)
@@ -708,6 +719,13 @@ function BracketTree({ event, pMap, onClickMatch }: {
           {m.result && <span className="text-sm font-bold">{w === m.participant2Id ? m.result.winnerScore : m.result.loserScore}</span>}
         </div>
         {isPlayable && <div className="text-center text-xs text-blue-500 py-0.5 bg-blue-50">클릭 → 결과입력</div>}
+        {m.result && (
+          <button
+            onClick={e => { e.stopPropagation(); if (confirm('결과를 취소하시겠습니까?')) onClearResult(m.id) }}
+            className="w-full text-center text-[10px] text-red-400 hover:text-red-600 hover:bg-red-50 py-0.5 transition-colors no-print">
+            결과 취소
+          </button>
+        )}
       </div>
     )
   }
@@ -744,10 +762,11 @@ function BracketTree({ event, pMap, onClickMatch }: {
 }
 
 // ─── 경기 리스트 (대규모용) ───────────────────────────────
-function MatchList({ matches, pMap, onClickMatch, groupMap }: {
+function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
   matches: BracketMatch[]
   pMap: Record<string, any>
   onClickMatch: (m: BracketMatch) => void
+  onClearResult: (matchId: string) => void
   groupMap: Record<string, string>
 }) {
   if (matches.length === 0) {
@@ -806,10 +825,17 @@ function MatchList({ matches, pMap, onClickMatch, groupMap }: {
                     <div className="text-xs text-gray-400 font-normal">{p2?.school}</div>
                   </div>
                   {/* Status */}
-                  <div className="w-16 flex-shrink-0 text-right">
+                  <div className="w-20 flex-shrink-0 text-right flex flex-col items-end gap-0.5">
                     {m.result && !m.result.walkedOver && <span className="text-xs text-green-500">✓완료</span>}
                     {m.result?.walkedOver && <span className="text-xs text-gray-400">부전승</span>}
                     {isPlayable && <span className="text-xs text-blue-500">입력 →</span>}
+                    {m.result && (
+                      <button
+                        onClick={e => { e.stopPropagation(); if (confirm('결과를 취소하시겠습니까?')) onClearResult(m.id) }}
+                        className="text-[10px] text-red-400 hover:text-red-600 no-print">
+                        취소
+                      </button>
+                    )}
                   </div>
                 </div>
               )

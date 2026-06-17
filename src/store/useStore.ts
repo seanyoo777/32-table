@@ -68,6 +68,7 @@ interface StoreState {
     matchId: string,
     result: MatchResult
   ) => void
+  clearMatchResult: (tournamentId: string, eventId: string, matchId: string) => void
 
   // Schedules
   addSchedule: (s: SchedulePlan) => void
@@ -262,6 +263,45 @@ export const useStore = create<StoreState>()(
       }))
        const updated2 = get().tournaments.find(t => t.id === tournamentId)
        if (updated2) uploadTournament(updated2).catch(() => {})
+      },
+
+      clearMatchResult: (tournamentId, eventId, matchId) => {
+        set((s) => ({
+          tournaments: s.tournaments.map(t => {
+            if (t.id !== tournamentId) return t
+            const newEvents = t.events.map(ev => {
+              if (ev.id !== eventId) return ev
+              const target = ev.matches.find(m => m.id === matchId)
+              if (!target?.result) return ev
+              const formerWinnerId = target.result.winnerId
+              const formerLoserId = target.result.loserId
+              const matches = ev.matches.map((m): BracketMatch => {
+                if (m.id === matchId) return { ...m, result: null }
+                // Remove winner from the next knockout match
+                if (target.nextMatchId && m.id === target.nextMatchId) {
+                  const p1 = m.participant1Id === formerWinnerId ? null : m.participant1Id
+                  const p2 = m.participant2Id === formerWinnerId ? null : m.participant2Id
+                  return { ...m, participant1Id: p1, participant2Id: p2 }
+                }
+                // Remove loser from 3rd place match
+                if (m.isThirdPlace) {
+                  const p1 = m.participant1Id === formerLoserId ? null : m.participant1Id
+                  const p2 = m.participant2Id === formerLoserId ? null : m.participant2Id
+                  return { ...m, participant1Id: p1, participant2Id: p2 }
+                }
+                return m
+              })
+              const realMatches = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+              const allCompleted = realMatches.length > 0 && realMatches.every(m => m.result)
+              const newStatus: TournamentEvent['status'] = allCompleted ? 'completed' : 'ongoing'
+              return { ...ev, matches, status: newStatus }
+            })
+            const allDone = newEvents.every(ev => ev.status === 'completed')
+            return { ...t, events: newEvents, status: (allDone ? 'completed' : 'ongoing') as Tournament['status'] }
+          })
+        }))
+        const updated = get().tournaments.find(t => t.id === tournamentId)
+        if (updated) uploadTournament(updated).catch(() => {})
       },
 
       // Schedules
