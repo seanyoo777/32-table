@@ -260,42 +260,48 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
             {isDeuce && <div className="text-center text-orange-600 font-bold text-sm mb-2">듀스!</div>}
             <div className="text-center text-xs text-gray-400 mb-3">{activeLM.currentSet}세트</div>
 
-            <div className="flex items-stretch gap-4">
+            <div className="flex items-stretch gap-3">
               {/* Player 1 */}
-              <div className="flex-1 flex flex-col items-center gap-3">
+              <div className="flex-1 flex flex-col items-center gap-2">
                 <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${servicePlayer === 0 ? 'bg-blue-100 text-blue-700' : 'text-gray-400'}`}>
-                  {servicePlayer === 0 ? '서브' : '리시브'}
+                  {servicePlayer === 0 ? '🏓 서브' : '리시브'}
                 </div>
-                <div className={`text-7xl font-black tabular-nums ${activeLM.currentSetScore[0] > activeLM.currentSetScore[1] ? 'text-blue-600' : 'text-gray-600'}`}>
+                <div className="font-semibold text-sm text-gray-700 truncate max-w-full text-center">
+                  {pMap[activeLM.participant1Id]?.name ?? '선수1'}
+                </div>
+                <div className={`text-7xl sm:text-8xl font-black tabular-nums leading-none ${activeLM.currentSetScore[0] > activeLM.currentSetScore[1] ? 'text-blue-600' : 'text-gray-600'}`}>
                   {activeLM.currentSetScore[0]}
                 </div>
                 <button onClick={() => addPoint(activeLM, 0)}
-                  className="w-full py-4 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold text-2xl rounded-xl transition-colors select-none">
+                  className="w-full min-h-[80px] sm:min-h-[100px] bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-black text-4xl sm:text-5xl rounded-2xl transition-colors select-none touch-manipulation shadow-lg">
                   +1
                 </button>
                 <button onClick={() => undoPoint(activeLM, 0)}
-                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm rounded-lg transition-colors">
-                  취소
+                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm rounded-lg transition-colors touch-manipulation">
+                  ↩ 취소
                 </button>
               </div>
 
-              <div className="flex flex-col items-center justify-center text-gray-200 font-bold text-2xl">:</div>
+              <div className="flex flex-col items-center justify-center text-gray-200 font-bold text-2xl pt-16">:</div>
 
               {/* Player 2 */}
-              <div className="flex-1 flex flex-col items-center gap-3">
+              <div className="flex-1 flex flex-col items-center gap-2">
                 <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${servicePlayer === 1 ? 'bg-red-100 text-red-700' : 'text-gray-400'}`}>
-                  {servicePlayer === 1 ? '서브' : '리시브'}
+                  {servicePlayer === 1 ? '🏓 서브' : '리시브'}
                 </div>
-                <div className={`text-7xl font-black tabular-nums ${activeLM.currentSetScore[1] > activeLM.currentSetScore[0] ? 'text-red-500' : 'text-gray-600'}`}>
+                <div className="font-semibold text-sm text-gray-700 truncate max-w-full text-center">
+                  {pMap[activeLM.participant2Id]?.name ?? '선수2'}
+                </div>
+                <div className={`text-7xl sm:text-8xl font-black tabular-nums leading-none ${activeLM.currentSetScore[1] > activeLM.currentSetScore[0] ? 'text-red-500' : 'text-gray-600'}`}>
                   {activeLM.currentSetScore[1]}
                 </div>
                 <button onClick={() => addPoint(activeLM, 1)}
-                  className="w-full py-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold text-2xl rounded-xl transition-colors select-none">
+                  className="w-full min-h-[80px] sm:min-h-[100px] bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-black text-4xl sm:text-5xl rounded-2xl transition-colors select-none touch-manipulation shadow-lg">
                   +1
                 </button>
                 <button onClick={() => undoPoint(activeLM, 1)}
-                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm rounded-lg transition-colors">
-                  취소
+                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm rounded-lg transition-colors touch-manipulation">
+                  ↩ 취소
                 </button>
               </div>
             </div>

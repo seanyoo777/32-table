@@ -6,7 +6,7 @@ import {
 } from '../utils/bracketUtils'
 import {
   Plus, Trash2, Trophy, ChevronRight, X, Printer,
-  Shuffle, Users, Layers, Check, ChevronDown, ChevronUp, Info
+  Shuffle, Users, Layers, Check, ChevronDown, ChevronUp, Info, Download
 } from 'lucide-react'
 import type {
   Division, EventType, Gender, BracketFormat,
@@ -28,6 +28,35 @@ const divColors: Record<Division, string> = {
 }
 const genderColors: Record<string, string> = {
   남: 'bg-blue-50 text-blue-600', 여: 'bg-pink-50 text-pink-600', 혼합: 'bg-purple-50 text-purple-600'
+}
+
+// ─── 결과 CSV 내보내기 ────────────────────────────────────
+function exportTournamentCSV(
+  tournament: Tournament,
+  pMap: Record<string, { name: string; school: string; points: number; gender: string }>
+) {
+  const rows: string[] = ['대회명,종목,라운드,선수1,학교1,선수2,학교2,승자,세트스코어']
+  for (const ev of tournament.events) {
+    const completed = ev.matches.filter(m => m.result && m.participant1Id && m.participant2Id && !m.isBye)
+    for (const m of completed) {
+      const p1 = pMap[m.participant1Id!]
+      const p2 = pMap[m.participant2Id!]
+      const winner = pMap[m.result!.winnerId]
+      const setStr = m.result!.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${m.result!.winnerScore}-${m.result!.loserScore}`
+      rows.push([
+        tournament.name, ev.label, `R${m.round}`,
+        p1?.name ?? '', p1?.school ?? '',
+        p2?.name ?? '', p2?.school ?? '',
+        winner?.name ?? '',
+        m.result!.walkedOver ? '부전승' : setStr
+      ].join(','))
+    }
+  }
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url
+  a.download = `${tournament.name}_결과_${new Date().toISOString().split('T')[0]}.csv`
+  a.click(); URL.revokeObjectURL(url)
 }
 
 // ─── 참가자 이름 조회 ─────────────────────────────────────
@@ -413,9 +442,14 @@ function TournamentDetail({ tournament, pMap, onBack, onRecord }: {
             <p className="text-sm text-gray-400">{tournament.date}{tournament.venue ? ` · ${tournament.venue}` : ''}</p>
           </div>
         </div>
-        <button onClick={() => window.print()} className="btn-secondary flex items-center gap-1.5 no-print">
-          <Printer size={14} /> 인쇄
-        </button>
+        <div className="flex gap-2 no-print">
+          <button onClick={() => exportTournamentCSV(tournament, pMap)} className="btn-secondary flex items-center gap-1.5 text-sm">
+            <Download size={14} /> 결과 CSV
+          </button>
+          <button onClick={() => window.print()} className="btn-secondary flex items-center gap-1.5">
+            <Printer size={14} /> 인쇄
+          </button>
+        </div>
       </div>
 
       {/* Event tabs */}

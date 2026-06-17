@@ -1,14 +1,14 @@
 import { useStore } from '../store/useStore'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, Users, Calendar, ClipboardList, TableProperties, Award, Star } from 'lucide-react'
+import { Trophy, Users, Calendar, ClipboardList, TableProperties, Award, Star, Zap, QrCode, Monitor } from 'lucide-react'
 
 export default function Home() {
-  const { players, pairs, tournaments, schedules } = useStore()
+  const { players, pairs, tournaments, schedules, appSettings } = useStore()
   const navigate = useNavigate()
 
-  const activeTournaments = tournaments.filter(t => t.status === 'ongoing').length
-  const totalParticipants = players.length + pairs.length
+  const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
   const topPlayer = [...players].sort((a, b) => b.points - a.points)[0]
+  const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
 
   const divisionCounts = players.reduce((acc, p) => {
     acc[p.division] = (acc[p.division] || 0) + 1
@@ -21,6 +21,7 @@ export default function Home() {
     { label: '경기일정표', desc: '시간·코트별 자동 배치', icon: Calendar, color: 'bg-purple-50 border-purple-200 text-purple-700', to: '/schedule' },
     { label: '점수 입력', desc: '결과 기록 → 포인트 반영', icon: ClipboardList, color: 'bg-red-50 border-red-200 text-red-700', to: '/score' },
   ]
+  void topPlayer
 
   const topPlayers = [...players].sort((a, b) => b.points - a.points).slice(0, 5)
 
@@ -31,16 +32,54 @@ export default function Home() {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold mb-1">🏓 탁구 대회 관리 시스템</h1>
-            <p className="text-blue-100 text-sm">초등~대학 · 단식·복식·혼합복식·단체전 · 토너먼트·리그·조별전</p>
+            <p className="text-blue-100 text-sm">
+              {appSettings.organizerName ? `${appSettings.organizerName} · ` : ''}
+              {today}
+            </p>
+            <p className="text-blue-200 text-xs mt-0.5">초등~생활체육 · 단식·복식·혼합복식·단체전 · 토너먼트·리그·조별전</p>
           </div>
-          <div className="flex gap-6">
+          <div className="flex gap-6 flex-wrap">
             <Stat label="등록 선수" value={players.length} />
             <Stat label="복식 페어" value={pairs.length} />
-            <Stat label="진행 대회" value={activeTournaments} />
+            <Stat label="진행 대회" value={activeTournaments.length} />
             <Stat label="일정표" value={schedules.length} />
           </div>
         </div>
       </div>
+
+      {/* 진행중 대회 알림 */}
+      {activeTournaments.length > 0 && (
+        <div className="space-y-2">
+          {activeTournaments.map(t => {
+            const totalM = t.events.reduce((s, e) => s + e.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
+            const doneM = t.events.reduce((s, e) => s + e.matches.filter(m => m.result).length, 0)
+            const pct = totalM > 0 ? Math.round(doneM / totalM * 100) : 0
+            return (
+              <div key={t.id} className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-green-100 transition-colors"
+                onClick={() => navigate('/tournament')}>
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-green-800 truncate">{t.name}</div>
+                  <div className="text-xs text-green-600">{t.events.length}종목 · {doneM}/{totalM}경기 완료 ({pct}%)</div>
+                  <div className="h-1 bg-green-200 rounded-full mt-1.5">
+                    <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={e => { e.stopPropagation(); navigate('/score') }}
+                    className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-green-700">
+                    <Zap size={11} /> 점수입력
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); navigate('/liveboard') }}
+                    className="px-3 py-1.5 bg-gray-700 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-gray-800">
+                    <Monitor size={11} /> 라이브
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Quick links */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -52,6 +91,28 @@ export default function Home() {
             <div className="text-xs opacity-70 mt-0.5">{desc}</div>
           </button>
         ))}
+      </div>
+
+      {/* 대회 당일 빠른 실행 */}
+      <div className="grid grid-cols-3 gap-3">
+        <button onClick={() => navigate('/checkin')}
+          className="card border-2 border-indigo-200 bg-indigo-50 text-indigo-700 text-center py-4 hover:shadow-md transition-shadow">
+          <QrCode size={24} className="mx-auto mb-1" />
+          <div className="font-semibold text-sm">QR 체크인</div>
+          <div className="text-xs opacity-70">선수 입장 확인</div>
+        </button>
+        <button onClick={() => navigate('/score')}
+          className="card border-2 border-red-200 bg-red-50 text-red-700 text-center py-4 hover:shadow-md transition-shadow">
+          <Zap size={24} className="mx-auto mb-1" />
+          <div className="font-semibold text-sm">실시간 스코어</div>
+          <div className="text-xs opacity-70">경기 점수 기록</div>
+        </button>
+        <button onClick={() => navigate('/liveboard')}
+          className="card border-2 border-gray-200 bg-gray-50 text-gray-700 text-center py-4 hover:shadow-md transition-shadow">
+          <Monitor size={24} className="mx-auto mb-1" />
+          <div className="font-semibold text-sm">라이브 보드</div>
+          <div className="text-xs opacity-70">TV 현황판</div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

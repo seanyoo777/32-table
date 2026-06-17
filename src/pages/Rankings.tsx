@@ -70,6 +70,8 @@ export default function Rankings() {
   const [importRows, setImportRows] = useState<ImportRow[]>([])
   const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 50
 
   // Player form
   const [pForm, setPForm] = useState({ name: '', school: '', division: '초등' as Division, gender: '남' as '남' | '여', points: '0' })
@@ -82,6 +84,7 @@ export default function Rankings() {
   const isDivView = DIVISIONS.includes(rankView as Division)
 
   const filteredPlayers = useMemo(() => {
+    setPage(1)
     let list = [...players]
     if (rankView === '남자') list = list.filter(p => p.gender === '남')
     else if (rankView === '여자') list = list.filter(p => p.gender === '여')
@@ -92,6 +95,9 @@ export default function Rankings() {
     if (search) list = list.filter(p => p.name.includes(search) || p.school.includes(search))
     return list.sort((a, b) => sortBy === 'elo' ? (b.rating ?? 1000) - (a.rating ?? 1000) : b.points - a.points)
   }, [players, rankView, subGender, sortBy, search, isDivView])
+
+  const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
+  const pagedPlayers = filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
@@ -337,13 +343,14 @@ export default function Rankings() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPlayers.map((p, i) => {
+                {pagedPlayers.map((p, i) => {
+                  const globalRank = (page - 1) * PAGE_SIZE + i + 1
                   const rLabel = getRatingLabel(p.rating ?? 1000)
                   const showDiv = rankView === '통합' || rankView === '남자' || rankView === '여자'
                   const showGender = rankView === '통합' || isDivView
                   return (
-                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${i < 3 ? 'bg-yellow-50/20' : ''}`}>
-                    <td className="py-3 px-4 text-center"><RankIcon rank={i + 1} /></td>
+                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : ''}`}>
+                    <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4 font-medium">{p.name}</td>
                     <td className="py-3 px-4 text-gray-500">{p.school}</td>
                     {showDiv && <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>}
@@ -377,12 +384,39 @@ export default function Rankings() {
                     </td>
                   </tr>
                 )})}
-                {filteredPlayers.length === 0 && (
+                {pagedPlayers.length === 0 && (
                   <tr><td colSpan={9} className="py-12 text-center text-gray-400">선수가 없습니다</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+              <span className="text-xs text-gray-400">
+                {(page-1)*PAGE_SIZE+1}–{Math.min(page*PAGE_SIZE, filteredPlayers.length)} / {filteredPlayers.length}명
+              </span>
+              <div className="flex gap-1">
+                <button onClick={() => setPage(1)} disabled={page === 1}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">«</button>
+                <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">‹</button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(page - 2, totalPages - 4))
+                  const p = start + i
+                  return (
+                    <button key={p} onClick={() => setPage(p)}
+                      className={`px-2.5 py-1 text-xs rounded border ${page === p ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'}`}>
+                      {p}
+                    </button>
+                  )
+                })}
+                <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">›</button>
+                <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                  className="px-2 py-1 text-xs rounded border disabled:opacity-30 hover:bg-gray-100">»</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
