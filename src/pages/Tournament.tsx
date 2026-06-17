@@ -476,6 +476,14 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord }
               <Shuffle size={14} /> 대회 재개
             </button>
           )}
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/public/${tournament.id}`
+              navigator.clipboard?.writeText(url).then(() => alert(`공개 링크 복사됨:\n${url}`)).catch(() => alert(url))
+            }}
+            className="btn-secondary flex items-center gap-1.5 text-sm">
+            <Info size={14} /> 공개 링크
+          </button>
           <button onClick={() => exportTournamentCSV(tournament, pMap)} className="btn-secondary flex items-center gap-1.5 text-sm">
             <Download size={14} /> 결과 CSV
           </button>

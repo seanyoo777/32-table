@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import Home from './pages/Home'
@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard'
 import CheckIn from './pages/CheckIn'
 import LiveBoard from './pages/LiveBoard'
 import Settings from './pages/Settings'
+import PublicTournament from './pages/PublicTournament'
 
 const pages: { path: string; element: React.ReactElement; label: string }[] = [
   { path: '/', element: <Home />, label: '홈' },
@@ -25,26 +26,35 @@ const pages: { path: string; element: React.ReactElement; label: string }[] = [
   { path: '/settings', element: <Settings />, label: '설정' },
 ]
 
+function MainLayout() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Routes>
+          {pages.map(({ path, element, label }) => (
+            <Route
+              key={path}
+              path={path}
+              element={<ErrorBoundary fallbackLabel={label}>{element}</ErrorBoundary>}
+            />
+          ))}
+        </Routes>
+      </main>
+      <footer className="text-center text-xs text-gray-400 py-3 border-t mt-auto">
+        🏓 탁구 대회 관리 시스템 v3.0 — USATT Elo 레이팅 · QR 체크인 · 라이브 보드
+      </footer>
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <Routes>
-            {pages.map(({ path, element, label }) => (
-              <Route
-                key={path}
-                path={path}
-                element={<ErrorBoundary fallbackLabel={label}>{element}</ErrorBoundary>}
-              />
-            ))}
-          </Routes>
-        </main>
-        <footer className="text-center text-xs text-gray-400 py-3 border-t mt-auto">
-          🏓 탁구 대회 관리 시스템 v3.0 — USATT Elo 레이팅 · QR 체크인 · 라이브 보드
-        </footer>
-      </div>
+      <Routes>
+        <Route path="/public/:id" element={<PublicTournament />} />
+        <Route path="/*" element={<MainLayout />} />
+      </Routes>
     </BrowserRouter>
   )
 }
