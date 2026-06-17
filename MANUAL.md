@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v3.0 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v3.2 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -120,6 +120,14 @@
 5. 경기 종료 → 포인트/Elo 자동 반영 → 대진표 자동 업데이트
 
 **취소(Undo)**: 점수 아래 ↩ 버튼
+
+**키보드 단축키** (스코어보드 화면):
+| 키 | 동작 |
+|----|------|
+| `[` | 선수1 점수 +1 |
+| `]` | 선수2 점수 +1 |
+| `z` | 선수1 마지막 점수 취소 |
+| `x` | 선수2 마지막 점수 취소 |
 
 ### 5-5. 수동 점수 입력
 **점수 입력 → 직접입력**
@@ -265,7 +273,7 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 
 ---
 
-## 13. 완성 기능 목록 (v3.0 기준)
+## 13. 완성 기능 목록 (v3.2 기준)
 
 ### ✅ 구현 완료
 - [x] 선수 CRUD + CSV 가져오기/내보내기 + 중복 감지
@@ -274,104 +282,103 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 - [x] 단체팀 관리 (단체전)
 - [x] USATT Elo 레이팅 자동 계산
 - [x] 선수 전적 모달 (대회 이력 + 점수 기록)
-- [x] 랭킹 페이지네이션 (50명/페이지, 1000명+ 대응)
+- [x] 랭킹 페이지네이션 — 단식 50/페이지, 복식·단체팀 30/페이지
+- [x] 랭킹 레이아웃 — 상단 컨트롤 고정 + 내부 스크롤 분리
 - [x] 토너먼트·리그·조별+토너먼트 대진표
 - [x] 시드 배정 자동화
 - [x] 세트별 점수 입력 + 부전승
+- [x] **경기 결과 취소** (clearMatchResult — 대진표 롤백)
+- [x] **3·4위전 자동 생성** (준결승 패자 자동 배정)
 - [x] 대진표 우승·준우승 배너
+- [x] **경기 종료 후 4초 승자 배너**
 - [x] 대진표 결과 CSV 내보내기
 - [x] 대회 수동 종료/재개
 - [x] 실시간 스코어보드 (모바일 최적화, 80px+ 버튼)
+- [x] **스코어보드 키보드 단축키** ([ ] / z x — 점수·취소)
+- [x] **선수 사진 URL** (스코어보드·체크인 표시)
 - [x] 서브 자동 표시 + 듀스 감지
 - [x] 직접 점수 입력 + 검증
+- [x] **경기일정 오전/오후 레이블** (파란=오전, 주황=오후)
 - [x] 경기일정 자동 생성 + 다일차
 - [x] 일정 CSV/인쇄 (A4 가로)
 - [x] QR 체크인 + 수동 체크인
-- [x] 출석 CSV 내보내기
+- [x] 출석 CSV 내보내기 (등록번호 포함)
 - [x] 운영 대시보드 (LIVE 현황)
 - [x] 경기 호출(콜링) 시스템
+- [x] **사이드바 알림 뱃지** (미호출+미확인 건수 실시간 표시)
+- [x] **대기중 경기 직접 호출 버튼** (대시보드 목록)
 - [x] 미확인 기록 알림 + 확인 처리
 - [x] 경기 기록 CSV (대회명·종목·입력자 포함)
 - [x] 브라우저 알림 (Notification API)
 - [x] TV/프로젝터 라이브 보드 (전체화면)
 - [x] 홈 명예의 전당 (완료 대회 우승자)
+- [x] **대회 공개 URL** `/public/{id}` (관람객용 비편집 뷰)
 - [x] 앱 설정 (기관명·담당자·시즌)
 - [x] JSON 백업·복원 (선수+페어+팀+대회+일정+설정)
+- [x] **시즌 초기화** (포인트·Elo·승패 리셋, 프로필 유지)
 - [x] ErrorBoundary (페이지별 격리)
 - [x] 인쇄 최적화 CSS (A4 가로)
 - [x] Cloudflare Pages 자동 배포
+- [x] **PWA** (오프라인 지원 — vite-plugin-pwa)
+- [x] **Supabase Realtime 동기화** (코드 완성 — DB 마이그레이션 필요)
 
 ---
 
-## 14. 다음 세션 계획 — 완성 로드맵
+## 14. 다음 세션 계획 — 개발 후보
 
-### 🔴 HIGH (운영 필수)
-- [ ] **대회별 누적 랭킹 시스템**  
-  포인트를 연도·시즌별로 집계, 시즌 랭킹 별도 표시  
-  `src/utils/rankingUtils.ts`에 `calcSeasonRankings()` 추가
+> v3.2에서 주요 기능이 완성됨. 아래는 데이터 규모가 커질 때 필요한 항목들.
 
-- [ ] **선수 사진 업로드**  
-  Player 타입에 `photoUrl?: string` 추가  
-  체크인·라이브보드에 얼굴 사진 표시  
-  → localStorage base64 or Cloudflare Images 연동
+### 🔴 HIGH (데이터 규모 대응)
+- [ ] **토너먼트 목록 페이지네이션**  
+  대회 수가 30개 이상 쌓이면 필요  
+  `src/pages/Tournament.tsx` — 리스트 뷰에 10~20개/페이지 추가
 
-- [ ] **대회 참가비 관리**  
-  Tournament 타입에 `entryFee: number` 추가  
-  체크인 시 납부 여부 체크  
-  설정 → 수납 현황 CSV
+- [ ] **점수 기록 목록 페이지네이션**  
+  scoreRecords가 수백 건 쌓이면 필요  
+  대시보드 및 직접입력 목록에 적용
 
-### 🟡 MEDIUM (편의 기능)
-- [ ] **멀티 디바이스 실시간 동기화**  
-  현재: localStorage 단일 기기  
-  목표: Cloudflare Durable Objects or Supabase Realtime  
-  → 주심 스마트폰 ↔ 운영 PC 동기화
+### 🟡 MEDIUM (운영 편의)
+- [ ] **경기일정 상세보기 인쇄 개선**  
+  현재: 전체 시간표 인쇄  
+  추가: 코트별 분리 인쇄, A4 세로 레이아웃 옵션
 
-- [ ] **대회 공개 URL (관람객용)**  
-  `/public/{tournamentId}` → 비로그인 열람  
-  대진표·결과·순위표 공개 (Cloudflare Pages 라우팅)
+- [ ] **Supabase DB 마이그레이션 완료** (사용자가 직접 실행)  
+  ```sql
+  create table if not exists pingpong_tournaments (
+    id text primary key, data jsonb not null,
+    session_name text, updated_at timestamptz default now() not null
+  );
+  ```
+  + Cloudflare Pages 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
 - [ ] **SMS/카카오 경기 호출**  
-  matchCall 생성 시 선수 연락처로 SMS 자동 발송  
+  matchCall 생성 시 선수 연락처로 자동 발송  
   → Twilio or 알리고 API 연동
 
-- [ ] **스마트 대진표 시드 개선**  
+- [ ] **스마트 대진표 시드 드래그앤드롭**  
   현재: 포인트 순 자동 시드  
-  추가: 수동 시드 조정 드래그앤드롭 UI
-
-- [ ] **대진표 3·4위전 자동 생성**  
-  준결승 패자 간 3위 결정전 자동 매치 생성  
-  `src/utils/bracketUtils.ts` → `generateThirdPlace()` 추가
-
-- [ ] **단체전 대진표 로직 완성**  
-  현재: 팀 등록까지 구현  
-  목표: 팀 간 매치 → 개인전 N세트 결과 합산 승패 결정  
-  `Team` 타입에 `matches: TeamMatch[]` 추가
-
-- [ ] **경기 예약제 (사전 대회 시간표)**  
-  일정표 ↔ 대진표 양방향 연동 강화  
-  특정 경기를 특정 시간·코트에 고정 배정 UI
+  추가: 수동 시드 조정 UI
 
 ### 🟢 LOW (완성도)
 - [ ] **다국어 지원 (i18n)**  
   한국어 기본, 영어 선택  
   `src/i18n/ko.ts` + `en.ts` 구조
 
-- [ ] **PWA (Progressive Web App)**  
-  `vite-plugin-pwa` 설치 → manifest.json + service worker  
-  오프라인 작동 + 홈 화면 추가 지원  
-  `npm install vite-plugin-pwa`
-
 - [ ] **다크모드**  
   Tailwind `dark:` 클래스 적용  
   Settings 에서 테마 토글
 
+- [ ] **대회 통계 리포트**  
+  종목별 경기 수, 평균 경기 시간, 부문별 참가율 분석  
+  선수별 포인트 추이 차트 (recharts or Chart.js)
+
 - [ ] **대회 사진 갤러리**  
   Tournament에 `photos: string[]` 추가  
-  설정 → 사진 업로드 → 완료 대회 페이지 표시
+  완료 대회 페이지에 사진 표시
 
-- [ ] **통계 대시보드 개선**  
-  선수별 포인트 추이 차트 (recharts or Chart.js)  
-  월별 경기 수, 부문별 참가율 시각화
+- [ ] **대회 참가비 관리**  
+  Tournament에 `entryFee: number` 추가  
+  체크인 시 납부 여부 체크 + 수납 현황 CSV
 
 ---
 
@@ -397,4 +404,4 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 
 ---
 
-*최종 업데이트: 2026-06-18 | Claude Sonnet 4.6 작성*
+*최종 업데이트: 2026-06-18 v3.2 | Claude Sonnet 4.6 작성*
