@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v3.2 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v3.3 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -273,7 +273,35 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 
 ---
 
-## 13. 완성 기능 목록 (v3.2 기준)
+## 12-1. v3.3 추가 기능 (이번 세션)
+
+### 랭킹
+- **빠른 선수 일괄 등록** (⚡ 버튼): 텍스트 붙여넣기 (`이름 소속 부문 성별 [포인트]` 공백/탭 구분, 한 줄 한 명) → 실시간 미리보기·오류표시 후 등록
+
+### 체크인
+- **참가비 납부 관리** 탭: 참가비 금액 설정, 납부/미납 토글, 수납액 집계, 부문별 진행바, CSV 내보내기
+
+### 대회·대진표
+- **결과 요약** 탭: 종목별 🥇🥈🥉 메달 자동 집계 (토너먼트/리그/조별 모두 지원)
+- **시드 ▲▼ 수동 정렬**: 대회 생성 시 시드 선수 순서 직접 조정 (preserveOrder)
+- **대회 목록 페이지네이션** (12개/페이지)
+
+### 경기일정표 (대폭 개선)
+- **종목별 경기시간 차등**: 개인전 30/25분 vs **단체전 120분(2시간)** 별도 설정
+- **단체전 전용 코트 분리**: "전용 코트 N개" 지정 → 개인·복식과 코트 자동 분리 (시간 겹침 방지)
+- **부문별 참가/비참가 체크박스**: 대회에 없는 부문 제외 (행 비활성화 + 집계·생성 제외)
+- **예상 소요시간 표시**: `필요 작업량 ÷ 코트 수` → 코트 늘리면 소요시간 감소 (4코트 9h → 8코트 4.5h)
+- **부문별 진행 일차 범위**: 예선→앞날, 준결승/결승→마지막날 자동 분산
+- **⚡ 일괄입력 행**: 종목 열별로 전 부문 인원 한번에 채우기
+- 시간 입력칸 가독성 개선 (오전/오후 컬러 뱃지 하단 배치)
+
+> **구현 메모**: 경기일정 수용량 모델은 "코트-분(코트수×운영시간)" 기반. 단체전 등 혼합 경기시간 정확 반영.
+> 예상 소요시간 = `필요 코트-분 × 총 운영시간 ÷ 총 코트-분`. 핵심 함수: `scheduleUtils.ts`의
+> `matchMinutes`, `calcDayCourtMinutes`, `calcDayOperatingMinutes`, `previewSmartPlan`, `generateSmartSlots`.
+
+---
+
+## 13. 완성 기능 목록 (v3.3 기준)
 
 ### ✅ 구현 완료
 - [x] 선수 CRUD + CSV 가져오기/내보내기 + 중복 감지
@@ -326,59 +354,43 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 
 ## 14. 다음 세션 계획 — 개발 후보
 
-> v3.2에서 주요 기능이 완성됨. 아래는 데이터 규모가 커질 때 필요한 항목들.
+> v3.3에서 경기일정·랭킹·체크인 주요 기능 완성. 실전 운영 가능 수준.
 
-### 🔴 HIGH (데이터 규모 대응)
-- [ ] **토너먼트 목록 페이지네이션**  
-  대회 수가 30개 이상 쌓이면 필요  
-  `src/pages/Tournament.tsx` — 리스트 뷰에 10~20개/페이지 추가
+### ✅ v3.3에서 완료된 항목 (이전 계획에서 이동)
+- [x] 토너먼트 목록 페이지네이션 (12개/페이지)
+- [x] 대회 참가비 관리 (체크인 탭, 수납 현황 CSV)
+- [x] 스마트 대진표 시드 수동 조정 (▲▼ 버튼)
 
-- [ ] **점수 기록 목록 페이지네이션**  
-  scoreRecords가 수백 건 쌓이면 필요  
-  대시보드 및 직접입력 목록에 적용
-
-### 🟡 MEDIUM (운영 편의)
-- [ ] **경기일정 상세보기 인쇄 개선**  
-  현재: 전체 시간표 인쇄  
-  추가: 코트별 분리 인쇄, A4 세로 레이아웃 옵션
-
-- [ ] **Supabase DB 마이그레이션 완료** (사용자가 직접 실행)  
+### 🔴 HIGH (실전 배포 직결)
+- [ ] **Supabase DB 마이그레이션 완료** (코드 완성, DB 테이블만 생성하면 됨)  
   ```sql
   create table if not exists pingpong_tournaments (
     id text primary key, data jsonb not null,
     session_name text, updated_at timestamptz default now() not null
   );
   ```
-  + Cloudflare Pages 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  + Cloudflare Pages 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`  
+  → 완료 시 여러 기기 동시 운영 가능
+
+- [ ] **점수 기록 목록 페이지네이션**  
+  scoreRecords가 수백 건 쌓이면 필요 — 대시보드 및 직접입력 목록에 적용
+
+### 🟡 MEDIUM (운영 편의)
+- [ ] **경기일정 상세보기 인쇄 개선**  
+  코트별 분리 인쇄, A4 세로 레이아웃 옵션
 
 - [ ] **SMS/카카오 경기 호출**  
-  matchCall 생성 시 선수 연락처로 자동 발송  
-  → Twilio or 알리고 API 연동
+  matchCall 생성 시 선수 연락처로 자동 발송 → Twilio or 알리고 API 연동
 
-- [ ] **스마트 대진표 시드 드래그앤드롭**  
-  현재: 포인트 순 자동 시드  
-  추가: 수동 시드 조정 UI
+- [ ] **경기일정 생성 설정 저장/불러오기**  
+  자주 쓰는 부문·인원·코트 구성을 프리셋으로 저장 (현재는 매번 입력)
 
 ### 🟢 LOW (완성도)
-- [ ] **다국어 지원 (i18n)**  
-  한국어 기본, 영어 선택  
-  `src/i18n/ko.ts` + `en.ts` 구조
-
-- [ ] **다크모드**  
-  Tailwind `dark:` 클래스 적용  
-  Settings 에서 테마 토글
-
 - [ ] **대회 통계 리포트**  
-  종목별 경기 수, 평균 경기 시간, 부문별 참가율 분석  
-  선수별 포인트 추이 차트 (recharts or Chart.js)
-
-- [ ] **대회 사진 갤러리**  
-  Tournament에 `photos: string[]` 추가  
-  완료 대회 페이지에 사진 표시
-
-- [ ] **대회 참가비 관리**  
-  Tournament에 `entryFee: number` 추가  
-  체크인 시 납부 여부 체크 + 수납 현황 CSV
+  종목별 경기 수, 부문별 참가율, 선수별 포인트 추이 차트 (recharts)
+- [ ] **다크모드** — Tailwind `dark:` + Settings 토글
+- [ ] **다국어 (i18n)** — 한국어 기본 + 영어
+- [ ] **대회 사진 갤러리** — Tournament에 `photos: string[]`
 
 ---
 
@@ -404,4 +416,4 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 
 ---
 
-*최종 업데이트: 2026-06-18 v3.2 | Claude Sonnet 4.6 작성*
+*최종 업데이트: 2026-06-18 v3.3 | Claude Sonnet 4.6 작성*
