@@ -22,6 +22,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
   const [tableNo, setTableNo] = useState(1)
   const [format, setFormat] = useState<MatchFormat>(DEFAULT_FORMAT)
   const [recorder, setRecorder] = useState('')
+  const [matchDone, setMatchDone] = useState<{ name: string; sets: string } | null>(null)
 
   const selTournament = tournaments.find(t => t.id === sel.tournamentId)
   const selEvent = selTournament?.events.find(e => e.id === sel.eventId)
@@ -102,6 +103,10 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
         addScoreRecord(record)
         removeLiveMatch(lm.matchId)
         setSel(s => ({ ...s, matchId: '' }))
+        const winnerName = pMap[winnerId]?.name ?? '승자'
+        const setsStr = newCompleted.map(([a, b]) => `${a}-${b}`).join(', ')
+        setMatchDone({ name: winnerName, sets: setsStr })
+        setTimeout(() => setMatchDone(null), 4000)
         return
       } else {
         setLiveMatch({ ...lm, completedSets: newCompleted, currentSet: lm.currentSet + 1, currentSetScore: [0, 0] })
@@ -163,8 +168,18 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="space-y-4">
+      {/* Match completed banner */}
+      {matchDone && (
+        <div className="card bg-green-50 border-2 border-green-400 text-center py-5 animate-pulse">
+          <div className="text-3xl mb-1">🏆</div>
+          <div className="font-black text-xl text-green-700">{matchDone.name} 승!</div>
+          <div className="text-sm text-green-600 mt-1 font-mono">{matchDone.sets}</div>
+          <div className="text-xs text-green-500 mt-1">결과 저장 완료</div>
+        </div>
+      )}
+
       {/* Match selector */}
-      {!activeLM && (
+      {!activeLM && !matchDone && (
         <div className="card space-y-4">
           <h2 className="font-semibold text-gray-700">경기 선택</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
