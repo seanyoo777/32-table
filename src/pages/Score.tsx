@@ -23,6 +23,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
   const [format, setFormat] = useState<MatchFormat>(DEFAULT_FORMAT)
   const [recorder, setRecorder] = useState('')
   const [matchDone, setMatchDone] = useState<{ name: string; sets: string } | null>(null)
+  const [matchSearch, setMatchSearch] = useState('')
 
   const selTournament = tournaments.find(t => t.id === sel.tournamentId)
   const selEvent = selTournament?.events.find(e => e.id === sel.eventId)
@@ -443,10 +444,13 @@ function ManualEntry() {
       recordedBy: recorder || '입력자', recordedAt: new Date().toISOString(), verified: false,
     }
     addScoreRecord(record)
-    setSel(s => ({ ...s, matchId: '' }))
     setSets([['', '']])
     setSubmitted(true)
     setTimeout(() => setSubmitted(false), 3000)
+    // 저장 후 다음 미완료 경기로 자동 이동
+    const remaining = pendingMatches.filter(m => m.id !== selMatch.id)
+    const nextMatch = remaining[0]
+    setSel(s => ({ ...s, matchId: nextMatch?.id ?? '' }))
   }
 
   const roundName = (round: number) => {
@@ -486,14 +490,45 @@ function ManualEntry() {
           )}
           {selEvent && (
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">경기 ({pendingMatches.length}경기 대기)</label>
-              <select className="select" value={sel.matchId} onChange={e => { setSel(s => ({ ...s, matchId: e.target.value })); setSets([['', '']]) }}>
+              <label className="text-sm font-medium text-gray-700 block mb-1">
+                경기 <span className="text-gray-400 font-normal text-xs">({pendingMatches.length}경기 대기 · Tab=다음경기)</span>
+              </label>
+              <input
+                className="input mb-1 text-sm"
+                placeholder="선수명 검색..."
+                value={matchSearch}
+                onChange={e => setMatchSearch(e.target.value)}
+              />
+              <select className="select" value={sel.matchId}
+                onChange={e => { setSel(s => ({ ...s, matchId: e.target.value })); setSets([['', '']]) }}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault()
+                    const filtered = pendingMatches.filter(m => {
+                      if (!matchSearch) return true
+                      const n1 = m.participant1Id ? pMap[m.participant1Id]?.name ?? '' : ''
+                      const n2 = m.participant2Id ? pMap[m.participant2Id]?.name ?? '' : ''
+                      return n1.includes(matchSearch) || n2.includes(matchSearch)
+                    })
+                    const idx = filtered.findIndex(m => m.id === sel.matchId)
+                    const next = filtered[e.shiftKey ? idx - 1 : idx + 1]
+                    if (next) { setSel(s => ({ ...s, matchId: next.id })); setSets([['', '']]) }
+                  }
+                }}
+              >
                 <option value="">경기 선택...</option>
-                {pendingMatches.map(m => {
-                  const n1 = m.participant1Id ? pMap[m.participant1Id]?.name : '?'
-                  const n2 = m.participant2Id ? pMap[m.participant2Id]?.name : '?'
-                  return <option key={m.id} value={m.id}>{roundName(m.round)} — {n1} vs {n2}</option>
-                })}
+                {pendingMatches
+                  .filter(m => {
+                    if (!matchSearch) return true
+                    const n1 = m.participant1Id ? pMap[m.participant1Id]?.name ?? '' : ''
+                    const n2 = m.participant2Id ? pMap[m.participant2Id]?.name ?? '' : ''
+                    return n1.includes(matchSearch) || n2.includes(matchSearch)
+                  })
+                  .map(m => {
+                    const n1 = m.participant1Id ? pMap[m.participant1Id]?.name : '?'
+                    const n2 = m.participant2Id ? pMap[m.participant2Id]?.name : '?'
+                    return <option key={m.id} value={m.id}>{roundName(m.round)} — {n1} vs {n2}</option>
+                  })}
               </select>
             </div>
           )}
