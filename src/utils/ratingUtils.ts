@@ -95,3 +95,22 @@ export function getPointsForResult(grade: TournamentGrade, achievement: string):
 export function getGradeLabel(grade: TournamentGrade): string { return grade }
 
 export const TOURNAMENT_GRADES: TournamentGrade[] = ['S급', 'A급', 'B급', 'C급', '생활체육S', '생활체육A', '생활체육B']
+
+// 종목별 포인트 배율
+export function getEventMultiplier(eventType: string): number {
+  if (eventType === '복식') return 0.7
+  if (eventType === '혼합복식') return 0.6
+  if (eventType === '단체전') return 0.8
+  return 1.0  // 단식
+}
+
+// Elo 기반 포인트 배율: 이변(upset) 승리 시 더 많은 포인트
+export function eloPointsMultiplier(winnerRating: number, loserRating: number): number {
+  const diff = loserRating - winnerRating // 양수 = 이변
+  if (diff >= 400) return 1.8
+  if (diff >= 200) return 1.4
+  if (diff >= 100) return 1.2
+  if (diff >= -100) return 1.0
+  if (diff >= -200) return 0.8
+  return 0.6
+}

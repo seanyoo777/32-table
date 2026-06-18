@@ -1,8 +1,8 @@
 export type Division = '초등' | '중등' | '고등' | '대학' | '일반' | '생활체육'
 export type EventType = '단식' | '복식' | '혼합복식' | '단체전'
 export type Gender = '남' | '여' | '혼합'
-export type BracketFormat = '토너먼트' | '리그' | '조별+토너먼트'
-export type SmartBracketFormat = 'single' | 'group' | 'league'
+export type BracketFormat = '토너먼트' | '리그' | '조별+토너먼트' | '시드예선'
+export type SmartBracketFormat = 'single' | 'group' | 'league' | 'seeded'
 
 export interface SmartEventInput {
   id: string
@@ -16,6 +16,7 @@ export interface SmartEventInput {
   preferredDayEnd?: number
   preferredCourtStart?: number
   preferredCourtEnd?: number
+  seedCount?: number
 }
 
 export interface Player {
@@ -106,6 +107,7 @@ export interface BracketMatch {
   scheduledTime?: string
   isBye?: boolean
   isThirdPlace?: boolean
+  phase?: 'qual' | 'main'
   setScores?: Array<[number, number]>
   tableNo?: number
   teamSubMatches?: TeamSubMatch[]
@@ -132,6 +134,8 @@ export interface TournamentEvent {
   status: 'draft' | 'ongoing' | 'completed'
   matchFormat?: MatchFormat
   hasThirdPlace?: boolean
+  seedCount?: number
+  participationAwarded?: boolean
 }
 
 export interface Tournament {

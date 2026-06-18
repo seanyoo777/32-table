@@ -2,7 +2,7 @@
 import { useStore } from '../store/useStore'
 import { SYNC_ENABLED } from '../lib/sync'
 import {
-  generateTournamentBracket, generateLeagueMatches, generateGroups,
+  generateTournamentBracket, generateLeagueMatches, generateGroups, generateSeededBracket,
   calcStandings, getRoundName, genId
 } from '../utils/bracketUtils'
 import {
@@ -15,12 +15,11 @@ import type {
   TournamentGrade, MatchFormat, TeamSubMatch
 } from '../types'
 import { TOURNAMENT_GRADES } from '../utils/rankingUtils'
-import { calcNewRatings } from '../utils/ratingUtils'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
 const EVENT_TYPES: EventType[] = ['단식', '복식', '혼합복식', '단체전']
 const GENDERS: Gender[] = ['남', '여', '혼합']
-const FORMATS: BracketFormat[] = ['토너먼트', '리그', '조별+토너먼트']
+const FORMATS: BracketFormat[] = ['토너먼트', '리그', '조별+토너먼트', '시드예선']
 
 const divColors: Record<Division, string> = {
   초등: 'bg-yellow-100 text-yellow-700', 중등: 'bg-green-100 text-green-700',
@@ -73,7 +72,7 @@ function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../t
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult, addPlayerPoints, updatePlayerRating, syncTournament, syncStatus } = useStore()
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult, syncTournament, syncStatus } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
@@ -100,24 +99,6 @@ export default function TournamentPage() {
       onStatusChange={(status) => updateTournament(selected.id, { status })}
       onRecord={(evId, mId, result) => {
         recordMatchResult(selected.id, evId, mId, result)
-        // Points: winner gets event.pointsForWin, loser gets 20%
-        const ev = selected.events.find(e => e.id === evId)
-        if (ev) {
-          addPlayerPoints(result.winnerId, ev.pointsForWin, true)
-          addPlayerPoints(result.loserId, Math.floor(ev.pointsForWin * 0.2), false)
-        }
-        // Elo 레이팅 업데이트 (단식 선수만)
-        const winner = players.find(p => p.id === result.winnerId)
-        const loser = players.find(p => p.id === result.loserId)
-        if (winner && loser) {
-          const { newA, newB } = calcNewRatings(
-            winner.rating, winner.gamesPlayed,
-            loser.rating, loser.gamesPlayed,
-            true
-          )
-          updatePlayerRating(winner.id, newA, winner.gamesPlayed + 1)
-          updatePlayerRating(loser.id, newB, loser.gamesPlayed + 1)
-        }
       }}
       onClearResult={(evId, mId) => clearMatchResult(selected.id, evId, mId)}
     />
@@ -222,7 +203,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
   const [showAutoSetup, setShowAutoSetup] = useState(false)
 
   // Auto setup state
-  type AutoDiv = { division: Division; gender: '남' | '여' | 'both'; format: BracketFormat; maxPlayers: number; enabled: boolean }
+  type AutoDiv = { division: Division; gender: '남' | '여' | 'both'; format: BracketFormat; maxPlayers: number; enabled: boolean; seedCount?: number }
   const [autoConfig, setAutoConfig] = useState<AutoDiv[]>([
     { division: '초등', gender: 'both', format: '토너먼트', maxPlayers: 32, enabled: true },
     { division: '중등', gender: 'both', format: '조별+토너먼트', maxPlayers: 32, enabled: true },
@@ -252,6 +233,10 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
           matches = generateTournamentBracket(participants, { thirdPlace: participants.length >= 4, preserveOrder: true })
         } else if (cfg.format === '리그') {
           matches = generateLeagueMatches(participants)
+        } else if (cfg.format === '시드예선') {
+          const sc = cfg.seedCount ?? 4
+          const r = generateSeededBracket(participants, sc)
+          groups = r.groups; matches = r.matches
         } else {
           const r = generateGroups(participants, 4, 2)
           groups = r.groups; matches = r.matches
@@ -261,6 +246,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
           bracketFormat: cfg.format, participantIds: participants.map(p => p.id),
           groups, matches, pointsForWin: 50, status: 'ongoing',
           hasThirdPlace: cfg.format === '토너먼트' && participants.length >= 4,
+          seedCount: cfg.format === '시드예선' ? (cfg.seedCount ?? 4) : undefined,
         })
       }
     }
@@ -278,6 +264,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
     pointsForWin: 50, groupSize: 4, advanceCount: 2,
     selectedIds: [] as string[],
     thirdPlace: false,
+    seedCount: 4,
   })
 
   const isDoubles = ef.eventType === '복식' || ef.eventType === '혼합복식'
@@ -359,6 +346,10 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
       matches = generateTournamentBracket(seeded, { thirdPlace: ef.thirdPlace, preserveOrder: !!finalOrder })
     } else if (ef.format === '리그') {
       matches = generateLeagueMatches(seeded)
+    } else if (ef.format === '시드예선') {
+      const result = generateSeededBracket(seeded, ef.seedCount)
+      groups = result.groups
+      matches = result.matches
     } else {
       const result = generateGroups(seeded, ef.groupSize, ef.advanceCount)
       groups = result.groups
@@ -371,6 +362,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
       participantIds: ef.selectedIds, groups, matches,
       pointsForWin: ef.pointsForWin, status: 'ongoing',
       hasThirdPlace: ef.format === '토너먼트' && ef.thirdPlace,
+      seedCount: ef.format === '시드예선' ? ef.seedCount : undefined,
     }
     setEvents(evs => [...evs, ev])
     setShowEventForm(false)
@@ -387,14 +379,32 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
-      <div className="flex items-center gap-3">
-        <button onClick={onCancel} className="btn-secondary py-1.5 text-sm">← 목록</button>
-        <h1 className="text-xl font-bold">새 대회 생성</h1>
+      {/* 스티키 헤더 + 단계 네비게이션 */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-200 -mx-4 px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button onClick={onCancel} className="btn-secondary py-1.5 text-sm flex-shrink-0">← 목록</button>
+          <h1 className="text-lg font-bold flex-shrink-0">새 대회 생성</h1>
+          <div className="flex gap-1 ml-auto flex-wrap">
+            {[
+              { label: '① 기본정보', href: 'sec-basic' },
+              { label: '② 종목구성', href: 'sec-events' },
+            ].map(s => (
+              <button key={s.href} onClick={() => document.getElementById(s.href)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-300 bg-white hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-colors">
+                {s.label}
+              </button>
+            ))}
+            <button onClick={handleCreate} disabled={!name || events.length === 0}
+              className="text-xs px-3 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+              ✓ 대회 생성
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 기본 정보 */}
-      <div className="card space-y-4">
-        <h2 className="font-semibold text-gray-700">대회 기본 정보</h2>
+      <div id="sec-basic" className="card space-y-4">
+        <h2 className="font-semibold text-gray-700">① 대회 기본 정보</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-1">
             <label className="text-sm font-medium text-gray-700 block mb-1">대회명 *</label>
@@ -412,9 +422,9 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
       </div>
 
       {/* 종목 목록 */}
-      <div className="card space-y-3">
+      <div id="sec-events" className="card space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="font-semibold text-gray-700">종목 구성 ({events.length}개)</h2>
+          <h2 className="font-semibold text-gray-700">② 종목 구성 ({events.length}개)</h2>
           <div className="flex gap-2">
             <button onClick={() => setShowAutoSetup(!showAutoSetup)} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5 bg-green-50 border-green-300 text-green-700 hover:bg-green-100">
               <Shuffle size={14} /> ⚡ 자동 구성
@@ -455,13 +465,23 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
                         <option value="토너먼트">토너먼트</option>
                         <option value="조별+토너먼트">조별+토너먼트</option>
                         <option value="리그">리그</option>
+                        <option value="시드예선">시드예선</option>
                       </select>
+                      {cfg.format === '시드예선' && (
+                        <select
+                          className="text-xs border rounded px-1.5 py-1 bg-white text-purple-700 font-medium"
+                          value={cfg.seedCount ?? 4}
+                          onChange={e => setAutoConfig(prev => prev.map((c, i) => i === idx ? { ...c, seedCount: Number(e.target.value) } : c))}
+                        >
+                          {[2, 4, 8, 16, 32].map(n => <option key={n} value={n}>시드 {n}명</option>)}
+                        </select>
+                      )}
                       <select
                         className="text-xs border rounded px-1.5 py-1 bg-white"
                         value={cfg.maxPlayers}
                         onChange={e => setAutoConfig(prev => prev.map((c, i) => i === idx ? { ...c, maxPlayers: Number(e.target.value) } : c))}
                       >
-                        {[8, 16, 32, 64, 128].map(n => <option key={n} value={n}>상위 {n}명</option>)}
+                        {[8, 16, 32, 64, 128].map(n => <option key={n} value={n}>{n}강</option>)}
                       </select>
                     </div>
                   </div>
@@ -544,6 +564,15 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
                   <input className="input" type="number" min="1" value={ef.advanceCount} onChange={e => setEf(f => ({ ...f, advanceCount: Number(e.target.value) }))} />
                 </div>
               </>)}
+              {ef.format === '시드예선' && (
+                <div>
+                  <label className="text-xs font-medium text-gray-600 block mb-1">시드 수 (직행)</label>
+                  <select className="select" value={ef.seedCount} onChange={e => setEf(f => ({ ...f, seedCount: Number(e.target.value) }))}>
+                    {[2, 4, 8, 16, 32].map(n => <option key={n} value={n}>{n}명</option>)}
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">상위 {ef.seedCount}명 본선 직행, 나머지는 예선 후 진출</p>
+                </div>
+              )}
             </div>
 
             {/* Participant selection */}
@@ -979,6 +1008,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
   const isLarge = event.participantIds.length > 32
   const isLeague = event.bracketFormat === '리그'
   const isGrouped = event.bracketFormat === '조별+토너먼트'
+  const isSeededQual = event.bracketFormat === '시드예선'
 
   const rounds = [...new Set(event.matches.map(m => m.round))].sort((a, b) => a - b)
   const roundMatches = event.matches.filter(m => m.round === selectedRound && m.participant1Id && m.participant2Id && !m.isBye)
@@ -987,8 +1017,8 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
     : {}
 
   // Champion / runner-up / 3rd place calculation
-  const finalMatch = event.bracketFormat === '토너먼트'
-    ? event.matches.filter(m => m.round === maxRound && m.result && !m.isBye && !m.isThirdPlace).sort((a, b) => a.position - b.position)[0]
+  const finalMatch = (event.bracketFormat === '토너먼트' || event.bracketFormat === '시드예선')
+    ? event.matches.filter(m => m.round === maxRound && m.result && !m.isBye && !m.isThirdPlace && m.phase !== 'qual').sort((a, b) => a.position - b.position)[0]
     : null
   const thirdPlaceMatch = event.matches.find(m => m.isThirdPlace)
   const champion = finalMatch?.result ? pMap[finalMatch.result.winnerId] : null
@@ -1058,7 +1088,10 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
             const rMatches = event.matches.filter(m => m.round === selectedRound && !m.isBye && m.participant1Id && m.participant2Id)
             const done = rMatches.filter(m => m.result && !m.result.walkedOver).length
             const isGroupRound = isGrouped && event.groups.length > 0 && selectedRound <= (event.groups[0]?.participantIds.length - 1)
+            const isQualRound = isSeededQual && rMatches.length > 0 && event.matches.find(m => m.round === selectedRound && m.participant1Id && m.participant2Id)?.phase === 'qual'
             const label = isGroupRound
+              ? `예선 ${selectedRound}라운드`
+              : isQualRound
               ? `예선 ${selectedRound}라운드`
               : getRoundName(selectedRound - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
             return (
@@ -1087,7 +1120,8 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
                     const rm = event.matches.filter(m => m.round === r && !m.isBye && m.participant1Id && m.participant2Id)
                     const d = rm.filter(m => m.result && !m.result.walkedOver).length
                     const isGR = isGrouped && event.groups.length > 0 && r <= (event.groups[0]?.participantIds.length - 1)
-                    const lbl = isGR ? `예선${r}R` : getRoundName(r - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
+                    const isQR = isSeededQual && event.matches.find(m => m.round === r && m.participant1Id && m.participant2Id)?.phase === 'qual'
+                    const lbl = isGR || isQR ? `예선${r}R` : getRoundName(r - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
                     return (
                       <button key={r} onClick={() => setSelectedRound(r)}
                         className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : d === rm.length && rm.length > 0 ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>

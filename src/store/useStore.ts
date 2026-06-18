@@ -5,7 +5,8 @@ import type {
   SchedulePlan, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
 } from '../types'
 import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
-import { getGroupRankedIds } from '../utils/bracketUtils'
+import { getGroupRankedIds, wireSeededQualWinners } from '../utils/bracketUtils'
+import { calcNewRatings, getPointsForResult, calcAchievement, getEventMultiplier, eloPointsMultiplier } from '../utils/ratingUtils'
 import { uploadTournament, subscribeTournament, SYNC_ENABLED } from '../lib/sync'
 
 // 최초 1회만 생성 (모듈 로드 시점)
@@ -219,8 +220,11 @@ export const useStore = create<StoreState>()(
               }
             }
 
-            // 3) Group stage → Knockout wiring
+            // 3) Group stage / Seeded-qual → Knockout wiring
             // When all matches of a group are done, fill the knockout placeholder slots
+            if (ev.bracketFormat === '시드예선' && ev.groups.length > 0) {
+              matches = wireSeededQualWinners(ev, matches)
+            }
             if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
               for (const group of ev.groups) {
                 const groupMatches = matches.filter(m => m.groupId === group.id)
@@ -267,6 +271,103 @@ export const useStore = create<StoreState>()(
       }))
        const updated2 = get().tournaments.find(t => t.id === tournamentId)
        if (updated2) uploadTournament(updated2).catch(() => {})
+
+       // ─── 자동 포인트·레이팅 계산 ─────────────────────────────
+       const st = get()
+       const tour = st.tournaments.find(t => t.id === tournamentId)
+       const ev = tour?.events.find(e => e.id === eventId)
+       const match = ev?.matches.find(m => m.id === matchId)
+       if (tour && ev && match && result.winnerId && result.loserId) {
+         const grade = tour.grade ?? 'C급'
+         const mainMatches = ev.matches.filter(m => !m.groupId && !m.isBye)
+         const maxRound = Math.max(...mainMatches.map(m => m.round), 1)
+         const isFinal = !match.nextMatchId && !match.isThirdPlace && match.round === maxRound && !match.groupId
+         const isThirdPlace = !!match.isThirdPlace
+         const eventMulti = getEventMultiplier(ev.eventType)
+
+         // ID가 pair/team인 경우 구성 선수 ID 배열로 확장
+         const expandId = (id: string): string[] => {
+           const pair = st.pairs.find(p => p.id === id)
+           if (pair) return [pair.player1Id, pair.player2Id].filter(Boolean) as string[]
+           const team = st.teams.find(t => t.id === id)
+           if (team) return team.playerIds ?? []
+           return [id]
+         }
+
+         type PlayerUpdate = { points: number; isWin: boolean; newRating?: number; newGames?: number }
+         const updates = new Map<string, PlayerUpdate>()
+         const addUpd = (id: string, pts: number, isWin: boolean, extra?: Partial<PlayerUpdate>) => {
+           const prev = updates.get(id) ?? { points: 0, isWin: false }
+           updates.set(id, { points: prev.points + pts, isWin: prev.isWin || isWin, ...extra })
+         }
+
+         // 패자 포인트 (라운드 성적)
+         const loserAch = calcAchievement(match.round, maxRound)
+         const loserPts = Math.round(getPointsForResult(grade, loserAch) * eventMulti)
+         for (const pid of expandId(result.loserId)) addUpd(pid, loserPts, false)
+
+         // 승자 포인트 (결승·3위전에서만)
+         if (isFinal || isThirdPlace) {
+           const winnerRating = st.players.find(p => p.id === result.winnerId)?.rating ?? 1000
+           const loserRating  = st.players.find(p => p.id === result.loserId)?.rating  ?? 1000
+           const eloM = eloPointsMultiplier(winnerRating, loserRating)
+           const ach = isFinal ? '우승' : '3위'
+           const winPts = Math.round(getPointsForResult(grade, ach) * eventMulti * eloM)
+           for (const pid of expandId(result.winnerId)) addUpd(pid, winPts, true)
+         } else {
+           // 결승 아닌 경우 승리 카운트만 올리기
+           for (const pid of expandId(result.winnerId)) addUpd(pid, 0, true)
+         }
+
+         // Elo 레이팅 업데이트 (단식만)
+         if (ev.eventType === '단식') {
+           const wP = st.players.find(p => p.id === result.winnerId)
+           const lP = st.players.find(p => p.id === result.loserId)
+           if (wP && lP) {
+             const { newA, newB } = calcNewRatings(wP.rating, wP.gamesPlayed, lP.rating, lP.gamesPlayed, true)
+             const wUpd = updates.get(wP.id) ?? { points: 0, isWin: true }
+             updates.set(wP.id, { ...wUpd, newRating: newA, newGames: wP.gamesPlayed + 1 })
+             const lUpd = updates.get(lP.id) ?? { points: 0, isWin: false }
+             updates.set(lP.id, { ...lUpd, newRating: newB, newGames: lP.gamesPlayed + 1 })
+           }
+         }
+
+         // 참가 포인트: 이벤트 첫 경기 시 전 참가자에게
+         const isFirstResult = ev.matches.filter(m => m.result && !m.isBye).length <= 1
+         if (isFirstResult && !ev.participationAwarded) {
+           const partPts = Math.round(getPointsForResult(grade, '참가') * eventMulti)
+           for (const pid of ev.participantIds) {
+             for (const playerId of expandId(pid)) {
+               const prev = updates.get(playerId) ?? { points: 0, isWin: false }
+               updates.set(playerId, { ...prev, points: prev.points + partPts })
+             }
+           }
+         }
+
+         if (updates.size > 0) {
+           set((s) => ({
+             players: s.players.map(p => {
+               const u = updates.get(p.id)
+               if (!u) return p
+               return {
+                 ...p,
+                 points: p.points + u.points,
+                 wins: p.wins + (u.isWin ? 1 : 0),
+                 losses: p.losses + (u.isWin ? 0 : 1),
+                 ...(u.newRating !== undefined ? { rating: u.newRating } : {}),
+                 ...(u.newGames !== undefined ? { gamesPlayed: u.newGames } : {}),
+               }
+             }),
+             // 참가 포인트 지급 완료 마킹
+             ...(isFirstResult && !ev.participationAwarded ? {
+               tournaments: s.tournaments.map(t => t.id !== tournamentId ? t : {
+                 ...t,
+                 events: t.events.map(e => e.id !== eventId ? e : { ...e, participationAwarded: true }),
+               })
+             } : {}),
+           }))
+         }
+       }
       },
 
       clearMatchResult: (tournamentId, eventId, matchId) => {

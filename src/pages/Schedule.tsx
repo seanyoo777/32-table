@@ -11,6 +11,7 @@ const BRACKET_LABELS: Record<SmartBracketFormat, string> = {
   single: '토너먼트',
   group: '조별+토너먼트',
   league: '리그전',
+  seeded: '시드예선',
 }
 
 type GridColDef = { key: string; label: string; eventType: EventType; gender: Gender }
@@ -24,7 +25,7 @@ const GRID_COLS: GridColDef[] = [
   { key: 'F-단체',  label: '여자단체',  eventType: '단체전',  gender: '여' },
 ]
 
-type GridRow = { bracketFormat: SmartBracketFormat; counts: Record<string, number>; dayStart: number; dayEnd: number }
+type GridRow = { bracketFormat: SmartBracketFormat; counts: Record<string, number>; dayStart: number; dayEnd: number; seedCount?: number }
 type GridState = Record<Division, GridRow>
 const initGrid = (): GridState =>
   Object.fromEntries(DIVISIONS.map(d => [d, { bracketFormat: 'single' as SmartBracketFormat, counts: {}, dayStart: 1, dayEnd: 1 }])) as GridState
@@ -138,6 +139,7 @@ export default function SchedulePage() {
             label: `${div} ${gLabel}${col.eventType}`,
             preferredDayStart: row.dayStart,
             preferredDayEnd: row.dayEnd,
+            seedCount: row.bracketFormat === 'seeded' ? (row.seedCount ?? 4) : undefined,
           })
         }
       }
@@ -616,12 +618,21 @@ export default function SchedulePage() {
                           </td>
                         )}
                         <td className="py-1 px-1.5 border border-gray-200">
-                          <select disabled={!active} className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            value={row.bracketFormat} onChange={e => setGridBracket(div, e.target.value as SmartBracketFormat)}>
-                            {(Object.keys(BRACKET_LABELS) as SmartBracketFormat[]).map(k => (
-                              <option key={k} value={k}>{BRACKET_LABELS[k]}</option>
-                            ))}
-                          </select>
+                          <div className="flex flex-col gap-1">
+                            <select disabled={!active} className="w-full text-xs border border-gray-200 rounded px-1 py-1 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                              value={row.bracketFormat} onChange={e => setGridBracket(div, e.target.value as SmartBracketFormat)}>
+                              {(Object.keys(BRACKET_LABELS) as SmartBracketFormat[]).map(k => (
+                                <option key={k} value={k}>{BRACKET_LABELS[k]}</option>
+                              ))}
+                            </select>
+                            {row.bracketFormat === 'seeded' && (
+                              <select disabled={!active} className="w-full text-xs border border-purple-300 rounded px-1 py-1 bg-purple-50 text-purple-700 font-medium disabled:opacity-50"
+                                value={row.seedCount ?? 4}
+                                onChange={e => setGrid(prev => ({ ...prev, [div]: { ...prev[div], seedCount: Number(e.target.value) } }))}>
+                                {[2, 4, 8, 16, 32].map(n => <option key={n} value={n}>시드 {n}명</option>)}
+                              </select>
+                            )}
+                          </div>
                         </td>
                         {GRID_COLS.map(col => {
                           const val = row.counts[col.key] ?? 0

@@ -310,6 +310,41 @@ export function calcRoundsFromParticipants(ev: SmartEventInput): RoundPlan[] {
       stageRatio: (1 + i) / (total - 1 || 1),
       isLate: r.name === '결승' || r.name === '준결승',
     }))
+  } else if (ev.bracketFormat === 'seeded') {
+    // 시드예선: 예선(토너먼트 절반) + 본선(토너먼트)
+    const seedCount = ev.seedCount ?? Math.min(Math.ceil(n / 2), 16)
+    const qualifiers = n - seedCount
+    // 예선 라운드 (non-seeds)
+    let qp = qualifiers
+    const qual: { name: string; matches: number }[] = []
+    while (qp > 1) {
+      qual.push({ name: `예선 ${qual.length + 1}라운드`, matches: Math.floor(qp / 2) })
+      qp = Math.ceil(qp / 2)
+    }
+    qual.forEach((r, i) => rounds.push({
+      eventId: ev.id, eventLabel: ev.label,
+      division: ev.division, eventType: ev.eventType, gender: ev.gender,
+      roundName: r.name, matchCount: r.matches,
+      stageRatio: i / (qual.length + 3 || 1), isLate: false,
+    }))
+    // 본선 라운드 (seeds + qual winners)
+    let p = seedCount + Math.ceil(qualifiers / 2)
+    const main: { name: string; matches: number }[] = []
+    while (p > 1) {
+      const m = Math.floor(p / 2)
+      const name = p <= 2 ? '결승' : p <= 4 ? '준결승' : p <= 8 ? '8강' : p <= 16 ? '16강' : '32강'
+      main.push({ name, matches: m })
+      p = Math.ceil(p / 2)
+    }
+    main.reverse()
+    const total = qual.length + main.length
+    main.forEach((r, i) => rounds.push({
+      eventId: ev.id, eventLabel: ev.label,
+      division: ev.division, eventType: ev.eventType, gender: ev.gender,
+      roundName: r.name, matchCount: r.matches,
+      stageRatio: (qual.length + i) / (total - 1 || 1),
+      isLate: r.name === '결승' || r.name === '준결승',
+    }))
   } else {
     // league: round-robin
     const totalMatches = Math.floor(n * (n - 1) / 2)

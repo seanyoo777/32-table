@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { ClipboardList, Check, X, Zap, Keyboard } from 'lucide-react'
 import type { ScoreRecord, MatchResult, MatchFormat, LiveMatch } from '../types'
-import { calcNewRatings } from '../utils/ratingUtils'
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
@@ -10,7 +9,7 @@ const DEFAULT_FORMAT: MatchFormat = { sets: 5, pointsPerGame: 11 }
 
 // ── Live Scoreboard ─────────────────────────────────────
 function LiveScoreboard({ onClose }: { onClose: () => void }) {
-  const { tournaments, players, pairs, teams, liveMatches, setLiveMatch, removeLiveMatch, recordMatchResult, addScoreRecord, addPlayerPoints, updatePlayerRating } = useStore()
+  const { tournaments, players, pairs, teams, liveMatches, setLiveMatch, removeLiveMatch, recordMatchResult, addScoreRecord } = useStore()
 
   const pMap = Object.fromEntries([
     ...players.map(p => [p.id, { name: p.name, school: p.school, photoUrl: p.photoUrl }]),
@@ -78,23 +77,6 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
           sets: newCompleted,
         }
         recordMatchResult(lm.tournamentId, lm.eventId, lm.matchId, result)
-        const ev = tournaments.find(t => t.id === lm.tournamentId)?.events.find(e => e.id === lm.eventId)
-        if (ev) {
-          addPlayerPoints(winnerId, ev.pointsForWin, true)
-          addPlayerPoints(loserId, Math.floor(ev.pointsForWin * 0.2), false)
-        }
-        // Elo 레이팅 업데이트 (단식 선수만 — pairs는 rating 없음)
-        const winner = players.find(p => p.id === winnerId)
-        const loser = players.find(p => p.id === loserId)
-        if (winner && loser) {
-          const { newA, newB } = calcNewRatings(
-            winner.rating, winner.gamesPlayed,
-            loser.rating, loser.gamesPlayed,
-            true
-          )
-          updatePlayerRating(winner.id, newA, winner.gamesPlayed + 1)
-          updatePlayerRating(loser.id, newB, loser.gamesPlayed + 1)
-        }
         const record: ScoreRecord = {
           id: genId(), tournamentId: lm.tournamentId, eventId: lm.eventId, matchId: lm.matchId,
           participant1Id: lm.participant1Id, participant2Id: lm.participant2Id,
@@ -376,7 +358,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 
 // ── Manual Entry ─────────────────────────────────────────
 function ManualEntry() {
-  const { players, pairs, tournaments, scoreRecords, addScoreRecord, verifyScoreRecord, recordMatchResult, addPlayerPoints, updatePlayerRating } = useStore()
+  const { players, pairs, tournaments, scoreRecords, addScoreRecord, verifyScoreRecord, recordMatchResult } = useStore()
   const [submitted, setSubmitted] = useState(false)
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
   const [recorder, setRecorder] = useState('')
@@ -420,20 +402,6 @@ function ManualEntry() {
       sets: sets.filter(([a, b]) => a !== '' && b !== '').map(([a, b]) => [Number(a), Number(b)]),
     }
     recordMatchResult(selTournament.id, selEvent.id, selMatch.id, result)
-    addPlayerPoints(winnerId, selEvent.pointsForWin, true)
-    addPlayerPoints(loserId, Math.floor(selEvent.pointsForWin * 0.2), false)
-    // Elo 레이팅 업데이트 (단식 선수만)
-    const winner = players.find(p => p.id === winnerId)
-    const loser = players.find(p => p.id === loserId)
-    if (winner && loser) {
-      const { newA, newB } = calcNewRatings(
-        winner.rating, winner.gamesPlayed,
-        loser.rating, loser.gamesPlayed,
-        true
-      )
-      updatePlayerRating(winner.id, newA, winner.gamesPlayed + 1)
-      updatePlayerRating(loser.id, newB, loser.gamesPlayed + 1)
-    }
 
     const record: ScoreRecord = {
       id: genId(), tournamentId: selTournament.id, eventId: selEvent.id,

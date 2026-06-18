@@ -1,4 +1,4 @@
-import type { BracketMatch, Group } from '../types'
+import type { BracketMatch, Group, TournamentEvent } from '../types'
 
 export function genId() { return Math.random().toString(36).slice(2, 10) }
 
@@ -134,6 +134,107 @@ export function generateGroups(
   const knockoutMatches = generateKnockoutFromGroups(groups, maxGroupRound)
 
   return { groups, matches: [...groupMatches, ...knockoutMatches] }
+}
+
+// ─── 시드예선 브래킷 ──────────────────────────────────────────
+// seeds: 상위 seedCount명 → 본선 직행
+// 나머지: 예선 조별 미니 토너먼트 → 우승자 본선 합류
+export function generateSeededBracket(
+  participants: Seeded[],
+  seedCount: number,
+  options?: { thirdPlace?: boolean }
+): { groups: Group[]; matches: BracketMatch[] } {
+  const sorted = [...participants].sort((a, b) => b.points - a.points)
+  const actualSeeds = Math.min(seedCount, sorted.length)
+  const seeds = sorted.slice(0, actualSeeds)
+  const qualifiers = sorted.slice(actualSeeds)
+
+  // 본선에서 필요한 예선 통과 슬롯 수
+  const qualAdvance = qualifiers.length > 0 ? Math.min(qualifiers.length, actualSeeds) : 0
+
+  // 예선 통과 슬롯 플레이스홀더 (포인트 0 → 본선에서 낮은 시드 위치 배정)
+  const qualSlots: Seeded[] = Array.from({ length: qualAdvance }, (_, i) => ({
+    id: `ko-slot-qg${i}-r1`,
+    points: 0,
+  }))
+
+  // 본선 브래킷 생성 (시드 + 예선 슬롯)
+  const mainParticipants = [...seeds, ...qualSlots]
+  const mainMatches: BracketMatch[] = generateTournamentBracket(mainParticipants, options)
+    .map(m => ({ ...m, phase: 'main' as const }))
+
+  // 예선 조 생성
+  const groups: Group[] = []
+  const qualMatches: BracketMatch[] = []
+
+  for (let gi = 0; gi < qualAdvance; gi++) {
+    const groupPlayers = qualifiers.filter((_, idx) => idx % qualAdvance === gi)
+    if (groupPlayers.length === 0) continue
+
+    const gId = `qg${gi}`
+    groups.push({
+      id: gId,
+      name: `예선 ${gi + 1}조`,
+      participantIds: groupPlayers.map(p => p.id),
+      advanceCount: 1,
+    })
+
+    if (groupPlayers.length === 1) {
+      // 1명 → 부전승으로 바로 통과
+      qualMatches.push({
+        id: `${gId}-r1m1`,
+        round: 1, position: 0,
+        groupId: gId,
+        participant1Id: groupPlayers[0].id,
+        participant2Id: null,
+        result: { winnerId: groupPlayers[0].id, loserId: '', winnerScore: 0, loserScore: 0, walkedOver: true },
+        nextMatchId: null,
+        isBye: true,
+        phase: 'qual',
+      })
+    } else {
+      // 미니 토너먼트 생성 후 ID 앞에 그룹 접두사 붙이기
+      const inner = generateTournamentBracket(groupPlayers)
+      const prefixed: BracketMatch[] = inner.map(m => ({
+        ...m,
+        id: `${gId}-${m.id}`,
+        groupId: gId,
+        phase: 'qual' as const,
+        nextMatchId: m.nextMatchId ? `${gId}-${m.nextMatchId}` : null,
+      }))
+      qualMatches.push(...prefixed)
+    }
+  }
+
+  return { groups, matches: [...qualMatches, ...mainMatches] }
+}
+
+// 시드예선에서 예선 그룹 완료 시 본선 슬롯 채우기 (useStore recordMatchResult에서 호출)
+export function wireSeededQualWinners(
+  ev: Pick<TournamentEvent, 'groups'>,
+  matches: BracketMatch[]
+): BracketMatch[] {
+  for (const group of ev.groups) {
+    const qgMatches = matches.filter(m => m.groupId === group.id)
+    if (qgMatches.length === 0) continue
+
+    const maxRound = Math.max(...qgMatches.map(m => m.round))
+    const qgFinal = qgMatches.find(m => m.round === maxRound && !m.isBye)
+    const autoWin = qgMatches.find(m => m.isBye && m.result?.winnerId)
+    const winner = qgFinal?.result?.winnerId ?? autoWin?.result?.winnerId
+    if (!winner) continue
+
+    const slotId = `ko-slot-${group.id}-r1`
+    matches = matches.map((m): BracketMatch => {
+      if (m.groupId) return m
+      const p1 = m.participant1Id === slotId ? winner : m.participant1Id
+      const p2 = m.participant2Id === slotId ? winner : m.participant2Id
+      return p1 !== m.participant1Id || p2 !== m.participant2Id
+        ? { ...m, participant1Id: p1, participant2Id: p2 }
+        : m
+    })
+  }
+  return matches
 }
 
 // Knockout bracket after group stage (placeholder matches)

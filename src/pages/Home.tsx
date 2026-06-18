@@ -1,6 +1,6 @@
 import { useStore } from '../store/useStore'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, Calendar, ClipboardList, TableProperties, Zap, QrCode, Monitor, Bell, LayoutDashboard } from 'lucide-react'
+import { Trophy, Calendar, ClipboardList, TableProperties, Zap, QrCode, Monitor, Bell, LayoutDashboard, Users, Award, Star } from 'lucide-react'
 
 export default function Home() {
   const { players, pairs, tournaments, schedules, appSettings, matchCalls } = useStore()
