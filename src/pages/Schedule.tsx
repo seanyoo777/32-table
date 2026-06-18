@@ -72,6 +72,7 @@ export default function SchedulePage() {
 
   const [planName, setPlanName] = useState('')
   const [planDate, setPlanDate] = useState(new Date().toISOString().split('T')[0])
+  const [planEndDate, setPlanEndDate] = useState('')  // 종료 날짜 (입력 시 totalDays 자동 계산)
 
   const [grid, setGrid] = useState<GridState>(initGrid)
   const [activeDivs, setActiveDivs] = useState<Record<Division, boolean>>(
@@ -152,18 +153,19 @@ export default function SchedulePage() {
     { day: 1, date: planDate, startTime: '09:00', endTime: '20:00', courtCount: 4 }
   ])
 
-  function updateDayCount(n: number) {
+  function updateDayCount(n: number, baseDate?: string) {
     const clamped = Math.min(7, Math.max(1, n))
     setTotalDays(clamped)
+    const start = baseDate ?? planDate
     setDayConfigs(prev => {
       const next: DayConfig[] = []
       for (let i = 1; i <= clamped; i++) {
         const existing = prev.find(d => d.day === i)
-        if (existing) { next.push(existing) }
+        if (existing) { next.push({ ...existing, date: (() => { const d = new Date(start); d.setDate(d.getDate() + i - 1); return d.toISOString().split('T')[0] })() }) }
         else {
-          const baseDate = new Date(planDate)
-          baseDate.setDate(baseDate.getDate() + i - 1)
-          next.push({ day: i, date: baseDate.toISOString().split('T')[0], startTime: '09:00', endTime: '20:00', courtCount: 4 })
+          const d = new Date(start)
+          d.setDate(d.getDate() + i - 1)
+          next.push({ day: i, date: d.toISOString().split('T')[0], startTime: '09:00', endTime: '20:00', courtCount: 4 })
         }
       }
       return next
@@ -216,9 +218,14 @@ export default function SchedulePage() {
     }, 0),
     [smartEvents]
   )
-  // 예상 소요 시간(벽시계) = 필요 작업량 ÷ 평균 코트 수 → 코트 늘수록 줄어듦
-  const estDurationMin = totalCapacityMin > 0 ? Math.round(totalRequiredMin * totalOperatingMin / totalCapacityMin) : 0
+  // 초과 여부: 필요 코트-분 > 가용 코트-분
   const overCapacity = totalRequiredMin > totalCapacityMin
+  // 부족 코트-분: 양수면 초과, 0 이하면 여유
+  const shortfallMin = totalRequiredMin - totalCapacityMin
+  // 평균 1일 가용 코트-분 (일수로 나눔)
+  const avgCapacityPerDay = totalDays > 0 ? totalCapacityMin / totalDays : 0
+  // 추가로 필요한 일수 (shortfallMin을 하루 평균 가용량으로 나눔)
+  const extraDaysNeeded = avgCapacityPerDay > 0 ? Math.ceil(shortfallMin / avgCapacityPerDay) : 0
 
   const maxCourts = useMemo(() => Math.max(1, ...dayConfigs.map(d => d.courtCount)), [dayConfigs])
   const hasTeamEvent = smartEvents.some(e => e.eventType === '단체전')
@@ -282,21 +289,35 @@ export default function SchedulePage() {
           {/* ① 기본 정보 */}
           <div className="card space-y-3">
             <h2 className="font-semibold text-gray-700 text-sm">① 기본 정보</h2>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-gray-600 block mb-1">일정표 이름 *</label>
                 <input className="input text-sm" placeholder="예: 2024 춘계 탁구대회" value={planName} onChange={e => setPlanName(e.target.value)} />
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">대회 시작 날짜</label>
-                <input className="input text-sm" type="date" value={planDate} onChange={e => { setPlanDate(e.target.value); updateDayCount(totalDays) }} />
+                <input className="input text-sm" type="date" value={planDate} onChange={e => {
+                  setPlanDate(e.target.value)
+                  if (planEndDate && planEndDate >= e.target.value) {
+                    const days = Math.round((new Date(planEndDate).getTime() - new Date(e.target.value).getTime()) / 86400000) + 1
+                    updateDayCount(Math.min(7, Math.max(1, days)), e.target.value)
+                  } else {
+                    updateDayCount(totalDays, e.target.value)
+                  }
+                }} />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">대회 일수</label>
-                <div className="flex items-center gap-2">
-                  <input className="input w-16 text-center text-sm" type="number" min="1" max="7" value={totalDays} onChange={e => updateDayCount(Number(e.target.value))} />
-                  <span className="text-sm text-gray-500">일 (최대 7일)</span>
-                </div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">대회 종료 날짜</label>
+                <input className="input text-sm" type="date" value={planEndDate || (() => { const d = new Date(planDate); d.setDate(d.getDate() + totalDays - 1); return d.toISOString().split('T')[0] })()} min={planDate}
+                  onChange={e => {
+                    setPlanEndDate(e.target.value)
+                    if (e.target.value >= planDate) {
+                      const days = Math.round((new Date(e.target.value).getTime() - new Date(planDate).getTime()) / 86400000) + 1
+                      updateDayCount(Math.min(7, Math.max(1, days)), planDate)
+                    }
+                  }}
+                />
+                <div className="text-[10px] text-gray-400 mt-0.5">= {totalDays}일 (최대 7일)</div>
               </div>
             </div>
           </div>
@@ -380,12 +401,31 @@ export default function SchedulePage() {
                   <td className="py-2">
                     {totalRequiredMin > 0 ? (
                       <div className="flex flex-col gap-0.5">
-                        <span className={`font-bold text-base ${overCapacity ? 'text-red-600' : 'text-green-600'}`}>
-                          약 {fmtCourtHours(estDurationMin)}{overCapacity && ' ⚠ 초과'}
-                        </span>
-                        <span className="text-[11px] text-gray-500">
-                          {totalRequiredMatches}경기 · 운영 {fmtCourtHours(totalOperatingMin)}{overCapacity ? ' 부족' : ' 내 완료 ✓'}
-                        </span>
+                        {overCapacity ? (
+                          <>
+                            <span className="font-bold text-base text-red-600">
+                              ⚠ {fmtCourtHours(shortfallMin)} 부족
+                            </span>
+                            <span className="text-[11px] text-gray-500">
+                              {totalRequiredMatches}경기 · 필요 {fmtCourtHours(totalRequiredMin)} / 가용 {fmtCourtHours(totalCapacityMin)}
+                            </span>
+                            <span className="text-[11px] text-orange-600">
+                              약 {extraDaysNeeded}일 더 필요 (또는 코트 추가)
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold text-base text-green-600">
+                              ✓ {totalDays}일 내 완료
+                            </span>
+                            <span className="text-[11px] text-gray-500">
+                              {totalRequiredMatches}경기 · 필요 {fmtCourtHours(totalRequiredMin)} / 가용 {fmtCourtHours(totalCapacityMin)}
+                            </span>
+                            <span className="text-[11px] text-green-600">
+                              여유 {fmtCourtHours(-shortfallMin)}
+                            </span>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <span className="text-xs text-gray-400">인원 입력 시 계산</span>
