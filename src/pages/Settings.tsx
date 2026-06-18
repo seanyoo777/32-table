@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { Save, Download, Upload, Trash2, AlertTriangle, CheckCircle, Info, Database, Settings as SettingsIcon, RefreshCw } from 'lucide-react'
+import { Save, Download, Upload, Trash2, AlertTriangle, CheckCircle, Info, Database, Settings as SettingsIcon, RefreshCw, Wifi, WifiOff, Copy } from 'lucide-react'
+import { SYNC_ENABLED } from '../lib/sync'
 
 export default function Settings() {
   const {
@@ -202,6 +203,64 @@ export default function Settings() {
                     className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
                     취소
                   </button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Supabase 실시간 동기화 */}
+          <section className="card space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+                {SYNC_ENABLED
+                  ? <><Wifi size={14} className="text-green-500" /> 실시간 동기화 <span className="text-xs text-green-600 font-normal">● 연결됨</span></>
+                  : <><WifiOff size={14} className="text-gray-400" /> 실시간 동기화 <span className="text-xs text-gray-400 font-normal">미연결</span></>
+                }
+              </h2>
+            </div>
+            {SYNC_ENABLED ? (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
+                <CheckCircle size={14} />
+                Supabase가 연결되어 대회 데이터가 여러 기기 간 실시간 동기화됩니다.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700">
+                  <Info size={13} className="mt-0.5 flex-shrink-0" />
+                  <span>Supabase를 연결하면 여러 기기에서 대회를 동시에 운영하고 관람객이 실시간 대진표를 볼 수 있습니다.</span>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2.5 text-xs">
+                  <div className="font-semibold text-gray-700">① Supabase 프로젝트 생성</div>
+                  <div className="text-gray-500 space-y-1">
+                    <p>supabase.com → New Project → URL과 anon key 복사</p>
+                  </div>
+                  <div className="font-semibold text-gray-700">② SQL 에디터에서 테이블 생성</div>
+                  <div className="relative">
+                    <pre className="bg-gray-800 text-green-300 rounded p-2.5 overflow-x-auto text-[11px] leading-relaxed">{`CREATE TABLE pingpong_tournaments (
+  id TEXT PRIMARY KEY,
+  data JSONB NOT NULL,
+  session_name TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE pingpong_tournaments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public read" ON pingpong_tournaments FOR SELECT USING (true);
+CREATE POLICY "public write" ON pingpong_tournaments FOR ALL USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE pingpong_tournaments;`}</pre>
+                    <button
+                      onClick={() => navigator.clipboard?.writeText(`CREATE TABLE pingpong_tournaments (\n  id TEXT PRIMARY KEY,\n  data JSONB NOT NULL,\n  session_name TEXT,\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\nALTER TABLE pingpong_tournaments ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "public read" ON pingpong_tournaments FOR SELECT USING (true);\nCREATE POLICY "public write" ON pingpong_tournaments FOR ALL USING (true);\nALTER PUBLICATION supabase_realtime ADD TABLE pingpong_tournaments;`)}
+                      className="absolute top-1.5 right-1.5 p-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300"
+                      title="복사"
+                    ><Copy size={11} /></button>
+                  </div>
+                  <div className="font-semibold text-gray-700">③ Cloudflare Pages 환경변수 설정</div>
+                  <div className="text-gray-500 space-y-1">
+                    <p>Cloudflare → Pages → Settings → Environment Variables</p>
+                    <div className="bg-white border rounded p-2 font-mono space-y-0.5">
+                      <div>VITE_SUPABASE_URL = <span className="text-blue-600">https://xxx.supabase.co</span></div>
+                      <div>VITE_SUPABASE_ANON_KEY = <span className="text-blue-600">eyJh...</span></div>
+                    </div>
+                  </div>
+                  <div className="font-semibold text-gray-700">④ 재배포 후 이 페이지에서 "● 연결됨" 확인</div>
                 </div>
               </div>
             )}
