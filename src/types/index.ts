@@ -120,6 +120,16 @@ export interface Group {
   advanceCount: number
 }
 
+// 종목 단위로 마지막에 적용된 포인트·승패·레이팅 델타 (idempotent 정산용)
+// 결과 입력/수정/취소 시 이 값과의 차이만 선수에게 반영 → 누적 오염 방지
+export interface EventAwards {
+  points: Record<string, number>      // playerId → 가산 포인트
+  wins: Record<string, number>        // playerId → 승 수
+  losses: Record<string, number>      // playerId → 패 수
+  ratingDelta: Record<string, number> // playerId → Elo 레이팅 변화량 (단식만)
+  gamesDelta: Record<string, number>  // playerId → 경기 수 변화량 (단식만)
+}
+
 export interface TournamentEvent {
   id: string
   label: string
@@ -135,7 +145,8 @@ export interface TournamentEvent {
   matchFormat?: MatchFormat
   hasThirdPlace?: boolean
   seedCount?: number
-  participationAwarded?: boolean
+  participationAwarded?: boolean  // (deprecated) v3.4 incremental 방식 잔재 — 현재 미사용
+  awards?: EventAwards            // 마지막 정산 스냅샷
 }
 
 export interface Tournament {

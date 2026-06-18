@@ -5,8 +5,8 @@ import type {
   SchedulePlan, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
 } from '../types'
 import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
-import { getGroupRankedIds, wireSeededQualWinners } from '../utils/bracketUtils'
-import { calcNewRatings, getPointsForResult, calcAchievement, getEventMultiplier, eloPointsMultiplier } from '../utils/ratingUtils'
+import { getGroupRankedIds, wireSeededQualWinners, propagateAndCascade, wireThirdPlace } from '../utils/bracketUtils'
+import { applyEventSettlement } from '../utils/tournamentScoring'
 import { uploadTournament, subscribeTournament, SYNC_ENABLED } from '../lib/sync'
 
 // 최초 1회만 생성 (모듈 로드 시점)
@@ -173,229 +173,93 @@ export const useStore = create<StoreState>()(
       })),
 
       recordMatchResult: (tournamentId, eventId, matchId, result) => {
-       set((s) => ({
-        tournaments: s.tournaments.map(t => {
-          if (t.id !== tournamentId) return t
+        set((s) => {
+          // 1) 브래킷 업데이트 (결과 기록 → 승자 전파 → 3·4위전 → 조별/예선 본선 배정 → 상태)
+          const tournaments1 = s.tournaments.map(t => {
+            if (t.id !== tournamentId) return t
 
-          const newEvents = t.events.map(ev => {
-            if (ev.id !== eventId) return ev
+            const newEvents = t.events.map(ev => {
+              if (ev.id !== eventId) return ev
 
-            // 1) Record the match result
-            let matches = ev.matches.map((m): BracketMatch =>
-              m.id === matchId ? { ...m, result } : m
-            )
+              // 결과 기록
+              let matches = ev.matches.map((m): BracketMatch =>
+                m.id === matchId ? { ...m, result } : m
+              )
 
-            // 2) Advance winner to next knockout round via nextMatchId
-            matches = matches.map((m): BracketMatch => {
-              const feeders = matches.filter(f => f.nextMatchId === m.id && f.result)
-              if (feeders.length === 0) return m
-              const updated = { ...m }
-              feeders.forEach(f => {
-                const allFeeders = matches.filter(x => x.nextMatchId === m.id)
-                const isFirst = allFeeders.indexOf(f) === 0
-                if (isFirst) updated.participant1Id = f.result!.winnerId
-                else updated.participant2Id = f.result!.winnerId
-              })
-              return updated
+              // 승자 다음 라운드 진출 + 연쇄 정리
+              matches = propagateAndCascade(matches)
+
+              // 시드예선/조별 → 본선 슬롯 채우기 (그룹 완료 시)
+              if (ev.bracketFormat === '시드예선' && ev.groups.length > 0) {
+                matches = wireSeededQualWinners(ev, matches)
+                matches = propagateAndCascade(matches)
+              }
+              if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
+                for (const group of ev.groups) {
+                  const groupMatches = matches.filter(m => m.groupId === group.id)
+                  const allDone = groupMatches.length > 0 && groupMatches.every(m => m.result)
+                  if (!allDone) continue
+                  const rankedIds = getGroupRankedIds(groupMatches, group)
+                  for (let rank = 1; rank <= group.advanceCount; rank++) {
+                    const advancerId = rankedIds[rank - 1]
+                    if (!advancerId) continue
+                    const slotId = `ko-slot-${group.id}-r${rank}`
+                    matches = matches.map((m): BracketMatch => {
+                      if (m.groupId) return m
+                      const p1Updated = m.participant1Id === slotId ? advancerId : m.participant1Id
+                      const p2Updated = m.participant2Id === slotId ? advancerId : m.participant2Id
+                      return p1Updated !== m.participant1Id || p2Updated !== m.participant2Id
+                        ? { ...m, participant1Id: p1Updated, participant2Id: p2Updated }
+                        : m
+                    })
+                  }
+                }
+                matches = propagateAndCascade(matches)
+              }
+
+              // 3·4위전 준결승 패자 배정
+              matches = wireThirdPlace(matches)
+
+              // 종목 상태 전환
+              const realMatches = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+              const allCompleted = realMatches.length > 0 && realMatches.every(m => m.result)
+              const newStatus = allCompleted ? 'completed' : ev.status === 'draft' ? 'ongoing' : ev.status
+
+              return { ...ev, matches, status: newStatus as TournamentEvent['status'] }
             })
 
-            // 2.5) 3·4위전: 준결승 패자를 자동 배정
-            const thirdPlaceIdx = matches.findIndex(m => m.isThirdPlace)
-            if (thirdPlaceIdx >= 0) {
-              const knockout = matches.filter(m => !m.isThirdPlace && !m.groupId)
-              const maxKnockRound = Math.max(...knockout.map(m => m.round), 1)
-              const finalM = knockout.find(m => m.round === maxKnockRound && !m.nextMatchId)
-              if (finalM) {
-                const semis = knockout
-                  .filter(m => m.nextMatchId === finalM.id)
-                  .sort((a, b) => a.position - b.position)
-                const tp = matches[thirdPlaceIdx]
-                const p1 = semis[0]?.result?.loserId || tp.participant1Id
-                const p2 = semis[1]?.result?.loserId || tp.participant2Id
-                if (p1 !== tp.participant1Id || p2 !== tp.participant2Id) {
-                  matches = matches.map((m, i) =>
-                    i === thirdPlaceIdx ? { ...m, participant1Id: p1, participant2Id: p2 } : m
-                  )
-                }
-              }
-            }
-
-            // 3) Group stage / Seeded-qual → Knockout wiring
-            // When all matches of a group are done, fill the knockout placeholder slots
-            if (ev.bracketFormat === '시드예선' && ev.groups.length > 0) {
-              matches = wireSeededQualWinners(ev, matches)
-            }
-            if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
-              for (const group of ev.groups) {
-                const groupMatches = matches.filter(m => m.groupId === group.id)
-                const allDone = groupMatches.length > 0 && groupMatches.every(m => m.result)
-                if (!allDone) continue
-
-                // Get ranked participant IDs for this group
-                const rankedIds = getGroupRankedIds(groupMatches, group)
-
-                // Fill knockout slots for this group's advancers
-                for (let rank = 1; rank <= group.advanceCount; rank++) {
-                  const advancerId = rankedIds[rank - 1]
-                  if (!advancerId) continue
-                  const slotId = `ko-slot-${group.id}-r${rank}`
-                  // Replace placeholder id in knockout matches
-                  matches = matches.map((m): BracketMatch => {
-                    if (m.groupId) return m // skip group-stage matches
-                    const p1Updated = m.participant1Id === slotId ? advancerId : m.participant1Id
-                    const p2Updated = m.participant2Id === slotId ? advancerId : m.participant2Id
-                    return p1Updated !== m.participant1Id || p2Updated !== m.participant2Id
-                      ? { ...m, participant1Id: p1Updated, participant2Id: p2Updated }
-                      : m
-                  })
-                }
-              }
-            }
-
-            // 4) Auto-transition event status
-            const realMatches = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
-            const allCompleted = realMatches.length > 0 && realMatches.every(m => m.result)
-            const newStatus = allCompleted ? 'completed' : ev.status === 'draft' ? 'ongoing' : ev.status
-
-            return { ...ev, matches, status: newStatus as TournamentEvent['status'] }
+            const allEventsCompleted = newEvents.every(ev => ev.status === 'completed')
+            const newTournamentStatus = allEventsCompleted ? 'completed'
+              : t.status === 'draft' ? 'ongoing'
+              : t.status
+            return { ...t, events: newEvents, status: newTournamentStatus as Tournament['status'] }
           })
 
-          // 5) Auto-transition tournament status
-          const allEventsCompleted = newEvents.every(ev => ev.status === 'completed')
-          const newTournamentStatus = allEventsCompleted ? 'completed'
-            : t.status === 'draft' ? 'ongoing'
-            : t.status
-
-          return { ...t, events: newEvents, status: newTournamentStatus as Tournament['status'] }
+          // 2) 포인트·승패·Elo 일괄 정산 (종목 완료 시점에만 실제 반영, idempotent)
+          const settled = applyEventSettlement(tournaments1, s.players, s.pairs, s.teams, tournamentId, eventId)
+          return { tournaments: settled.tournaments, players: settled.players }
         })
-      }))
-       const updated2 = get().tournaments.find(t => t.id === tournamentId)
-       if (updated2) uploadTournament(updated2).catch(() => {})
 
-       // ─── 자동 포인트·레이팅 계산 ─────────────────────────────
-       const st = get()
-       const tour = st.tournaments.find(t => t.id === tournamentId)
-       const ev = tour?.events.find(e => e.id === eventId)
-       const match = ev?.matches.find(m => m.id === matchId)
-       if (tour && ev && match && result.winnerId && result.loserId) {
-         const grade = tour.grade ?? 'C급'
-         const mainMatches = ev.matches.filter(m => !m.groupId && !m.isBye)
-         const maxRound = Math.max(...mainMatches.map(m => m.round), 1)
-         const isFinal = !match.nextMatchId && !match.isThirdPlace && match.round === maxRound && !match.groupId
-         const isThirdPlace = !!match.isThirdPlace
-         const eventMulti = getEventMultiplier(ev.eventType)
-
-         // ID가 pair/team인 경우 구성 선수 ID 배열로 확장
-         const expandId = (id: string): string[] => {
-           const pair = st.pairs.find(p => p.id === id)
-           if (pair) return [pair.player1Id, pair.player2Id].filter(Boolean) as string[]
-           const team = st.teams.find(t => t.id === id)
-           if (team) return team.playerIds ?? []
-           return [id]
-         }
-
-         type PlayerUpdate = { points: number; isWin: boolean; newRating?: number; newGames?: number }
-         const updates = new Map<string, PlayerUpdate>()
-         const addUpd = (id: string, pts: number, isWin: boolean, extra?: Partial<PlayerUpdate>) => {
-           const prev = updates.get(id) ?? { points: 0, isWin: false }
-           updates.set(id, { points: prev.points + pts, isWin: prev.isWin || isWin, ...extra })
-         }
-
-         // 패자 포인트 (라운드 성적)
-         const loserAch = calcAchievement(match.round, maxRound)
-         const loserPts = Math.round(getPointsForResult(grade, loserAch) * eventMulti)
-         for (const pid of expandId(result.loserId)) addUpd(pid, loserPts, false)
-
-         // 승자 포인트 (결승·3위전에서만)
-         if (isFinal || isThirdPlace) {
-           const winnerRating = st.players.find(p => p.id === result.winnerId)?.rating ?? 1000
-           const loserRating  = st.players.find(p => p.id === result.loserId)?.rating  ?? 1000
-           const eloM = eloPointsMultiplier(winnerRating, loserRating)
-           const ach = isFinal ? '우승' : '3위'
-           const winPts = Math.round(getPointsForResult(grade, ach) * eventMulti * eloM)
-           for (const pid of expandId(result.winnerId)) addUpd(pid, winPts, true)
-         } else {
-           // 결승 아닌 경우 승리 카운트만 올리기
-           for (const pid of expandId(result.winnerId)) addUpd(pid, 0, true)
-         }
-
-         // Elo 레이팅 업데이트 (단식만)
-         if (ev.eventType === '단식') {
-           const wP = st.players.find(p => p.id === result.winnerId)
-           const lP = st.players.find(p => p.id === result.loserId)
-           if (wP && lP) {
-             const { newA, newB } = calcNewRatings(wP.rating, wP.gamesPlayed, lP.rating, lP.gamesPlayed, true)
-             const wUpd = updates.get(wP.id) ?? { points: 0, isWin: true }
-             updates.set(wP.id, { ...wUpd, newRating: newA, newGames: wP.gamesPlayed + 1 })
-             const lUpd = updates.get(lP.id) ?? { points: 0, isWin: false }
-             updates.set(lP.id, { ...lUpd, newRating: newB, newGames: lP.gamesPlayed + 1 })
-           }
-         }
-
-         // 참가 포인트: 이벤트 첫 경기 시 전 참가자에게
-         const isFirstResult = ev.matches.filter(m => m.result && !m.isBye).length <= 1
-         if (isFirstResult && !ev.participationAwarded) {
-           const partPts = Math.round(getPointsForResult(grade, '참가') * eventMulti)
-           for (const pid of ev.participantIds) {
-             for (const playerId of expandId(pid)) {
-               const prev = updates.get(playerId) ?? { points: 0, isWin: false }
-               updates.set(playerId, { ...prev, points: prev.points + partPts })
-             }
-           }
-         }
-
-         if (updates.size > 0) {
-           set((s) => ({
-             players: s.players.map(p => {
-               const u = updates.get(p.id)
-               if (!u) return p
-               return {
-                 ...p,
-                 points: p.points + u.points,
-                 wins: p.wins + (u.isWin ? 1 : 0),
-                 losses: p.losses + (u.isWin ? 0 : 1),
-                 ...(u.newRating !== undefined ? { rating: u.newRating } : {}),
-                 ...(u.newGames !== undefined ? { gamesPlayed: u.newGames } : {}),
-               }
-             }),
-             // 참가 포인트 지급 완료 마킹
-             ...(isFirstResult && !ev.participationAwarded ? {
-               tournaments: s.tournaments.map(t => t.id !== tournamentId ? t : {
-                 ...t,
-                 events: t.events.map(e => e.id !== eventId ? e : { ...e, participationAwarded: true }),
-               })
-             } : {}),
-           }))
-         }
-       }
+        const updated = get().tournaments.find(t => t.id === tournamentId)
+        if (updated) uploadTournament(updated).catch(() => {})
       },
 
       clearMatchResult: (tournamentId, eventId, matchId) => {
-        set((s) => ({
-          tournaments: s.tournaments.map(t => {
+        set((s) => {
+          const tournaments1 = s.tournaments.map(t => {
             if (t.id !== tournamentId) return t
             const newEvents = t.events.map(ev => {
               if (ev.id !== eventId) return ev
               const target = ev.matches.find(m => m.id === matchId)
               if (!target?.result) return ev
-              const formerWinnerId = target.result.winnerId
-              const formerLoserId = target.result.loserId
-              const matches = ev.matches.map((m): BracketMatch => {
-                if (m.id === matchId) return { ...m, result: null }
-                // Remove winner from the next knockout match
-                if (target.nextMatchId && m.id === target.nextMatchId) {
-                  const p1 = m.participant1Id === formerWinnerId ? null : m.participant1Id
-                  const p2 = m.participant2Id === formerWinnerId ? null : m.participant2Id
-                  return { ...m, participant1Id: p1, participant2Id: p2 }
-                }
-                // Remove loser from 3rd place match
-                if (m.isThirdPlace) {
-                  const p1 = m.participant1Id === formerLoserId ? null : m.participant1Id
-                  const p2 = m.participant2Id === formerLoserId ? null : m.participant2Id
-                  return { ...m, participant1Id: p1, participant2Id: p2 }
-                }
-                return m
-              })
+
+              // 결과 제거 → 승자 전파 연쇄 정리 → 3·4위전 재배정
+              let matches = ev.matches.map((m): BracketMatch =>
+                m.id === matchId ? { ...m, result: null } : m
+              )
+              matches = propagateAndCascade(matches)
+              matches = wireThirdPlace(matches)
+
               const realMatches = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
               const allCompleted = realMatches.length > 0 && realMatches.every(m => m.result)
               const newStatus: TournamentEvent['status'] = allCompleted ? 'completed' : 'ongoing'
@@ -404,7 +268,11 @@ export const useStore = create<StoreState>()(
             const allDone = newEvents.every(ev => ev.status === 'completed')
             return { ...t, events: newEvents, status: (allDone ? 'completed' : 'ongoing') as Tournament['status'] }
           })
-        }))
+
+          // 정산 재실행 → 미완료 전환 시 직전 지급분 자동 롤백
+          const settled = applyEventSettlement(tournaments1, s.players, s.pairs, s.teams, tournamentId, eventId)
+          return { tournaments: settled.tournaments, players: settled.players }
+        })
         const updated = get().tournaments.find(t => t.id === tournamentId)
         if (updated) uploadTournament(updated).catch(() => {})
       },

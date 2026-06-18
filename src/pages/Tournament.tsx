@@ -5,6 +5,7 @@ import {
   generateTournamentBracket, generateLeagueMatches, generateGroups, generateSeededBracket,
   calcStandings, getRoundName, genId
 } from '../utils/bracketUtils'
+import { getMedalists, isEventComplete } from '../utils/tournamentScoring'
 import {
   Plus, Trash2, Trophy, ChevronRight, ChevronLeft, X, Printer,
   Shuffle, Users, Layers, Check, ChevronDown, ChevronUp, Info, Download, Upload, Cloud, CloudOff
@@ -72,7 +73,7 @@ function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../t
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult, syncTournament, syncStatus } = useStore()
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
@@ -731,6 +732,7 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
   onRecord: (evId: string, mId: string, result: MatchResult) => void
   onClearResult: (evId: string, mId: string) => void
 }) {
+  const { syncStatus, syncTournament } = useStore()
   const [activeEventId, setActiveEventId] = useState<string>(tournament.events[0]?.id ?? '')
   const [showSummary, setShowSummary] = useState(false)
   const activeEvent = tournament.events.find(e => e.id === activeEventId)
@@ -834,37 +836,12 @@ function TournamentSummary({ tournament, pMap }: {
   pMap: Record<string, { name: string; school: string; points: number; gender: string }>
 }) {
   const results = tournament.events.map(ev => {
-    const knockout = ev.matches.filter(m => !m.groupId && !m.isThirdPlace && m.participant1Id && m.participant2Id && !m.isBye)
-    const groupMatches = ev.matches.filter(m => m.groupId)
-    const maxRound = knockout.length > 0 ? Math.max(...knockout.map(m => m.round)) : 0
-    const finalMatch = knockout.find(m => m.round === maxRound && !m.nextMatchId)
-      ?? knockout.find(m => m.round === maxRound)
-    const thirdMatch = ev.matches.find(m => m.isThirdPlace)
-
-    let gold: string | null = null
-    let silver: string | null = null
-    let bronze: string[] = []
-
-    if (finalMatch?.result) {
-      gold = finalMatch.result.winnerId
-      silver = finalMatch.result.loserId
-    }
-    if (thirdMatch?.result) {
-      bronze = [thirdMatch.result.winnerId]
-    } else if (finalMatch && ev.bracketFormat !== '리그') {
-      // 준결승 패자들
-      const semis = knockout.filter(m => m.nextMatchId === finalMatch.id && m.result)
-      semis.forEach(s => { if (s.result && s.result.loserId !== silver) bronze.push(s.result.loserId) })
-    }
-
-    // 리그/조별 순위
-    if (ev.bracketFormat === '리그' && knockout.length === 0) {
-      const s = calcStandings(groupMatches.length > 0 ? groupMatches : ev.matches, ev.participantIds)
-      const sorted = [...ev.participantIds].sort((a, b) => (s[b]?.pts ?? 0) - (s[a]?.pts ?? 0))
-      gold = sorted[0] ?? null
-      silver = sorted[1] ?? null
-      bronze = sorted[2] ? [sorted[2]] : []
-    }
+    // 시상은 정산 로직과 동일한 getMedalists로 계산 (포인트와 일치)
+    const medals = getMedalists(ev)
+    const ready = ev.bracketFormat === '리그' ? isEventComplete(ev) : true
+    const gold: string | null = ready ? medals.gold : null
+    const silver: string | null = ready ? medals.silver : null
+    const bronze: string[] = ready ? medals.bronze : []
 
     const done = ev.matches.filter(m => m.result && m.participant1Id && m.participant2Id && !m.isBye).length
     const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
@@ -1016,46 +993,44 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
     ? calcStandings(event.matches, event.participantIds)
     : {}
 
-  // Champion / runner-up / 3rd place calculation
-  const finalMatch = (event.bracketFormat === '토너먼트' || event.bracketFormat === '시드예선')
-    ? event.matches.filter(m => m.round === maxRound && m.result && !m.isBye && !m.isThirdPlace && m.phase !== 'qual').sort((a, b) => a.position - b.position)[0]
-    : null
-  const thirdPlaceMatch = event.matches.find(m => m.isThirdPlace)
-  const champion = finalMatch?.result ? pMap[finalMatch.result.winnerId] : null
-  const runnerUp = finalMatch?.result ? pMap[finalMatch.result.loserId] : null
-  const thirdPlace = thirdPlaceMatch?.result ? pMap[thirdPlaceMatch.result.winnerId] : null
-  const leagueTop2 = (isLeague || isGrouped) && Object.keys(standings).length > 0
-    ? Object.entries(standings).sort((a, b) => b[1].wins - a[1].wins || a[1].losses - b[1].losses).slice(0, 2).map(([id]) => pMap[id])
-    : null
+  // 우승/준우승/3위 — 정산 로직과 동일한 getMedalists 사용 (표시·포인트 일치 보장)
+  // 리그는 모든 경기가 끝났을 때만 시상 (중간 순위로 우승 표기 방지)
+  const medals = getMedalists(event)
+  const medalsReady = isLeague ? isEventComplete(event) : true
+  const champion = medalsReady && medals.gold ? pMap[medals.gold] : null
+  const runnerUp = medalsReady && medals.silver ? pMap[medals.silver] : null
+  const bronzeList = medalsReady ? medals.bronze.map(id => pMap[id]).filter(Boolean) : []
 
   return (
     <div className="space-y-4">
       {/* Champion banner */}
-      {(champion || (leagueTop2 && leagueTop2[0])) && (
+      {(champion || runnerUp || bronzeList.length > 0) && (
         <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl p-4 text-white">
           <div className="flex items-center gap-6 flex-wrap justify-center sm:justify-start">
-            <div className="text-center">
-              <div className="text-3xl mb-1">🏆</div>
-              <div className="font-black text-xl">{(champion ?? leagueTop2![0])?.name ?? '?'}</div>
-              <div className="text-yellow-100 text-xs">{(champion ?? leagueTop2![0])?.school ?? ''}</div>
-              <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">우승</div>
-            </div>
-            {(runnerUp ?? leagueTop2?.[1]) && (
+            {champion && (
+              <div className="text-center">
+                <div className="text-3xl mb-1">🏆</div>
+                <div className="font-black text-xl">{champion.name ?? '?'}</div>
+                <div className="text-yellow-100 text-xs">{champion.school ?? ''}</div>
+                <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">우승</div>
+              </div>
+            )}
+            {runnerUp && (
               <div className="text-center">
                 <div className="text-2xl mb-1">🥈</div>
-                <div className="font-bold text-lg">{(runnerUp ?? leagueTop2![1])?.name ?? '?'}</div>
-                <div className="text-yellow-100 text-xs">{(runnerUp ?? leagueTop2![1])?.school ?? ''}</div>
+                <div className="font-bold text-lg">{runnerUp.name ?? '?'}</div>
+                <div className="text-yellow-100 text-xs">{runnerUp.school ?? ''}</div>
                 <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">준우승</div>
               </div>
             )}
-            {thirdPlace && (
-              <div className="text-center">
+            {bronzeList.map((b, i) => (
+              <div key={i} className="text-center">
                 <div className="text-2xl mb-1">🥉</div>
-                <div className="font-bold text-lg">{thirdPlace.name}</div>
-                <div className="text-yellow-100 text-xs">{thirdPlace.school}</div>
+                <div className="font-bold text-lg">{b.name}</div>
+                <div className="text-yellow-100 text-xs">{b.school}</div>
                 <div className="text-xs bg-white/20 rounded-full px-2 py-0.5 mt-1">3위</div>
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}

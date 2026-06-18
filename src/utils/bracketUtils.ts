@@ -206,7 +206,12 @@ export function generateSeededBracket(
     }
   }
 
-  return { groups, matches: [...qualMatches, ...mainMatches] }
+  // 본선 라운드를 예선 최대 라운드만큼 오프셋 → 라운드 번호 충돌 방지
+  // (예선 1·2·3R + 본선 8강·준결승·결승 이 별도 라운드로 구분 표시됨)
+  const maxQualRound = qualMatches.length > 0 ? Math.max(...qualMatches.map(m => m.round)) : 0
+  const mainOffset = mainMatches.map(m => ({ ...m, round: m.round + maxQualRound }))
+
+  return { groups, matches: [...qualMatches, ...mainOffset] }
 }
 
 // 시드예선에서 예선 그룹 완료 시 본선 슬롯 채우기 (useStore recordMatchResult에서 호출)
@@ -235,6 +240,62 @@ export function wireSeededQualWinners(
     })
   }
   return matches
+}
+
+// ─── 녹아웃 승자 전파 + 연쇄 무효화 ──────────────────────────
+// feeder(이 경기로 진출하는 직전 경기)의 승자를 참가자로 채우고,
+// 상위 경기의 결과가 클리어되면 그 승자가 빠진 하위 경기 참가자·결과를 연쇄 정리한다.
+// 라운드1·조별/예선 슬롯으로 채워지는 경기(feeder 없음)는 건드리지 않는다.
+export function propagateAndCascade(input: BracketMatch[]): BracketMatch[] {
+  let matches = input
+  for (let pass = 0; pass < 100; pass++) {
+    let changed = false
+    const next = matches.map((m): BracketMatch => {
+      const feeders = matches.filter(f => f.nextMatchId === m.id)
+      if (feeders.length === 0) return m // 외부 입력(라운드1·조별·예선 슬롯)
+      const sorted = [...feeders].sort((a, b) => a.position - b.position)
+      const np1 = sorted[0]?.result?.winnerId ?? null
+      const np2 = sorted[1]?.result?.winnerId ?? null
+      let p1 = m.participant1Id, p2 = m.participant2Id, result = m.result
+      if (p1 !== np1 || p2 !== np2) { p1 = np1; p2 = np2; changed = true }
+      if (result) {
+        const ids = [p1, p2]
+        if (!p1 || !p2 || !ids.includes(result.winnerId) || (result.loserId && !ids.includes(result.loserId))) {
+          result = null; changed = true
+        }
+      }
+      return (p1 !== m.participant1Id || p2 !== m.participant2Id || result !== m.result)
+        ? { ...m, participant1Id: p1, participant2Id: p2, result }
+        : m
+    })
+    matches = next
+    if (!changed) break
+  }
+  return matches
+}
+
+// ─── 3·4위전 참가자(준결승 패자) 재배정 + 무효 결과 정리 ──────
+export function wireThirdPlace(matches: BracketMatch[]): BracketMatch[] {
+  const idx = matches.findIndex(m => m.isThirdPlace)
+  if (idx < 0) return matches
+  const knockout = matches.filter(m => !m.isThirdPlace && !m.groupId)
+  if (knockout.length === 0) return matches
+  const maxR = Math.max(...knockout.map(m => m.round), 1)
+  const finalM = knockout.find(m => m.round === maxR && !m.nextMatchId)
+  const tp = matches[idx]
+  let p1 = tp.participant1Id, p2 = tp.participant2Id
+  if (finalM) {
+    const semis = knockout.filter(m => m.nextMatchId === finalM.id).sort((a, b) => a.position - b.position)
+    p1 = semis[0]?.result?.loserId ?? null
+    p2 = semis[1]?.result?.loserId ?? null
+  }
+  let result = tp.result
+  if (result) {
+    const ids = [p1, p2]
+    if (!ids.includes(result.winnerId) || (result.loserId && !ids.includes(result.loserId))) result = null
+  }
+  if (p1 === tp.participant1Id && p2 === tp.participant2Id && result === tp.result) return matches
+  return matches.map((m, i) => i === idx ? { ...m, participant1Id: p1, participant2Id: p2, result } : m)
 }
 
 // Knockout bracket after group stage (placeholder matches)
