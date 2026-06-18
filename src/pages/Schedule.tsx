@@ -218,13 +218,22 @@ export default function SchedulePage() {
     }, 0),
     [smartEvents]
   )
-  // 초과 여부: 필요 코트-분 > 가용 코트-분
+  // 평균 코트 수 (가중 평균: Σ코트×운영분 / 총운영분)
+  const avgCourts = totalOperatingMin > 0 ? totalCapacityMin / totalOperatingMin : 1
+
+  // ── 핵심 공식 ──────────────────────────────────────────
+  // 총 소요시간 = 총경기×경기시간 ÷ 평균코트수  (테이블↑→시간↓)
+  const totalDurationMin = avgCourts > 0 ? Math.round(totalRequiredMin / avgCourts) : 0
+  // 일평균 필요시간 = 총소요시간 ÷ 일수           (일수↑→시간↓)
+  const perDayDurationMin = totalDays > 0 ? Math.round(totalDurationMin / totalDays) : totalDurationMin
+  // 하루 운영시간 (첫째날 기준)
+  const firstDayOpMin = dayConfigs[0] ? calcDayOperatingMinutes(dayConfigs[0]) : 660
+  // 필요 일수 = ceil(총소요시간 ÷ 하루최대운영시간)
+  const daysNeeded = firstDayOpMin > 0 ? Math.ceil(totalDurationMin / firstDayOpMin) : 1
+  // 초과 여부
   const overCapacity = totalRequiredMin > totalCapacityMin
-  // 부족 코트-분: 양수면 초과, 0 이하면 여유
   const shortfallMin = totalRequiredMin - totalCapacityMin
-  // 평균 1일 가용 코트-분 (일수로 나눔)
   const avgCapacityPerDay = totalDays > 0 ? totalCapacityMin / totalDays : 0
-  // 추가로 필요한 일수 (shortfallMin을 하루 평균 가용량으로 나눔)
   const extraDaysNeeded = avgCapacityPerDay > 0 ? Math.ceil(shortfallMin / avgCapacityPerDay) : 0
 
   const maxCourts = useMemo(() => Math.max(1, ...dayConfigs.map(d => d.courtCount)), [dayConfigs])
@@ -401,31 +410,23 @@ export default function SchedulePage() {
                   <td className="py-2">
                     {totalRequiredMin > 0 ? (
                       <div className="flex flex-col gap-0.5">
-                        {overCapacity ? (
-                          <>
-                            <span className="font-bold text-base text-red-600">
-                              ⚠ {fmtCourtHours(shortfallMin)} 부족
-                            </span>
-                            <span className="text-[11px] text-gray-500">
-                              {totalRequiredMatches}경기 · 필요 {fmtCourtHours(totalRequiredMin)} / 가용 {fmtCourtHours(totalCapacityMin)}
-                            </span>
-                            <span className="text-[11px] text-orange-600">
-                              약 {extraDaysNeeded}일 더 필요 (또는 코트 추가)
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-bold text-base text-green-600">
-                              ✓ {totalDays}일 내 완료
-                            </span>
-                            <span className="text-[11px] text-gray-500">
-                              {totalRequiredMatches}경기 · 필요 {fmtCourtHours(totalRequiredMin)} / 가용 {fmtCourtHours(totalCapacityMin)}
-                            </span>
-                            <span className="text-[11px] text-green-600">
-                              여유 {fmtCourtHours(-shortfallMin)}
-                            </span>
-                          </>
-                        )}
+                        {/* 총 소요시간 = 총경기×경기시간 ÷ 평균코트 (코트↑→시간↓) */}
+                        <span className={`font-bold text-base ${overCapacity ? 'text-red-600' : 'text-green-600'}`}>
+                          {overCapacity ? '⚠' : '✓'} 총 {fmtCourtHours(totalDurationMin)}
+                          <span className="text-xs font-normal ml-1 text-gray-500">
+                            (테이블 {Math.round(avgCourts)}개 기준)
+                          </span>
+                        </span>
+                        {/* 일평균 필요시간 (테이블↑ 또는 일수↑ → 감소) */}
+                        <span className="text-[11px] text-blue-700 font-medium">
+                          일평균 {fmtCourtHours(perDayDurationMin)} / {totalDays}일
+                        </span>
+                        <span className="text-[11px] text-gray-500">
+                          {totalRequiredMatches}경기 · {overCapacity
+                            ? `약 ${extraDaysNeeded}일 더 필요`
+                            : `필요 ${daysNeeded}일 · 여유 ${fmtCourtHours(-shortfallMin)}`
+                          }
+                        </span>
                       </div>
                     ) : (
                       <span className="text-xs text-gray-400">인원 입력 시 계산</span>
