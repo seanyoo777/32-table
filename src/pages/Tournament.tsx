@@ -219,6 +219,53 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
   const [defaultMatchFormat, setDefaultMatchFormat] = useState<MatchFormat>({ sets: 5, pointsPerGame: 11 })
   const [events, setEvents] = useState<TournamentEvent[]>([])
   const [showEventForm, setShowEventForm] = useState(false)
+  const [showAutoSetup, setShowAutoSetup] = useState(false)
+
+  // Auto setup state
+  type AutoDiv = { division: Division; gender: '남' | '여' | 'both'; format: BracketFormat; maxPlayers: number; enabled: boolean }
+  const [autoConfig, setAutoConfig] = useState<AutoDiv[]>([
+    { division: '초등', gender: 'both', format: '토너먼트', maxPlayers: 32, enabled: true },
+    { division: '중등', gender: 'both', format: '조별+토너먼트', maxPlayers: 32, enabled: true },
+    { division: '고등', gender: 'both', format: '조별+토너먼트', maxPlayers: 64, enabled: true },
+    { division: '대학', gender: 'both', format: '토너먼트', maxPlayers: 32, enabled: false },
+    { division: '일반', gender: 'both', format: '토너먼트', maxPlayers: 32, enabled: false },
+    { division: '생활체육', gender: 'both', format: '토너먼트', maxPlayers: 32, enabled: true },
+  ])
+
+  function getPlayersForDiv(division: Division, gender: '남' | '여') {
+    return players.filter(p => p.division === division && p.gender === gender).sort((a, b) => b.points - a.points)
+  }
+
+  function buildAutoEvents(): TournamentEvent[] {
+    const result: TournamentEvent[] = []
+    for (const cfg of autoConfig) {
+      if (!cfg.enabled) continue
+      const genders: Array<'남' | '여'> = cfg.gender === 'both' ? ['남', '여'] : [cfg.gender]
+      for (const gender of genders) {
+        const pool = getPlayersForDiv(cfg.division, gender)
+        const participants = pool.slice(0, cfg.maxPlayers)
+        if (participants.length < 2) continue
+        const label = `${cfg.division} ${gender}자 단식`
+        let matches: BracketMatch[] = []
+        let groups: import('../types').Group[] = []
+        if (cfg.format === '토너먼트') {
+          matches = generateTournamentBracket(participants, { thirdPlace: participants.length >= 4, preserveOrder: true })
+        } else if (cfg.format === '리그') {
+          matches = generateLeagueMatches(participants)
+        } else {
+          const r = generateGroups(participants, 4, 2)
+          groups = r.groups; matches = r.matches
+        }
+        result.push({
+          id: genId(), label, eventType: '단식', gender, division: cfg.division,
+          bracketFormat: cfg.format, participantIds: participants.map(p => p.id),
+          groups, matches, pointsForWin: 50, status: 'ongoing',
+          hasThirdPlace: cfg.format === '토너먼트' && participants.length >= 4,
+        })
+      }
+    }
+    return result
+  }
 
   // Seeding state
   const [seedCount, setSeedCount] = useState(4)
@@ -366,12 +413,78 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
 
       {/* 종목 목록 */}
       <div className="card space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-semibold text-gray-700">종목 구성 ({events.length}개)</h2>
-          <button onClick={() => setShowEventForm(!showEventForm)} className="btn-primary flex items-center gap-1.5 text-sm py-1.5">
-            <Plus size={14} /> 종목 추가
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowAutoSetup(!showAutoSetup)} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5 bg-green-50 border-green-300 text-green-700 hover:bg-green-100">
+              <Shuffle size={14} /> ⚡ 자동 구성
+            </button>
+            <button onClick={() => setShowEventForm(!showEventForm)} className="btn-primary flex items-center gap-1.5 text-sm py-1.5">
+              <Plus size={14} /> 종목 추가
+            </button>
+          </div>
         </div>
+
+        {/* 자동 구성 패널 */}
+        {showAutoSetup && (
+          <div className="border-2 border-green-200 rounded-xl p-4 bg-green-50/30 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-green-700 text-sm">⚡ 자동 대진 구성 — 부문별 설정</h3>
+              <span className="text-xs text-gray-400">체크된 부문이 자동으로 추가됩니다</span>
+            </div>
+            <div className="space-y-2">
+              {autoConfig.map((cfg, idx) => {
+                const maleCount = getPlayersForDiv(cfg.division, '남').length
+                const femaleCount = getPlayersForDiv(cfg.division, '여').length
+                return (
+                  <div key={cfg.division} className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-colors ${cfg.enabled ? 'border-green-300 bg-white' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
+                    <input type="checkbox" checked={cfg.enabled} onChange={e => setAutoConfig(prev => prev.map((c, i) => i === idx ? { ...c, enabled: e.target.checked } : c))} className="rounded w-4 h-4 flex-shrink-0" />
+                    <span className={`badge text-xs font-bold ${divColors[cfg.division]}`}>{cfg.division}</span>
+                    <span className="text-xs text-gray-500">
+                      <span className="text-blue-500">남 {maleCount}</span>
+                      <span className="mx-1">·</span>
+                      <span className="text-pink-500">여 {femaleCount}</span>
+                      명 등록
+                    </span>
+                    <div className="ml-auto flex items-center gap-2 flex-wrap">
+                      <select
+                        className="text-xs border rounded px-1.5 py-1 bg-white"
+                        value={cfg.format}
+                        onChange={e => setAutoConfig(prev => prev.map((c, i) => i === idx ? { ...c, format: e.target.value as BracketFormat } : c))}
+                      >
+                        <option value="토너먼트">토너먼트</option>
+                        <option value="조별+토너먼트">조별+토너먼트</option>
+                        <option value="리그">리그</option>
+                      </select>
+                      <select
+                        className="text-xs border rounded px-1.5 py-1 bg-white"
+                        value={cfg.maxPlayers}
+                        onChange={e => setAutoConfig(prev => prev.map((c, i) => i === idx ? { ...c, maxPlayers: Number(e.target.value) } : c))}
+                      >
+                        {[8, 16, 32, 64, 128].map(n => <option key={n} value={n}>상위 {n}명</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                className="btn-primary flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  const newEvents = buildAutoEvents()
+                  if (newEvents.length === 0) { alert('등록된 선수가 없습니다. 먼저 랭킹 페이지에서 선수를 등록하세요.'); return }
+                  setEvents(evs => [...evs, ...newEvents])
+                  setShowAutoSetup(false)
+                }}
+              >
+                ✓ {autoConfig.filter(c => c.enabled).length}개 부문 자동 생성
+              </button>
+              <button className="btn-secondary px-4" onClick={() => setShowAutoSetup(false)}>취소</button>
+            </div>
+          </div>
+        )}
+
 
         {events.length === 0 && !showEventForm && (
           <div className="text-center py-6 text-gray-400 text-sm border-2 border-dashed rounded-lg">
@@ -929,24 +1042,53 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
 
       {activeView === 'bracket' && (
         <>
-          {/* Round selector */}
-          <div className="flex gap-1.5 flex-wrap">
-            {rounds.map(r => {
-              const rMatches = event.matches.filter(m => m.round === r && !m.isBye && m.participant1Id && m.participant2Id)
-              const done = rMatches.filter(m => m.result && !m.result.walkedOver).length
-              const isGroupRound = isGrouped && event.groups.length > 0 && r <= (event.groups[0]?.participantIds.length - 1)
-              const label = isGroupRound
-                ? `예선 ${r}라운드`
-                : getRoundName(r - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
-              return (
-                <button key={r} onClick={() => setSelectedRound(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
-                  {label}
-                  <span className={`ml-1 ${selectedRound === r ? 'text-blue-200' : 'text-gray-400'}`}>{done}/{rMatches.length}</span>
+          {/* Round selector — arrow navigation */}
+          {rounds.length > 0 && (() => {
+            const rIdx = rounds.indexOf(selectedRound)
+            const rMatches = event.matches.filter(m => m.round === selectedRound && !m.isBye && m.participant1Id && m.participant2Id)
+            const done = rMatches.filter(m => m.result && !m.result.walkedOver).length
+            const isGroupRound = isGrouped && event.groups.length > 0 && selectedRound <= (event.groups[0]?.participantIds.length - 1)
+            const label = isGroupRound
+              ? `예선 ${selectedRound}라운드`
+              : getRoundName(selectedRound - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* ← → arrows */}
+                <button
+                  onClick={() => rIdx > 0 && setSelectedRound(rounds[rIdx - 1])}
+                  disabled={rIdx === 0}
+                  className="px-3 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-30 hover:bg-gray-50 text-sm font-medium">
+                  ←
                 </button>
-              )
-            })}
-          </div>
+                <div className="flex-1 text-center bg-blue-600 text-white px-4 py-2 rounded-lg">
+                  <span className="font-bold text-sm">{label}</span>
+                  <span className="text-blue-200 text-xs ml-2">{done}/{rMatches.length}경기 완료</span>
+                  <span className="text-blue-300 text-xs ml-2">({rIdx + 1}/{rounds.length})</span>
+                </div>
+                <button
+                  onClick={() => rIdx < rounds.length - 1 && setSelectedRound(rounds[rIdx + 1])}
+                  disabled={rIdx === rounds.length - 1}
+                  className="px-3 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-30 hover:bg-gray-50 text-sm font-medium">
+                  →
+                </button>
+                {/* All rounds quick-jump */}
+                <div className="w-full flex gap-1 flex-wrap mt-1">
+                  {rounds.map(r => {
+                    const rm = event.matches.filter(m => m.round === r && !m.isBye && m.participant1Id && m.participant2Id)
+                    const d = rm.filter(m => m.result && !m.result.walkedOver).length
+                    const isGR = isGrouped && event.groups.length > 0 && r <= (event.groups[0]?.participantIds.length - 1)
+                    const lbl = isGR ? `예선${r}R` : getRoundName(r - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
+                    return (
+                      <button key={r} onClick={() => setSelectedRound(r)}
+                        className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : d === rm.length && rm.length > 0 ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>
+                        {lbl} {d}/{rm.length}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Match list (always list for large, tree option for small) */}
           {isLarge || isLeague || isGrouped ? (
@@ -1095,7 +1237,10 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
                 <div key={m.id}
                   className={`flex items-center gap-3 px-4 py-3 transition-colors ${isPlayable ? 'hover:bg-blue-50 cursor-pointer' : ''}`}
                   onClick={() => isPlayable && onClickMatch(m)}>
-                  <span className="text-xs text-gray-400 w-6">{i + 1}</span>
+                  <div className="flex flex-col items-center w-10 flex-shrink-0">
+                    <span className="text-xs text-gray-400">{i + 1}</span>
+                    {m.tableNo && <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded font-bold">T{m.tableNo}</span>}
+                  </div>
                   {/* P1 */}
                   <div className={`flex-1 text-sm font-medium text-right ${w === m.participant1Id ? 'text-blue-700' : w ? 'text-gray-400' : ''}`}>
                     <div>{p1?.name ?? '-'}</div>

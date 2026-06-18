@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2 } from 'lucide-react'
+import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2, Zap } from 'lucide-react'
 import type { Player, Pair, Division, Gender, Tournament, ScoreRecord } from '../types'
 import { getRatingLabel, pointsToRating } from '../utils/ratingUtils'
+import { generatePlayers, generatePairs } from '../data/mockData'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
 
@@ -98,6 +99,8 @@ export default function Rankings() {
   const [quickModal, setQuickModal] = useState(false)
   const [quickText, setQuickText] = useState('')
   const [quickRows, setQuickRows] = useState<ImportRow[]>([])
+  const [mockGenModal, setMockGenModal] = useState(false)
+  const [mockGenCount, setMockGenCount] = useState(500)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 50
@@ -305,6 +308,9 @@ export default function Rankings() {
           {tab === 'singles' && (
             <>
               <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
+              <button onClick={() => setMockGenModal(true)} className="btn-secondary flex items-center gap-1.5 text-sm bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100">
+                <Zap size={14} /> 가상 데이터 생성
+              </button>
               <button onClick={() => { setQuickModal(true); setQuickText(''); setQuickRows([]); setImportResult(null) }} className="btn-secondary flex items-center gap-1.5 text-sm bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100">
                 ⚡ 빠른 등록
               </button>
@@ -981,6 +987,52 @@ export default function Rankings() {
                 </div>
               </>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Mock Data Generation Modal */}
+      {mockGenModal && (
+        <Modal title="🎲 가상 선수 데이터 생성" onClose={() => setMockGenModal(false)}>
+          <div className="space-y-4">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-700 space-y-1">
+              <div className="font-semibold">테스트용 가상 선수를 자동 생성합니다</div>
+              <div className="text-xs text-purple-600">초등~생활체육 6개 부문, 남녀 균형 배분, 포인트/Elo 자동 계산</div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">생성 인원 (최대 1000명)</label>
+              <div className="flex gap-2">
+                {[100, 200, 500, 1000].map(n => (
+                  <button key={n} onClick={() => setMockGenCount(n)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${mockGenCount === n ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                    {n}명
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-0.5">
+              <div>• 기존 선수와 이름이 겹치면 건너뜁니다</div>
+              <div>• 복식 페어도 함께 생성됩니다 (약 65쌍)</div>
+              <div>• 언제든 개별 삭제/수정 가능합니다</div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="btn-primary flex-1 bg-purple-600 hover:bg-purple-700"
+                onClick={() => {
+                  const allPlayers = generatePlayers()
+                  const ratio = mockGenCount / 1000
+                  const subset = allPlayers.slice(0, Math.round(allPlayers.length * ratio))
+                  const result = importPlayers(subset)
+                  const newPairs = generatePairs(subset)
+                  newPairs.forEach(p => addPair(p))
+                  setMockGenModal(false)
+                  alert(`✅ 선수 ${result.added}명 + 복식 페어 ${newPairs.length}쌍 생성 완료\n(중복 ${result.skipped}명 건너뜀)`)
+                }}
+              >
+                {mockGenCount}명 생성하기
+              </button>
+              <button className="btn-secondary flex-1" onClick={() => setMockGenModal(false)}>취소</button>
+            </div>
           </div>
         </Modal>
       )}
