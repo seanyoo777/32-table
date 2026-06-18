@@ -453,7 +453,10 @@ export default function Rankings() {
                           ? <img src={p.photoUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                           : <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 flex-shrink-0 font-bold">{p.name[0]}</div>
                         }
-                        <span className="font-medium">{p.name}</span>
+                        <button
+                          onClick={() => setStatsModal(p)}
+                          className="font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors"
+                        >{p.name}</button>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-gray-500">{p.school}</td>
@@ -485,7 +488,7 @@ export default function Rankings() {
                         <button onClick={() => setPointsModal({ id: p.id, name: p.name })}
                           className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-medium">+P</button>
                         <button onClick={() => setEditModal({ ...p })} className="text-gray-400 hover:text-gray-700 p-1"><Edit2 size={13} /></button>
-                        <button onClick={() => deletePlayer(p.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
+                        <button onClick={() => { if (window.confirm(`${p.name} 선수를 삭제하시겠습니까?`)) deletePlayer(p.id) }} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
                       </div>
                     </td>
                   </tr>

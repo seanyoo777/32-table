@@ -6,7 +6,7 @@ import {
   calcStandings, getRoundName, genId
 } from '../utils/bracketUtils'
 import {
-  Plus, Trash2, Trophy, ChevronRight, X, Printer,
+  Plus, Trash2, Trophy, ChevronRight, ChevronLeft, X, Printer,
   Shuffle, Users, Layers, Check, ChevronDown, ChevronUp, Info, Download, Upload, Cloud, CloudOff
 } from 'lucide-react'
 import type {
@@ -960,6 +960,16 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
   const [resultModal, setResultModal] = useState<BracketMatch | null>(null)
 
   const realMatches = event.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+  // 미완료 경기 목록 (라운드→포지션 순) — 모달 next/prev 이동용
+  const pendingMatches = realMatches
+    .filter(m => !m.result)
+    .sort((a, b) => a.round !== b.round ? a.round - b.round : a.position - b.position)
+  const modalIdx = resultModal ? pendingMatches.findIndex(m => m.id === resultModal.id) : -1
+
+  function openNextPending(dir: 1 | -1) {
+    const nextIdx = modalIdx + dir
+    if (nextIdx >= 0 && nextIdx < pendingMatches.length) setResultModal(pendingMatches[nextIdx])
+  }
   const maxRound = Math.max(...realMatches.map(m => m.round), 1)
   const totalRounds = event.bracketFormat === '토너먼트'
     ? Math.max(...event.matches.map(m => m.round), 1)
@@ -1116,7 +1126,16 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
           match={resultModal}
           pMap={pMap}
           event={event}
-          onSubmit={(result) => { onRecord(resultModal.id, result); setResultModal(null) }}
+          matchIndex={modalIdx}
+          totalPending={pendingMatches.length}
+          onSubmit={(result) => {
+            onRecord(resultModal.id, result)
+            // 다음 미완료 경기로 자동 이동 (없으면 닫기)
+            const next = pendingMatches.find((m, i) => i > modalIdx)
+            setResultModal(next ?? null)
+          }}
+          onPrev={modalIdx > 0 ? () => openNextPending(-1) : undefined}
+          onNext={modalIdx < pendingMatches.length - 1 ? () => openNextPending(1) : undefined}
           onClose={() => setResultModal(null)}
         />
       )}
@@ -1341,12 +1360,16 @@ function StandingsTable({ participantIds, standings, pMap }: {
 }
 
 // ─── 결과 입력 모달 ───────────────────────────────────────
-function ResultModal({ match, pMap, event, onSubmit, onClose }: {
+function ResultModal({ match, pMap, event, onSubmit, onClose, onPrev, onNext, matchIndex, totalPending }: {
   match: BracketMatch
   pMap: Record<string, any>
   event: TournamentEvent
   onSubmit: (r: MatchResult) => void
   onClose: () => void
+  onPrev?: () => void
+  onNext?: () => void
+  matchIndex?: number
+  totalPending?: number
 }) {
   const { players, teams } = useStore()
   const isTeamEvent = event.eventType === '단체전'
@@ -1418,10 +1441,29 @@ function ResultModal({ match, pMap, event, onSubmit, onClose }: {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-800">
-            {isTeamEvent ? '단체전 결과 입력' : '경기 결과 입력'}
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-gray-800">
+              {isTeamEvent ? '단체전 결과 입력' : '경기 결과 입력'}
+            </h3>
+            {totalPending !== undefined && totalPending > 0 && (
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                {(matchIndex ?? 0) + 1} / {totalPending}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {onPrev && (
+              <button onClick={onPrev} className="p-1.5 rounded hover:bg-gray-100 text-gray-500" title="이전 경기">
+                <ChevronLeft size={16} />
+              </button>
+            )}
+            {onNext && (
+              <button onClick={onNext} className="p-1.5 rounded hover:bg-gray-100 text-gray-500" title="다음 경기">
+                <ChevronRight size={16} />
+              </button>
+            )}
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 ml-1"><X size={18} /></button>
+          </div>
         </div>
 
         {/* VS header */}
@@ -1511,8 +1553,10 @@ function ResultModal({ match, pMap, event, onSubmit, onClose }: {
         )}
 
         <div className="flex gap-2">
-          <button className="btn-primary flex-1" onClick={handleSubmit} disabled={!hasWinner}>결과 저장</button>
-          <button className="btn-secondary flex-1" onClick={onClose}>취소</button>
+          <button className="btn-primary flex-1" onClick={handleSubmit} disabled={!hasWinner}>
+            {onNext ? '저장 후 다음 →' : '결과 저장'}
+          </button>
+          <button className="btn-secondary" onClick={onClose}>닫기</button>
         </div>
 
         {/* 부전승 처리 */}

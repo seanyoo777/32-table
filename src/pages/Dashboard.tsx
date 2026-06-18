@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [now, setNow] = useState(new Date())
   const [callTableNo, setCallTableNo] = useState(1)
   const [callMatchKey, setCallMatchKey] = useState('')
+  const [callSearch, setCallSearch] = useState('')
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -272,21 +273,37 @@ export default function DashboardPage() {
                 </span>
               )}
             </h2>
+            <div className="flex gap-1.5 mb-1.5">
+              <input
+                className="input flex-1 min-w-0 py-1 text-xs"
+                placeholder="선수명 검색..."
+                value={callSearch}
+                onChange={e => setCallSearch(e.target.value)}
+              />
+              <input className="input w-14 text-center py-1" type="number" min={1} max={99}
+                value={callTableNo} onChange={e => setCallTableNo(Number(e.target.value))} />
+            </div>
             <div className="flex gap-1.5 mb-2">
               <select className="select flex-1 min-w-0 py-1" value={callMatchKey}
                 onChange={e => setCallMatchKey(e.target.value)}>
-                <option value="">경기 선택...</option>
-                {pendingMatches.slice(0, 30).map(m => {
-                  const p1 = m.participant1Id ? pMap[m.participant1Id]?.name : '?'
-                  const p2 = m.participant2Id ? pMap[m.participant2Id]?.name : '?'
-                  const key = `${m.tournamentId}|${m.eventId}|${m.id}`
-                  return <option key={key} value={key}>[{m.eventLabel}] {p1} vs {p2}</option>
-                })}
+                <option value="">경기 선택... ({pendingMatches.length}개 대기)</option>
+                {pendingMatches
+                  .filter(m => {
+                    if (!callSearch) return true
+                    const p1 = m.participant1Id ? pMap[m.participant1Id]?.name ?? '' : ''
+                    const p2 = m.participant2Id ? pMap[m.participant2Id]?.name ?? '' : ''
+                    const q = callSearch.toLowerCase()
+                    return p1.toLowerCase().includes(q) || p2.toLowerCase().includes(q) || (m.eventLabel ?? '').toLowerCase().includes(q)
+                  })
+                  .map(m => {
+                    const p1 = m.participant1Id ? pMap[m.participant1Id]?.name : '?'
+                    const p2 = m.participant2Id ? pMap[m.participant2Id]?.name : '?'
+                    const key = `${m.tournamentId}|${m.eventId}|${m.id}`
+                    return <option key={key} value={key}>[{m.eventLabel}] {p1} vs {p2}</option>
+                  })}
               </select>
-              <input className="input w-14 text-center py-1" type="number" min={1} max={30}
-                value={callTableNo} onChange={e => setCallTableNo(Number(e.target.value))} />
               <button onClick={handleCallMatch} disabled={!callMatchKey}
-                className="px-2.5 py-1 bg-blue-600 text-white text-xs rounded-lg disabled:opacity-50 flex items-center gap-1 hover:bg-blue-700">
+                className="px-2.5 py-1 bg-blue-600 text-white text-xs rounded-lg disabled:opacity-50 flex items-center gap-1 hover:bg-blue-700 flex-shrink-0">
                 <Bell size={11} /> 호출
               </button>
             </div>
