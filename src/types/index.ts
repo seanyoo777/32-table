@@ -186,6 +186,7 @@ export interface SchedulePlan {
   events: ScheduleEvent[]
   slots: ScheduleSlot[]
   createdAt: string
+  linkedTournamentId?: string
 }
 
 export interface ScoreRecord {

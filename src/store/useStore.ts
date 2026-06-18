@@ -72,6 +72,7 @@ interface StoreState {
 
   // Schedules
   addSchedule: (s: SchedulePlan) => void
+  updateSchedule: (id: string, data: Partial<SchedulePlan>) => void
   deleteSchedule: (id: string) => void
 
   // Score Records
@@ -309,6 +310,7 @@ export const useStore = create<StoreState>()(
 
       // Schedules
       addSchedule: (s) => set((st) => ({ schedules: [...st.schedules, s] })),
+      updateSchedule: (id, data) => set((st) => ({ schedules: st.schedules.map(sc => sc.id === id ? { ...sc, ...data } : sc) })),
       deleteSchedule: (id) => set((s) => ({ schedules: s.schedules.filter(sc => sc.id !== id) })),
 
       // Score Records
