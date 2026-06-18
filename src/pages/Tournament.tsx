@@ -1236,14 +1236,36 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
     return acc
   }, {} as Record<string, BracketMatch[]>)
 
+  const doneCount = matches.filter(m => m.result).length
+  const pendingCount = matches.filter(m => !m.result && m.participant1Id && m.participant2Id).length
+  const pct = matches.length > 0 ? Math.round(doneCount / matches.length * 100) : 0
+
   return (
     <div className="space-y-4">
-      {Object.entries(byGroup).map(([gId, gMatches]) => (
+      {/* 진행 현황 바 */}
+      <div className="flex items-center gap-3 px-1">
+        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="text-xs text-gray-500 flex-shrink-0">
+          <span className="text-green-600 font-bold">{doneCount}완료</span>
+          {pendingCount > 0 && <span className="text-yellow-600 ml-1.5 font-bold">{pendingCount}대기</span>}
+          <span className="text-gray-400 ml-1.5">{pct}%</span>
+        </span>
+      </div>
+      {Object.entries(byGroup).map(([gId, gMatches]) => {
+        const gDone = gMatches.filter(m => m.result).length
+        return (
         <div key={gId} className="card p-0 overflow-hidden">
           {gId !== '__main' && (
-            <div className="bg-gray-50 px-4 py-2 border-b">
-              <span className="font-semibold text-sm text-gray-700">{groupMap[gId] ?? gId}</span>
-              <span className="text-xs text-gray-400 ml-2">{gMatches.length}경기</span>
+            <div className="bg-gray-50 px-4 py-2 border-b flex items-center justify-between">
+              <div>
+                <span className="font-semibold text-sm text-gray-700">{groupMap[gId] ?? gId}</span>
+                <span className="text-xs text-gray-400 ml-2">{gMatches.length}경기</span>
+              </div>
+              <span className="text-xs">
+                <span className="text-green-600 font-medium">{gDone}/{gMatches.length}</span>
+              </span>
             </div>
           )}
           <div className="divide-y">
@@ -1300,7 +1322,8 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
             })}
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
