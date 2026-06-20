@@ -71,6 +71,88 @@ html, body, #root {
   @apply text-xs text-gray-400 font-normal mr-1;
 }
 
+/* ─── 다크 모드 ───────────────────────────────────────────────
+   하드코딩된 중립색(white/gray) 유틸과 공통 컴포넌트 클래스를
+   .dark 스코프에서 일괄 리매핑한다. 컴포넌트 파일 수정 없이 전역 적용. */
+.dark {
+  color-scheme: dark;
+  --d-app: #0b1220;      /* 앱 배경 (가장 어두움) */
+  --d-surface: #18212f;  /* 카드·헤더 표면 */
+  --d-elevated: #283446; /* 살짝 떠 있는 패널 */
+  --d-elevated2: #34425a;
+  --d-border: #2c3a4f;
+  --d-border-soft: #222e40;
+  --d-t1: #f1f5f9;       /* 최상위 텍스트 */
+  --d-t2: #dbe3ec;
+  --d-t3: #b6c2d2;
+  --d-t4: #8d9bb0;
+  --d-t5: #6b7a90;
+}
+
+.dark body { background-color: var(--d-app); color: var(--d-t2); }
+
+/* 배경 중립색 */
+.dark .bg-white { background-color: var(--d-surface) !important; }
+.dark .bg-gray-50 { background-color: var(--d-app) !important; }
+.dark .bg-gray-100 { background-color: var(--d-elevated) !important; }
+.dark .bg-gray-200 { background-color: var(--d-elevated2) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: var(--d-elevated) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: var(--d-elevated2) !important; }
+.dark .hover\:bg-gray-200:hover { background-color: var(--d-elevated2) !important; }
+
+/* 텍스트 중립색 */
+.dark .text-gray-900 { color: var(--d-t1) !important; }
+.dark .text-gray-800 { color: var(--d-t2) !important; }
+.dark .text-gray-700 { color: var(--d-t3) !important; }
+.dark .text-gray-600 { color: var(--d-t3) !important; }
+.dark .text-gray-500 { color: var(--d-t4) !important; }
+.dark .text-gray-400 { color: var(--d-t5) !important; }
+.dark .text-gray-300 { color: var(--d-t5) !important; }
+
+/* 테두리 중립색 */
+.dark .border-gray-200 { border-color: var(--d-border) !important; }
+.dark .border-gray-100 { border-color: var(--d-border-soft) !important; }
+.dark .border-gray-300 { border-color: var(--d-elevated2) !important; }
+.dark .border-b, .dark .border-t, .dark .border-r, .dark .border-l,
+.dark .border { border-color: var(--d-border); }
+
+/* 컴포넌트 클래스 (@apply로 색이 박혀 유틸 오버라이드가 닿지 않음) */
+.dark .card { background-color: var(--d-surface); border-color: var(--d-border); }
+.dark .page-shell, .dark .page-body { background-color: var(--d-app); }
+.dark .page-header { background-color: var(--d-surface); border-color: var(--d-border); }
+.dark .input, .dark .select {
+  background-color: var(--d-elevated) !important;
+  border-color: var(--d-border) !important;
+  color: var(--d-t2) !important;
+}
+.dark .input::placeholder { color: var(--d-t5); }
+.dark .btn-secondary { background-color: var(--d-elevated); color: var(--d-t2); }
+.dark .btn-secondary:hover { background-color: var(--d-elevated2); }
+.dark select option { background-color: var(--d-surface); color: var(--d-t2); }
+
+/* 브래킷 */
+.dark .bracket-match { background-color: var(--d-surface); border-color: var(--d-elevated2); }
+.dark .bracket-player.loser { background-color: var(--d-elevated); color: var(--d-t5); }
+.dark .bracket-player.winner { background-color: rgba(59,130,246,0.18); color: #93c5fd; }
+
+/* 상태 틴트(-50) 패널: 어둡게 + 텍스트 밝게 */
+.dark .bg-blue-50 { background-color: rgba(59,130,246,0.14) !important; }
+.dark .bg-green-50 { background-color: rgba(34,197,94,0.14) !important; }
+.dark .bg-red-50 { background-color: rgba(239,68,68,0.14) !important; }
+.dark .bg-amber-50, .dark .bg-orange-50, .dark .bg-yellow-50 { background-color: rgba(245,158,11,0.14) !important; }
+.dark .bg-purple-50, .dark .bg-indigo-50 { background-color: rgba(139,92,246,0.14) !important; }
+.dark .bg-teal-50 { background-color: rgba(20,184,166,0.14) !important; }
+.dark .bg-pink-50 { background-color: rgba(236,72,153,0.14) !important; }
+.dark .text-blue-700, .dark .text-blue-600 { color: #93c5fd !important; }
+.dark .text-green-700, .dark .text-green-600 { color: #86efac !important; }
+.dark .text-red-700, .dark .text-red-600 { color: #fca5a5 !important; }
+.dark .text-amber-700, .dark .text-amber-600, .dark .text-orange-700, .dark .text-orange-600, .dark .text-yellow-600 { color: #fcd34d !important; }
+.dark .text-purple-700, .dark .text-purple-600, .dark .text-indigo-700, .dark .text-indigo-600 { color: #c4b5fd !important; }
+.dark .text-teal-700, .dark .text-teal-600 { color: #5eead4 !important; }
+
+/* 그림자 약화 */
+.dark .shadow-sm, .dark .shadow, .dark .shadow-md, .dark .shadow-lg { --tw-shadow-color: rgba(0,0,0,0.4); box-shadow: 0 1px 3px rgba(0,0,0,0.45); }
+
 /* Print styles */
 @media print {
   .no-print { display: none !important; }

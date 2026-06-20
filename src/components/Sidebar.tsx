@@ -2,13 +2,14 @@ import { NavLink } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import {
   Home, Trophy, TableProperties, ClipboardList, Calendar,
-  Zap, QrCode, Monitor, Settings, LayoutDashboard, BarChart3
+  Zap, QrCode, Monitor, Settings, LayoutDashboard, BarChart3, Sun, Moon
 } from 'lucide-react'
 
 export default function Sidebar() {
-  const { matchCalls, liveMatches, scoreRecords } = useStore()
+  const { matchCalls, liveMatches, scoreRecords, appSettings, updateAppSettings } = useStore()
   const pendingCalls = matchCalls.filter(c => !c.acknowledged).length
   const unverified = scoreRecords.filter(r => !r.verified).length
+  const isDark = appSettings.theme === 'dark'
 
   const navItems = [
     { to: '/', label: '홈', icon: Home, exact: true, badge: 0 },
@@ -63,6 +64,13 @@ export default function Sidebar() {
 
       {/* Settings + version at bottom */}
       <div className="px-3 py-3 border-t border-gray-800 flex-shrink-0 space-y-0.5">
+        <button
+          onClick={() => updateAppSettings({ theme: isDark ? 'light' : 'dark' })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+        >
+          {isDark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+          <span className="flex-1 text-left">{isDark ? '라이트 모드' : '다크 모드'}</span>
+        </button>
         <NavLink
           to="/settings"
           className={({ isActive }) =>
@@ -73,7 +81,7 @@ export default function Sidebar() {
           <Settings size={16} strokeWidth={2} />
           설정
         </NavLink>
-        <div className="px-3 pt-1 text-xs text-gray-600">v3.0 · 탁구대회 관리</div>
+        <div className="px-3 pt-1 text-xs text-gray-600">v3.6 · 탁구대회 관리</div>
       </div>
     </aside>
   )

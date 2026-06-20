@@ -1,7 +1,8 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useStore } from './store/useStore'
 
 // 라우트 코드 스플리팅 — 초기 번들에서 분리하여 첫 로딩 속도 개선
 const Home = lazy(() => import('./pages/Home'))
@@ -64,6 +65,11 @@ function MainLayout() {
 }
 
 export default function App() {
+  const theme = useStore(s => s.appSettings.theme)
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }, [theme])
+
   return (
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>

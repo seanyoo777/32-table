@@ -21,6 +21,7 @@ export interface AppSettings {
   season: string
   contactPhone: string
   contactEmail: string
+  theme: 'light' | 'dark'
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -29,6 +30,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   season: new Date().getFullYear().toString(),
   contactPhone: '',
   contactEmail: '',
+  theme: 'light',
 }
 
 interface StoreState {
