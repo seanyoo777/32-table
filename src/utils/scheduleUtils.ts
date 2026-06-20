@@ -244,6 +244,80 @@ export function groupSlotsByTime(slots: ScheduleSlot[]): Map<string, ScheduleSlo
   return map
 }
 
+// ─── 일정 충돌 감지 ──────────────────────────────────────────
+// 운영 사고 예방: 같은 선수/페어/팀이 (1) 동시간대 두 코트에 배정되거나
+// (2) 연속 경기 사이 휴식이 부족한 경우를 탐지한다. 슬롯의 참가자명(엔티티 단위) 기준.
+export const REST_MINUTES_THRESHOLD = 10  // 연속 경기 최소 권장 휴식(분)
+
+export type ScheduleConflictType = 'overlap' | 'rest'
+export interface ScheduleConflict {
+  type: ScheduleConflictType
+  participant: string
+  day: number
+  slotA: ScheduleSlot
+  slotB: ScheduleSlot
+  gapMinutes?: number   // rest 타입: 두 경기 사이 간격(분)
+}
+
+export interface ConflictReport {
+  conflicts: ScheduleConflict[]
+  conflictSlotIds: Set<string>   // 하이라이트용 (overlap 슬롯만)
+}
+
+export function detectScheduleConflicts(
+  slots: ScheduleSlot[],
+  restThreshold: number = REST_MINUTES_THRESHOLD,
+): ConflictReport {
+  // 참가자(엔티티명) → 출전 슬롯 목록
+  const byParticipant = new Map<string, Array<{ slot: ScheduleSlot; start: number; end: number; day: number }>>()
+  for (const slot of slots) {
+    if (slot.type && slot.type !== 'match') continue
+    const day = slot.day ?? 1
+    const start = timeToMins(slot.startTime)
+    const end = timeToMins(slot.endTime)
+    for (const name of [slot.participant1, slot.participant2]) {
+      const p = (name ?? '').trim()
+      if (!p || p === '미정' || p === 'BYE') continue
+      if (!byParticipant.has(p)) byParticipant.set(p, [])
+      byParticipant.get(p)!.push({ slot, start, end, day })
+    }
+  }
+
+  const conflicts: ScheduleConflict[] = []
+  const conflictSlotIds = new Set<string>()
+
+  for (const [participant, entries] of byParticipant) {
+    if (entries.length < 2) continue
+    // 같은 날끼리 시간순 비교
+    const sorted = [...entries].sort((a, b) => a.day - b.day || a.start - b.start)
+    for (let i = 0; i < sorted.length - 1; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const a = sorted[i], b = sorted[j]
+        if (a.day !== b.day) continue
+        if (a.slot.id === b.slot.id) continue
+        const overlap = a.start < b.end && b.start < a.end
+        if (overlap) {
+          conflicts.push({ type: 'overlap', participant, day: a.day, slotA: a.slot, slotB: b.slot })
+          conflictSlotIds.add(a.slot.id)
+          conflictSlotIds.add(b.slot.id)
+        } else {
+          // 휴식 부족: 먼저 끝나는 경기 종료 → 다음 경기 시작 간격
+          const earlier = a.end <= b.start ? a : b
+          const later = earlier === a ? b : a
+          const gap = later.start - earlier.end
+          if (gap >= 0 && gap < restThreshold) {
+            conflicts.push({ type: 'rest', participant, day: a.day, slotA: earlier.slot, slotB: later.slot, gapMinutes: gap })
+          }
+        }
+      }
+    }
+  }
+
+  // overlap 먼저, 그다음 휴식부족
+  conflicts.sort((a, b) => (a.type === b.type ? 0 : a.type === 'overlap' ? -1 : 1))
+  return { conflicts, conflictSlotIds }
+}
+
 // ─── 스마트 자동 스케줄러 ────────────────────────────────────
 
 export interface RoundPlan {

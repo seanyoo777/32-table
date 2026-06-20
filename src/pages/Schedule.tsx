@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants } from '../utils/scheduleUtils'
+import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
-import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft } from 'lucide-react'
+import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
@@ -803,6 +803,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [activeDay, setActiveDay] = useState<number | null>(null)
   const [assignTourId, setAssignTourId] = useState<string>('')
   const [assignResult, setAssignResult] = useState<string | null>(null)
+  const [showConflicts, setShowConflicts] = useState(false)
 
   const days = [...new Set([
     ...plan.slots.map(s => s.day ?? 1),
@@ -817,6 +818,11 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const filteredCourts = [...new Set(filteredSlots.map(s => s.courtNo))].sort()
   const filteredTimes = [...new Set(filteredSlots.map(s => s.startTime))].sort()
   const byTime = filteredTimes.map(t => ({ time: t, slots: filteredSlots.filter(s => s.startTime === t) }))
+
+  // 일정 충돌 감지 (선수 동시간대 중복배정 / 연속경기 휴식부족)
+  const { conflicts, conflictSlotIds } = useMemo(() => detectScheduleConflicts(filteredSlots), [filteredSlots])
+  const overlapCount = conflicts.filter(c => c.type === 'overlap').length
+  const restCount = conflicts.filter(c => c.type === 'rest').length
 
   const specialEvents = plan.events.filter(e =>
     e.type && e.type !== 'match' && (activeDay === null || (e.day ?? 1) === activeDay)
@@ -952,7 +958,46 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         <StatMini label="코트 수" value={`${filteredCourts.length}개`} />
         <StatMini label="종목 수" value={`${plan.events.length}개`} />
         <StatMini label="예상 종료" value={formatTime12h(endTime) || '-'} />
+        {conflicts.length === 0 ? (
+          <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 충돌 없음
+          </span>
+        ) : (
+          <button onClick={() => setShowConflicts(v => !v)}
+            className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700">
+            <AlertTriangle size={13} />
+            {overlapCount > 0 && <span>중복배정 {overlapCount}</span>}
+            {restCount > 0 && <span className="text-amber-600">휴식부족 {restCount}</span>}
+            <ChevronDown size={12} className={`transition-transform ${showConflicts ? 'rotate-180' : ''}`} />
+          </button>
+        )}
       </div>
+
+      {/* 충돌 경고 패널 */}
+      {conflicts.length > 0 && showConflicts && (
+        <div className="flex-shrink-0 bg-red-50 border-b border-red-100 px-4 py-2.5 max-h-44 overflow-y-auto no-print">
+          <div className="space-y-1">
+            {conflicts.map((c, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                {c.type === 'overlap'
+                  ? <AlertTriangle size={12} className="text-red-500 flex-shrink-0" />
+                  : <Coffee size={12} className="text-amber-500 flex-shrink-0" />}
+                <span className="font-bold text-gray-800 w-24 truncate">{c.participant}</span>
+                {hasMultipleDays && <span className="text-gray-400">{c.day}일차</span>}
+                {c.type === 'overlap' ? (
+                  <span className="text-red-600">
+                    동시간 중복 — 코트{c.slotA.courtNo}({formatTime12h(c.slotA.startTime)}) ⟷ 코트{c.slotB.courtNo}({formatTime12h(c.slotB.startTime)})
+                  </span>
+                ) : (
+                  <span className="text-amber-700">
+                    휴식 {c.gapMinutes}분 — 코트{c.slotA.courtNo}({formatTime12h(c.slotA.endTime)} 종료) → 코트{c.slotB.courtNo}({formatTime12h(c.slotB.startTime)} 시작)
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
@@ -1029,7 +1074,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       if (!slot) return <td key={c} className="py-2 px-2 border border-gray-100 bg-white" />
                       return (
                         <td key={c} className="py-1.5 px-2 border border-gray-100">
-                          <div className={`rounded p-1.5 border ${divColors[slot.division]}`}>
+                          <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''}`}>
                             <div className="flex items-center gap-1 mb-0.5">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                               <span className="font-semibold text-[11px]">{slot.division} {slot.eventType}</span>
@@ -1067,7 +1112,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                     </h3>
                     <div className="space-y-1.5">
                       {courtSlots.map(slot => (
-                        <div key={slot.id} className={`p-1.5 rounded border ${divColors[slot.division]}`}>
+                        <div key={slot.id} className={`p-1.5 rounded border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''}`}>
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
