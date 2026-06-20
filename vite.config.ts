@@ -34,4 +34,17 @@ export default defineConfig({
     }),
   ],
   server: { port: 3100 },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // 외부 라이브러리를 별도 청크로 분리 → 페이지 청크 경량화 + 캐시 효율
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-qr': ['qrcode.react'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 })

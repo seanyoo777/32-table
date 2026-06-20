@@ -40,8 +40,9 @@ export function subscribeTournament(
   onUpdate: (tournament: Tournament) => void
 ) {
   if (!SYNC_ENABLED || !supabase) return () => {}
+  const sb = supabase
 
-  const channel = supabase
+  const channel = sb
     .channel(`tournament:${tournamentId}`)
     .on(
       'postgres_changes',
@@ -58,5 +59,5 @@ export function subscribeTournament(
     )
     .subscribe()
 
-  return () => { supabase.removeChannel(channel) }
+  return () => { sb.removeChannel(channel) }
 }

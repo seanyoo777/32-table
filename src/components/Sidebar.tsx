@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import {
   Home, Trophy, TableProperties, ClipboardList, Calendar,
-  Zap, QrCode, Monitor, Settings, LayoutDashboard
+  Zap, QrCode, Monitor, Settings, LayoutDashboard, BarChart3
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -20,6 +20,7 @@ export default function Sidebar() {
     { to: '/score', label: '점수입력', icon: Zap, badge: liveMatches.length },
     { to: '/checkin', label: 'QR 체크인', icon: QrCode, badge: 0 },
     { to: '/liveboard', label: '라이브보드', icon: Monitor, badge: 0 },
+    { to: '/stats', label: '통계·리포트', icon: BarChart3, badge: 0 },
   ]
 
   return (

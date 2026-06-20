@@ -363,6 +363,7 @@ function ManualEntry() {
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
   const [recorder, setRecorder] = useState('')
   const [sets, setSets] = useState<Array<[string, string]>>([['', '']])
+  const [matchSearch, setMatchSearch] = useState('')
 
   const pMap = Object.fromEntries([
     ...players.map(p => [p.id, { name: p.name, school: p.school }]),
