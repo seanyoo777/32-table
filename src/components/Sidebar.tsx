@@ -81,7 +81,7 @@ export default function Sidebar() {
           <Settings size={16} strokeWidth={2} />
           설정
         </NavLink>
-        <div className="px-3 pt-1 text-xs text-gray-600">v3.6 · 탁구대회 관리</div>
+        <div className="px-3 pt-1 text-xs text-gray-600">v3.7 · 탁구대회 관리</div>
       </div>
     </aside>
   )
