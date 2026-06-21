@@ -11,6 +11,13 @@ export interface SmartScheduleEventInput {
   preferredCourtStart?: number   // 1-base, 이 종목 전용 코트 시작
   preferredCourtEnd?: number
 }
+// 다일차 운영 창(벽시계 분). 지정 시 경기가 하루 운영시간을 넘기지 못하도록
+// day 경계에서 자동으로 다음 날로 넘긴다(경기는 하루를 가로지를 수 없음).
+export interface SchedulerDayConfig {
+  startMin: number    // 이 날 시작(자정 기준 분, 예: 09:00 → 540)
+  endMin: number      // 이 날 종료(예: 20:00 → 1200)
+  courts?: number     // 이 날 가용 코트 수 (기본 = input.courts)
+}
 export interface SmartScheduleInput {
   events: SmartScheduleEventInput[]
   courts: number
@@ -21,20 +28,23 @@ export interface SmartScheduleInput {
   restMin: number     // 선수 연속 경기 최소 휴식
   pairs?: Pair[]
   teams?: Team[]
+  days?: SchedulerDayConfig[]  // 지정 시 다일차 자동분할. 미지정 시 startMinutes부터 단일 타임라인(기존 동작).
 }
 export interface ScheduledMatch {
   matchId: string
   eventId: string
   courtNo: number
-  startMin: number
+  startMin: number   // 벽시계 분(해당 day 기준)
   endMin: number
   round: number
+  day: number        // 1-base 일차
 }
 export interface SmartScheduleResult {
   matches: ScheduledMatch[]
   makespanMin: number
   courtBusyMin: number
   utilization: number   // 0~1, 코트 가동률
+  usedDays: number      // 실제 사용된 일수(1-base 최대 day)
 }
 
 export function scheduleTournamentMatches(input: SmartScheduleInput): SmartScheduleResult {
@@ -81,28 +91,103 @@ export function scheduleTournamentMatches(input: SmartScheduleInput): SmartSched
     }
   }
 
-  const courtFree = Array(courts).fill(startMinutes)
-  const playerFree: Record<string, number> = {}
-  const endOf: Record<string, number> = {}
   const scheduled: Record<string, ScheduledMatch> = {}
   const done = new Set<string>()
+  const endOf: Record<string, number> = {}     // 노드별 종료 시각(절대 분)
+  const playerFree: Record<string, number> = {}
   const total = Object.keys(nodes).length
-  let guard = 0
 
+  // ── 단일 타임라인 (days 미지정, 기존 동작 그대로) ──
+  if (!input.days || input.days.length === 0) {
+    const courtFree = Array(courts).fill(startMinutes)
+    let guard = 0
+    while (done.size < total && guard++ < total + 5) {
+      const ready = Object.values(nodes).filter(n => !done.has(n.id) && n.deps.every(d => done.has(d) || !nodes[d]))
+      if (ready.length === 0) break
+      let best: { n: Node; court: number; start: number } | null = null
+      for (const n of ready) {
+        const depEnd = n.deps.length ? Math.max(startMinutes, ...n.deps.map(d => (endOf[d] ?? startMinutes) + bufferMin)) : startMinutes
+        const playerReady = n.players.length ? Math.max(startMinutes, ...n.players.map(p => playerFree[p] ?? startMinutes)) : startMinutes
+        const readyT = Math.max(depEnd, playerReady)
+        // 이 종목이 쓸 수 있는 코트 중 가장 빨리 비는 것
+        let bc = -1
+        for (let c = n.courtFrom - 1; c <= n.courtTo - 1; c++) if (bc < 0 || courtFree[c] < courtFree[bc]) bc = c
+        if (bc < 0) bc = 0
+        const startT = Math.max(courtFree[bc], readyT)
+        if (!best || startT < best.start || (startT === best.start && n.round < best.n.round)) best = { n, court: bc, start: startT }
+      }
+      if (!best) break
+      const { n, court, start } = best
+      const end = start + n.dur
+      courtFree[court] = end
+      endOf[n.id] = end
+      for (const p of n.players) playerFree[p] = end + restMin
+      scheduled[n.id] = { matchId: n.id, eventId: n.eventId, courtNo: court + 1, startMin: start, endMin: end, round: n.round, day: 1 }
+      done.add(n.id)
+    }
+    const result = Object.values(scheduled).sort((a, b) => a.startMin - b.startMin || a.courtNo - b.courtNo)
+    const makespanMin = result.length ? Math.max(...result.map(r => r.endMin)) : startMinutes
+    const courtBusyMin = result.reduce((s, r) => s + (r.endMin - r.startMin), 0)
+    const span = makespanMin - startMinutes
+    const utilization = span > 0 ? courtBusyMin / (courts * span) : 0
+    return { matches: result, makespanMin, courtBusyMin, utilization, usedDays: 1 }
+  }
+
+  // ── 다일차 자동분할 (절대 타임라인 모델) ──
+  // 각 날을 연속 절대분으로 이어붙임(밤 사이 간격 0). 경기는 하루를 가로지를 수 없고,
+  // 안 들어가면 다음 날로 넘긴다. 마지막 날엔 넘쳐도 배치(드롭 금지).
+  const dayList = input.days.map(d => ({
+    start: d.startMin,
+    len: Math.max(0, d.endMin - d.startMin),
+    courts: Math.max(1, Math.min(courts, d.courts ?? courts)),
+  }))
+  const baseAbs: number[] = []
+  { let acc = 0; for (let i = 0; i < dayList.length; i++) { baseAbs[i] = acc; acc += dayList[i].len } }
+  const startAbs = baseAbs[0]
+  const dayOfAbs = (a: number): number => {
+    let d = 0
+    for (let i = 0; i < dayList.length; i++) { if (a >= baseAbs[i]) d = i; else break }
+    return d
+  }
+  const toWall = (a: number): { day: number; wall: number } => {
+    const d = dayOfAbs(a)
+    return { day: d + 1, wall: dayList[d].start + (a - baseAbs[d]) }
+  }
+  // court(1-base)가 fromAbs 이후 dur 동안 통째로 들어가는 가장 빠른 절대 시작.
+  // 해당 코트가 남은 일정 어디에도 없으면 Infinity(선택되지 않음).
+  const earliestFit = (fromAbs: number, dur: number, court1: number): number => {
+    let a = Math.max(startAbs, fromAbs)
+    for (let d = dayOfAbs(a); d < dayList.length; d++) {
+      if (court1 > dayList[d].courts) { a = baseAbs[d + 1] ?? Infinity; continue }  // 이 날 코트 없음 → 다음 날
+      const dStartAbs = baseAbs[d]
+      const dEndAbs = baseAbs[d] + dayList[d].len
+      const s = Math.max(a, dStartAbs)
+      if (s + dur <= dEndAbs) return s                              // 이 날에 들어감
+      if (d + 1 >= dayList.length) return s                          // 마지막 날 — 오버플로 허용(드롭 금지)
+      a = baseAbs[d + 1]                                             // 다음 날로
+    }
+    return Infinity                                                  // 이 코트는 남은 일정에 없음
+  }
+
+  const courtFree = Array(courts).fill(startAbs)
+  let guard = 0
   while (done.size < total && guard++ < total + 5) {
     const ready = Object.values(nodes).filter(n => !done.has(n.id) && n.deps.every(d => done.has(d) || !nodes[d]))
     if (ready.length === 0) break
     let best: { n: Node; court: number; start: number } | null = null
     for (const n of ready) {
-      const depEnd = n.deps.length ? Math.max(startMinutes, ...n.deps.map(d => (endOf[d] ?? startMinutes) + bufferMin)) : startMinutes
-      const playerReady = n.players.length ? Math.max(startMinutes, ...n.players.map(p => playerFree[p] ?? startMinutes)) : startMinutes
+      const depEnd = n.deps.length ? Math.max(startAbs, ...n.deps.map(d => (endOf[d] ?? startAbs) + bufferMin)) : startAbs
+      const playerReady = n.players.length ? Math.max(startAbs, ...n.players.map(p => playerFree[p] ?? startAbs)) : startAbs
       const readyT = Math.max(depEnd, playerReady)
-      // 이 종목이 쓸 수 있는 코트 중 가장 빨리 비는 것
-      let bc = -1
-      for (let c = n.courtFrom - 1; c <= n.courtTo - 1; c++) if (bc < 0 || courtFree[c] < courtFree[bc]) bc = c
-      if (bc < 0) bc = 0
-      const startT = Math.max(courtFree[bc], readyT)
-      if (!best || startT < best.start || (startT === best.start && n.round < best.n.round)) best = { n, court: bc, start: startT }
+      // 이 종목이 쓸 수 있는 코트 중 가장 빨리 들어갈 수 있는 것
+      let bc = -1, bs = Infinity
+      for (let c = n.courtFrom; c <= n.courtTo; c++) {
+        const s = earliestFit(Math.max(courtFree[c - 1] ?? startAbs, readyT), n.dur, c)
+        if (s < bs) { bs = s; bc = c - 1 }
+      }
+      if (bc < 0) { bc = 0; bs = earliestFit(Math.max(courtFree[0], readyT), n.dur, 1) }  // 전용코트가 남은 일정에 없으면 코트1로
+
+      if (!best || bs < best.start || (bs === best.start && n.round < best.n.round)) best = { n, court: bc, start: bs }
     }
     if (!best) break
     const { n, court, start } = best
@@ -110,16 +195,19 @@ export function scheduleTournamentMatches(input: SmartScheduleInput): SmartSched
     courtFree[court] = end
     endOf[n.id] = end
     for (const p of n.players) playerFree[p] = end + restMin
-    scheduled[n.id] = { matchId: n.id, eventId: n.eventId, courtNo: court + 1, startMin: start, endMin: end, round: n.round }
+    const { day, wall } = toWall(start)
+    scheduled[n.id] = { matchId: n.id, eventId: n.eventId, courtNo: court + 1, startMin: wall, endMin: wall + n.dur, round: n.round, day }
     done.add(n.id)
   }
 
-  const result = Object.values(scheduled).sort((a, b) => a.startMin - b.startMin || a.courtNo - b.courtNo)
-  const makespanMin = result.length ? Math.max(...result.map(r => r.endMin)) : startMinutes
+  const result = Object.values(scheduled).sort((a, b) => (a.day - b.day) || (a.startMin - b.startMin) || (a.courtNo - b.courtNo))
+  const lastEndAbs = Object.values(endOf).length ? Math.max(...Object.values(endOf)) : startAbs
   const courtBusyMin = result.reduce((s, r) => s + (r.endMin - r.startMin), 0)
-  const span = makespanMin - startMinutes
+  const span = lastEndAbs - startAbs
   const utilization = span > 0 ? courtBusyMin / (courts * span) : 0
-  return { matches: result, makespanMin, courtBusyMin, utilization }
+  const usedDays = result.length ? Math.max(...result.map(r => r.day)) : 1
+  const makespanMin = result.length ? toWall(lastEndAbs).wall : startMinutes   // 마지막 경기의 종료 벽시계
+  return { matches: result, makespanMin, courtBusyMin, utilization, usedDays }
 }
 
 // ─── 시간 유틸 ─────────────────────────────────────────────
