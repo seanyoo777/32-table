@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches } from '../utils/scheduleUtils'
+import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches, shiftSlotsAfterDelay } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
 import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
@@ -951,6 +951,12 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     }
   }
 
+  // 경기 지연 → 같은 코트 후속 자동 밀림(버퍼 유지). 현장 운영 중 지연 대응.
+  function handleDelaySlot(slotId: string, delayMin: number) {
+    const buffer = plan.events.find(e => !e.type || e.type === 'match')?.bufferMinutes ?? 0
+    updateSchedule(plan.id, { slots: shiftSlotsAfterDelay(plan.slots, slotId, delayMin, buffer) })
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-gray-50">
       {/* Header */}
@@ -1167,6 +1173,16 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             </div>
                           ) : (
                             <div className="text-[10px] text-gray-400">{slot.gender} · 미배정</div>
+                          )}
+                          {(!slot.type || slot.type === 'match') && (
+                            <div className="flex items-center gap-1 mt-1 no-print">
+                              <span className="text-[9px] text-gray-400">지연</span>
+                              {[10, 30].map(d => (
+                                <button key={d} onClick={() => handleDelaySlot(slot.id, d)}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium"
+                                  title={`이 경기 +${d}분 지연 → 같은 코트 후속 자동 밀림`}>+{d}분</button>
+                              ))}
+                            </div>
                           )}
                         </div>
                       ))}

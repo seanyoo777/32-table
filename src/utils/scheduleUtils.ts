@@ -798,3 +798,69 @@ export function generateSmartSlots(
     return a.courtNo - b.courtNo
   })
 }
+
+// ─── 경기 지연 → 후속 자동 밀림 / 슬롯 인라인 이동 ───────────────
+function minutesToHHMM(total: number): string {
+  const nh = Math.floor(total / 60) % 24
+  const nm = ((total % 60) + 60) % 60
+  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`
+}
+
+// 같은 코트·같은 날의 경기 슬롯을 시작순으로 재정렬해, 각 경기가 직전 경기 종료 + 버퍼
+// 이후에 시작하도록 앞으로만 민다(겹침 발생 시에만). 다른 코트/날/특수일정은 건드리지 않음.
+function repackCourtDay(result: ScheduleSlot[], court: number, day: number, bufferMin: number): void {
+  const lane = result
+    .filter(s => s.courtNo === court && (s.day ?? 1) === day && (!s.type || s.type === 'match'))
+    .sort((a, b) => timeToMins(a.startTime) - timeToMins(b.startTime))
+  let prevEnd = -Infinity
+  for (const s of lane) {
+    const dur = timeToMins(s.endTime) - timeToMins(s.startTime)
+    const newStart = Math.max(timeToMins(s.startTime), prevEnd + bufferMin)
+    if (newStart !== timeToMins(s.startTime)) {
+      s.startTime = minutesToHHMM(newStart)
+      s.endTime = minutesToHHMM(newStart + dur)
+    }
+    prevEnd = timeToMins(s.endTime)
+  }
+}
+
+// 특정 경기가 delayMin 만큼 지연(연장)되면, 같은 코트·같은 날의 이후 경기들을 버퍼를 지키며
+// 자동으로 뒤로 민다(겹침 시에만). day 경계 초과분은 벽시계 그대로(운영자는 detectScheduleConflicts로 경고 확인).
+// 반환은 새 배열(원본 불변).
+export function shiftSlotsAfterDelay(
+  slots: ScheduleSlot[],
+  slotId: string,
+  delayMin: number,
+  bufferMin = 0,
+): ScheduleSlot[] {
+  const result = slots.map(s => ({ ...s }))
+  const target = result.find(s => s.id === slotId)
+  if (!target || delayMin <= 0) return result
+  target.endTime = addMinutes(target.endTime, delayMin)   // 대상 경기 연장
+  repackCourtDay(result, target.courtNo, target.day ?? 1, bufferMin)
+  return result
+}
+
+// 슬롯의 시작시간/코트를 직접 수정하고, 영향받는 코트(들)를 재정렬해 겹침을 자동 해소.
+// 코트가 바뀌면 이전 코트와 새 코트 둘 다 재정렬. 반환은 새 배열(원본 불변).
+export function moveScheduleSlot(
+  slots: ScheduleSlot[],
+  slotId: string,
+  patch: { startTime?: string; courtNo?: number },
+  bufferMin = 0,
+): ScheduleSlot[] {
+  const result = slots.map(s => ({ ...s }))
+  const target = result.find(s => s.id === slotId)
+  if (!target) return result
+  const day = target.day ?? 1
+  const oldCourt = target.courtNo
+  if (patch.startTime != null) {
+    const dur = timeToMins(target.endTime) - timeToMins(target.startTime)
+    target.startTime = patch.startTime
+    target.endTime = minutesToHHMM(timeToMins(patch.startTime) + dur)
+  }
+  if (patch.courtNo != null) target.courtNo = patch.courtNo
+  repackCourtDay(result, target.courtNo, day, bufferMin)
+  if (patch.courtNo != null && patch.courtNo !== oldCourt) repackCourtDay(result, oldCourt, day, bufferMin)
+  return result
+}
