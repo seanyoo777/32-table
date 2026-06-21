@@ -544,8 +544,10 @@ v3.4의 "경기마다 즉시 포인트 가산" 방식이 결과 수정·취소·
   + (확장) players/pairs/teams도 동기화 — 현재 sync.ts는 tournaments만 업로드
 
 ### 🟡 MEDIUM (운영 편의)
-- [ ] **병렬 스케줄러 다일차 자동분할** — 현재 단일 타임라인. makespan이 하루 운영시간 초과 시
-  자동으로 day 2/3으로 넘기기 (scheduleTournamentMatches에 dayConfig 입력 추가)
+- [x] **병렬 스케줄러 다일차 자동분할** — ✅완료(cbf9260 엔진 + 5fde629 UI). `SmartScheduleInput.days`
+  지정 시 하루 운영시간 초과분을 자동으로 다음 날로 분할(경기는 하루 못 넘김, 날짜별 코트수·전용코트 존중).
+  `SchedulePlan.days` 영속화 → 시간배치 시 day별 운영창 사용, 슬롯 day 자동·`usedDays` 메시지.
+  라이브검증: 6경기 2일×120분 1코트 → [4,2] 분할·일차탭 표시. 단위테스트 16/16.
 - [ ] **종목별 전용코트 지정 UI** — 엔진은 preferredCourtStart/End 지원, UI 연결 필요 (단체전 코트 분리)
 - [ ] **일정 드래그/인라인 편집** — 경기 지연 시 후속 자동 밀림. `updateScheduleSlot` 추가
 - [ ] **SMS/카카오 경기 호출** — matchCall→선수 연락처 발송 (Twilio/알리고)
