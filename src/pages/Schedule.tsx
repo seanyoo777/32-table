@@ -336,6 +336,7 @@ export default function SchedulePage() {
       startTime: dayConfigs[0]?.startTime ?? '09:00',
       events: derivedEvents, slots, createdAt: new Date().toISOString(),
       linkedTournamentId: linkedTourId || undefined,
+      days: dayConfigs.map(d => ({ ...d })),   // 다일차 운영창 보존(시간 재배치용)
     }
     addSchedule(plan)
     setSelectedId(plan.id)
@@ -876,20 +877,27 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
 
     // 일정 설정에서 코트·시작시간·경기시간 도출
     const matchCfgs = plan.events.filter(e => !e.type || e.type === 'match')
-    const courts = Math.max(1, ...matchCfgs.map(e => e.courtCount), 1)
-    const [sh, sm0] = plan.startTime.split(':').map(Number)
-    const startMin = sh * 60 + sm0
+    const hhmmToMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    // 다일차 운영창(plan.days) → 스케줄러 days. 구버전 plan(days 없음)은 단일 타임라인 유지.
+    const schedDays = plan.days && plan.days.length > 1
+      ? plan.days.map(d => ({ startMin: hhmmToMin(d.startTime), endMin: hhmmToMin(d.endTime), courts: d.courtCount }))
+      : undefined
+    const courts = schedDays
+      ? Math.max(1, ...plan.days!.map(d => d.courtCount))
+      : Math.max(1, ...matchCfgs.map(e => e.courtCount), 1)
+    const startMin = plan.days?.[0] ? hhmmToMin(plan.days[0].startTime) : hhmmToMin(plan.startTime)
     const indivMin = matchCfgs.find(e => e.eventType !== '단체전')?.minutesPerMatch ?? 25
     const teamMin = matchCfgs.find(e => e.eventType === '단체전')?.minutesPerMatch ?? 120
     const buffer = matchCfgs[0]?.bufferMinutes ?? 0
 
     // 대진 의존성 기반 병렬 스케줄링 (이전 라운드 종료→다음 시작, 조별→본선, 선수충돌·휴식)
+    // days 지정 시 하루 운영시간 초과분은 다음 날로 자동 분할.
     const sched = scheduleTournamentMatches({
       events: tour.events.map(ev => ({ id: ev.id, eventType: ev.eventType, matches: ev.matches })),
       courts, startMinutes: startMin, individualMin: indivMin, teamMin, bufferMin: buffer, restMin: buffer,
-      pairs, teams,
+      pairs, teams, days: schedDays,
     })
-    console.log('[ASSIGN] sched', { matches: sched.matches.length, courts, startMin })
+    console.log('[ASSIGN] sched', { matches: sched.matches.length, courts, startMin, days: schedDays?.length ?? 1, usedDays: sched.usedDays })
     if (sched.matches.length === 0) { setAssignResult('배치할 경기가 없습니다.'); return }
 
     const minToTime = (mm: number) => `${String(Math.floor(mm / 60) % 24).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`
@@ -904,7 +912,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         courtNo: s.courtNo, startTime: minToTime(s.startMin), endTime: minToTime(s.endMin), matchNo: i + 1,
         participant1: resolveParticipantName(m.participant1Id, ev.eventType),
         participant2: resolveParticipantName(m.participant2Id, ev.eventType),
-        round: `${m.round}라운드`, day: 1, type: 'match' as const,
+        round: `${m.round}라운드`, day: s.day, type: 'match' as const,
       }
     })
 
@@ -920,9 +928,14 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     updateTournament(assignTourId, { events: newEvents })
     updateSchedule(plan.id, { slots: newSlots, linkedTournamentId: assignTourId })
 
-    const mk = sched.makespanMin - startMin
-    const hh = Math.floor(mk / 60), mmn = mk % 60
-    setAssignResult(`${sched.matches.length}경기 병렬배치 · 총 ${hh}시간${mmn ? ` ${mmn}분` : ''} · 코트 ${courts}개 가동률 ${Math.round(sched.utilization * 100)}%`)
+    const pct = Math.round(sched.utilization * 100)
+    if (sched.usedDays > 1) {
+      setAssignResult(`${sched.matches.length}경기 병렬배치 · ${sched.usedDays}일 일정 (마지막날 ${minToTime(sched.makespanMin)} 종료) · 코트 ${courts}개 가동률 ${pct}%`)
+    } else {
+      const mk = sched.makespanMin - startMin
+      const hh = Math.floor(mk / 60), mmn = mk % 60
+      setAssignResult(`${sched.matches.length}경기 병렬배치 · 총 ${hh}시간${mmn ? ` ${mmn}분` : ''} · 코트 ${courts}개 가동률 ${pct}%`)
+    }
   }
 
   return (

@@ -208,6 +208,8 @@ export interface SchedulePlan {
   slots: ScheduleSlot[]
   createdAt: string
   linkedTournamentId?: string
+  // 다일차 운영 설정(시간 재배치 시 day별 운영창으로 사용). 구버전 plan은 없음 → 단일 타임라인.
+  days?: { day: number; date?: string; label?: string; startTime: string; endTime: string; courtCount: number }[]
 }
 
 export interface ScoreRecord {
