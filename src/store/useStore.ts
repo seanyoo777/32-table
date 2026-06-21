@@ -361,6 +361,8 @@ export const useStore = create<StoreState>()(
         tournaments: data.tournaments ?? s.tournaments,
         schedules: data.schedules ?? s.schedules,
         scoreRecords: data.scoreRecords ?? s.scoreRecords,
+        liveMatches: data.liveMatches ?? s.liveMatches,
+        matchCalls: data.matchCalls ?? s.matchCalls,
         appSettings: data.appSettings ?? s.appSettings,
       })),
       resetSeasonStats: () => set((s) => ({

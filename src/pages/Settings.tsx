@@ -6,6 +6,7 @@ import { SYNC_ENABLED } from '../lib/sync'
 export default function Settings() {
   const {
     players, pairs, teams, tournaments, schedules, scoreRecords,
+    liveMatches, matchCalls,
     appSettings, updateAppSettings, resetAllData, restoreBackup, resetSeasonStats,
   } = useStore()
 
@@ -24,9 +25,10 @@ export default function Settings() {
 
   function handleBackup() {
     const data = {
-      version: '3.0',
+      version: '3.7',
       exportedAt: new Date().toISOString(),
       appSettings, players, pairs, teams, tournaments, schedules, scoreRecords,
+      liveMatches, matchCalls,
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)

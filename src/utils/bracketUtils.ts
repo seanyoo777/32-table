@@ -490,12 +490,15 @@ export function generateKnockoutFromGroups(
   groups: Group[],
   roundOffset?: number,
 ): BracketMatch[] {
-  const totalAdvancers = groups.reduce((s, g) => s + g.advanceCount, 0)
+  // 진출 인원은 조원 수를 넘을 수 없음 — 초과 시 채워지지 않는 고아 슬롯이 생겨
+  // 본선 경기가 영구 미완료가 되므로 실제 조원 수로 클램프한다.
+  const advCount = (g: Group) => Math.min(g.advanceCount, g.participantIds.length)
+  const totalAdvancers = groups.reduce((s, g) => s + advCount(g), 0)
   const maxGroupRound = roundOffset ?? Math.max(...groups.map(g => g.participantIds.length - 1), 1)
   // Placeholder ids: slot-g1-1 = 1st place of group 1, slot-g1-2 = 2nd place, etc.
   const advancerSlots: Seeded[] = []
   for (const g of groups) {
-    for (let rank = 1; rank <= g.advanceCount; rank++) {
+    for (let rank = 1; rank <= advCount(g); rank++) {
       advancerSlots.push({ id: `ko-slot-${g.id}-r${rank}`, points: totalAdvancers - advancerSlots.length })
     }
   }

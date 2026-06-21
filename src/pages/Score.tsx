@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
-import { ClipboardList, Check, X, Zap, Keyboard } from 'lucide-react'
+import { ClipboardList, Check, X, Zap, Keyboard, AlertTriangle } from 'lucide-react'
 import type { ScoreRecord, MatchResult, MatchFormat, LiveMatch } from '../types'
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
+
+// 탁구 세트 점수 유효성: needed점(11/21) 도달 + 2점 차 마무리(듀스는 정확히 2점 차)
+function isValidSetScore(a: number, b: number, needed: number): boolean {
+  if (a < 0 || b < 0 || a === b) return false
+  const hi = Math.max(a, b), lo = Math.min(a, b)
+  if (hi < needed) return false                 // 아무도 목표점 미도달
+  if (hi === needed) return lo <= needed - 2     // 11:0 ~ 11:9
+  return hi - lo === 2 && lo >= needed - 1       // 듀스: 12:10, 13:11 …
+}
 
 const DEFAULT_FORMAT: MatchFormat = { sets: 5, pointsPerGame: 11 }
 
@@ -117,8 +126,14 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 
   const servicePlayer = activeLM ? (() => {
     const totalPoints = activeLM.currentSetScore[0] + activeLM.currentSetScore[1]
-    const svcInterval = (activeLM.matchFormat.pointsPerGame === 21 && !isDeuce) ? 5 : 2
     const baseServer = activeLM.currentSet % 2 === 1 ? 0 : 1
+    // 듀스(양쪽 needed-1 이상)에서는 매 1점마다 서브 교대. 그 전엔 11점제 2점·21점제 5점마다.
+    if (isDeuce) {
+      const deucePoints = totalPoints - 2 * (activeLM.matchFormat.pointsPerGame - 1)
+      const preChanges = Math.floor((2 * (activeLM.matchFormat.pointsPerGame - 1)) / (activeLM.matchFormat.pointsPerGame === 21 ? 5 : 2))
+      return (baseServer + preChanges + deucePoints) % 2
+    }
+    const svcInterval = activeLM.matchFormat.pointsPerGame === 21 ? 5 : 2
     const changes = Math.floor(totalPoints / svcInterval)
     return (baseServer + changes) % 2
   })() : 0
@@ -394,6 +409,13 @@ function ManualEntry() {
   const p1 = selMatch?.participant1Id ? pMap[selMatch.participant1Id] : null
   const p2 = selMatch?.participant2Id ? pMap[selMatch.participant2Id] : null
 
+  // 세트 점수 검증 (입력된 세트 중 비정상 인덱스)
+  const neededPts = selEvent?.matchFormat?.pointsPerGame ?? 11
+  const invalidSetIdx = sets.reduce<number[]>((acc, [a, b], i) => {
+    if (a !== '' && b !== '' && !isValidSetScore(Number(a), Number(b), neededPts)) acc.push(i)
+    return acc
+  }, [])
+
   // 최근 입력 기록: 검색 + 미확인 필터 + 페이지네이션
   const filteredRecords = [...scoreRecords].reverse().filter(r => {
     if (recUnverifiedOnly && r.verified) return false
@@ -534,7 +556,7 @@ function ManualEntry() {
               <div className="text-center flex-1"><div className="font-bold text-red-500 text-sm">{p2.name}</div></div>
             </div>
             {sets.map(([a, b], i) => (
-              <div key={i} className={`flex items-center gap-2 p-2 rounded-lg ${a && b && Number(a) !== Number(b) ? (Number(a) > Number(b) ? 'bg-blue-50' : 'bg-red-50') : 'bg-gray-50'}`}>
+              <div key={i} className={`flex items-center gap-2 p-2 rounded-lg ${invalidSetIdx.includes(i) ? 'bg-amber-50 ring-1 ring-amber-300' : a && b && Number(a) !== Number(b) ? (Number(a) > Number(b) ? 'bg-blue-50' : 'bg-red-50') : 'bg-gray-50'}`}>
                 <span className="text-xs text-gray-400 w-8 text-center">SET {i + 1}</span>
                 <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
                   value={a} onChange={e => setSets(s => s.map((set, si) => si === i ? [e.target.value, set[1]] : set))} />
@@ -550,6 +572,12 @@ function ManualEntry() {
             <button onClick={() => setSets(s => [...s, ['', '']])} className="text-xs text-blue-500 hover:underline w-full text-center py-1">
               + 세트 추가 (Enter)
             </button>
+            {invalidSetIdx.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">
+                <AlertTriangle size={12} className="flex-shrink-0" />
+                비정상 세트 점수 {invalidSetIdx.map(i => `SET${i + 1}`).join(', ')} — {neededPts}점 도달·2점 차로 마무리되어야 합니다. (저장은 가능)
+              </div>
+            )}
           </div>
         )}
       </div>
