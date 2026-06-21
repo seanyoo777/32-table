@@ -272,7 +272,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE pingpong_tournaments;`}</pre>
           <section className="card text-xs text-gray-500 space-y-1">
             <h2 className="font-semibold text-gray-600 text-sm mb-2">시스템 정보</h2>
             <div className="grid grid-cols-2 gap-1">
-              <span>버전</span><span className="text-gray-700">v3.7</span>
+              <span>버전</span><span className="text-gray-700">v3.8</span>
               <span>레이팅 시스템</span><span className="text-gray-700">USATT Elo</span>
               <span>대진 형식</span><span className="text-gray-700">토너먼트 / 리그 / 조별 / 시드예선 / 더블엘리미네이션</span>
               <span>지원 부문</span><span className="text-gray-700">초등·중등·고등·대학·일반·생활체육</span>
