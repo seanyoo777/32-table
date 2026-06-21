@@ -62,6 +62,18 @@ export default function DashboardPage() {
   const pendingCalls = matchCalls.filter(c => !c.acknowledged)
   const unverifiedRecords = scoreRecords.filter(r => !r.verified)
 
+  // ── 코트 현황판: 탁구대별 LIVE / 호출 / 빈 코트 ──
+  const maxTable = Math.max(8, 0, ...liveMatches.map(m => m.tableNo), ...pendingCalls.map(c => c.tableNo))
+  const courts = Array.from({ length: maxTable }, (_, i) => {
+    const no = i + 1
+    const live = liveMatches.find(m => m.tableNo === no)
+    const call = pendingCalls.find(c => c.tableNo === no)
+    if (live) return { no, status: 'live' as const, label: `${pMap[live.participant1Id]?.name ?? '?'} vs ${pMap[live.participant2Id]?.name ?? '?'}` }
+    if (call) return { no, status: 'called' as const, label: `${call.participant1Name} vs ${call.participant2Name}` }
+    return { no, status: 'free' as const, label: '대기' }
+  })
+  const freeCourts = courts.filter(c => c.status === 'free').length
+
   const formatTime = (d: Date) =>
     `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`
 
@@ -122,6 +134,35 @@ export default function DashboardPage() {
         <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
         <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
         <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
+      </div>
+
+      {/* 코트 현황판 */}
+      <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-xs font-semibold text-gray-600">코트 현황</span>
+            <span className="text-[10px] text-gray-400">빈 {freeCourts}/{courts.length}</span>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            {courts.map(c => {
+              const cls = c.status === 'live'
+                ? 'border-red-300 bg-red-50'
+                : c.status === 'called'
+                ? 'border-orange-300 bg-orange-50'
+                : 'border-gray-200 bg-gray-50'
+              const dot = c.status === 'live' ? 'bg-red-500 animate-pulse' : c.status === 'called' ? 'bg-orange-400' : 'bg-gray-300'
+              return (
+                <div key={c.no} className={`flex-shrink-0 rounded-lg border px-2 py-1 min-w-[92px] ${cls}`}>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-bold text-gray-700">{c.no}번대</span>
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+                  </div>
+                  <div className={`text-[10px] truncate ${c.status === 'free' ? 'text-gray-400' : 'text-gray-600 font-medium'}`}>{c.label}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 3-column content */}
