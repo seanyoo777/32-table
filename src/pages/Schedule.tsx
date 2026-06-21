@@ -813,6 +813,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [activeDay, setActiveDay] = useState<number | null>(null)
   const [assignTourId, setAssignTourId] = useState<string>('')
   const [assignResult, setAssignResult] = useState<string | null>(null)
+  const [assignTeamCourts, setAssignTeamCourts] = useState(0)  // 단체전 전용 코트 수(0=분리 안 함)
   const [showConflicts, setShowConflicts] = useState(false)
 
   const days = [...new Set([
@@ -890,10 +891,22 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     const teamMin = matchCfgs.find(e => e.eventType === '단체전')?.minutesPerMatch ?? 120
     const buffer = matchCfgs[0]?.bufferMinutes ?? 0
 
+    // 단체전 전용 코트 분리: 단체전→뒤쪽 코트, 개인/복식→앞쪽 코트 (긴 단체전이 개인전 코트 막지 않게)
+    const teamSplit = assignTeamCourts > 0 ? Math.max(1, courts - assignTeamCourts) : 0
+    const evInputs = tour.events.map(ev => {
+      const base = { id: ev.id, eventType: ev.eventType, matches: ev.matches }
+      if (teamSplit > 0) {
+        return ev.eventType === '단체전'
+          ? { ...base, preferredCourtStart: teamSplit + 1, preferredCourtEnd: courts }
+          : { ...base, preferredCourtStart: 1, preferredCourtEnd: teamSplit }
+      }
+      return base
+    })
+
     // 대진 의존성 기반 병렬 스케줄링 (이전 라운드 종료→다음 시작, 조별→본선, 선수충돌·휴식)
     // days 지정 시 하루 운영시간 초과분은 다음 날로 자동 분할.
     const sched = scheduleTournamentMatches({
-      events: tour.events.map(ev => ({ id: ev.id, eventType: ev.eventType, matches: ev.matches })),
+      events: evInputs,
       courts, startMinutes: startMin, individualMin: indivMin, teamMin, bufferMin: buffer, restMin: buffer,
       pairs, teams, days: schedDays,
     })
@@ -1061,6 +1074,15 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                 <option value="">대회 선택...</option>
                 {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
+              {tournaments.find(t => t.id === assignTourId)?.events.some(e => e.eventType === '단체전') && (
+                <label className="flex items-center gap-1.5 mb-2 text-[11px] text-gray-600">
+                  <Building2 size={11} className="text-gray-400" /> 단체전 전용 코트
+                  <input type="number" min="0" max="20" value={assignTeamCourts}
+                    onChange={e => { setAssignTeamCourts(Math.max(0, Number(e.target.value) || 0)); setAssignResult(null) }}
+                    className="input py-0.5 px-1 text-xs w-12 text-center" />
+                  <span className="text-gray-400">개 (뒤쪽 코트 분리, 0=안 함)</span>
+                </label>
+              )}
               <button className="btn-primary w-full text-xs py-1.5 flex items-center justify-center gap-1"
                 onClick={handleAssignTimes} disabled={!assignTourId}>
                 <Clock size={11} /> 병렬 시간표 생성
