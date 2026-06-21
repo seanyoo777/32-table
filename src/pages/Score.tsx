@@ -364,6 +364,10 @@ function ManualEntry() {
   const [recorder, setRecorder] = useState('')
   const [sets, setSets] = useState<Array<[string, string]>>([['', '']])
   const [matchSearch, setMatchSearch] = useState('')
+  const [recSearch, setRecSearch] = useState('')
+  const [recUnverifiedOnly, setRecUnverifiedOnly] = useState(false)
+  const [recPage, setRecPage] = useState(0)
+  const REC_PAGE_SIZE = 12
 
   const pMap = Object.fromEntries([
     ...players.map(p => [p.id, { name: p.name, school: p.school }]),
@@ -389,6 +393,20 @@ function ManualEntry() {
   const { w1, w2, hasWinner } = calcWinner()
   const p1 = selMatch?.participant1Id ? pMap[selMatch.participant1Id] : null
   const p2 = selMatch?.participant2Id ? pMap[selMatch.participant2Id] : null
+
+  // 최근 입력 기록: 검색 + 미확인 필터 + 페이지네이션
+  const filteredRecords = [...scoreRecords].reverse().filter(r => {
+    if (recUnverifiedOnly && r.verified) return false
+    if (!recSearch) return true
+    const q = recSearch.toLowerCase()
+    const n1 = (pMap[r.participant1Id]?.name ?? '').toLowerCase()
+    const n2 = (pMap[r.participant2Id]?.name ?? '').toLowerCase()
+    return n1.includes(q) || n2.includes(q)
+  })
+  const recTotalPages = Math.max(1, Math.ceil(filteredRecords.length / REC_PAGE_SIZE))
+  const recPageClamped = Math.min(recPage, recTotalPages - 1)
+  const pagedRecords = filteredRecords.slice(recPageClamped * REC_PAGE_SIZE, (recPageClamped + 1) * REC_PAGE_SIZE)
+  const recUnverifiedCount = scoreRecords.filter(r => !r.verified).length
 
   // suppress unused warning
   void submitted
@@ -564,28 +582,59 @@ function ManualEntry() {
         )}
 
         <div className="card">
-          <h3 className="font-semibold text-gray-700 mb-3">최근 입력 기록</h3>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <h3 className="font-semibold text-gray-700 flex-shrink-0">
+              최근 입력 기록 <span className="text-xs text-gray-400 font-normal">({filteredRecords.length})</span>
+            </h3>
+            {recUnverifiedCount > 0 && (
+              <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
+                className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
+                미확인만 {recUnverifiedCount}
+              </button>
+            )}
+          </div>
           {scoreRecords.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">입력된 기록이 없습니다</p>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {[...scoreRecords].reverse().slice(0, 15).map(r => {
-                const n1 = pMap[r.participant1Id]?.name ?? '?'
-                const n2 = pMap[r.participant2Id]?.name ?? '?'
-                const isP1Win = r.p1Score > r.p2Score
-                return (
-                  <div key={r.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm">
-                    <span className={`flex-1 text-right truncate font-medium ${isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n1}</span>
-                    <span className="font-bold text-gray-600 flex-shrink-0">{r.p1Score} - {r.p2Score}</span>
-                    <span className={`flex-1 truncate font-medium ${!isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n2}</span>
-                    {!r.verified
-                      ? <button onClick={() => verifyScoreRecord(r.id)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded flex-shrink-0">확인</button>
-                      : <Check size={12} className="text-green-500 flex-shrink-0" />
-                    }
-                  </div>
-                )
-              })}
-            </div>
+            <>
+              <input
+                className="input mb-2 text-sm"
+                placeholder="선수명으로 검색..."
+                value={recSearch}
+                onChange={e => { setRecSearch(e.target.value); setRecPage(0) }}
+              />
+              {filteredRecords.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">검색 결과가 없습니다</p>
+              ) : (
+                <div className="space-y-2">
+                  {pagedRecords.map(r => {
+                    const n1 = pMap[r.participant1Id]?.name ?? '?'
+                    const n2 = pMap[r.participant2Id]?.name ?? '?'
+                    const isP1Win = r.p1Score > r.p2Score
+                    return (
+                      <div key={r.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm">
+                        <span className={`flex-1 text-right truncate font-medium ${isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n1}</span>
+                        <span className="font-bold text-gray-600 flex-shrink-0">{r.p1Score} - {r.p2Score}</span>
+                        <span className={`flex-1 truncate font-medium ${!isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n2}</span>
+                        {!r.verified
+                          ? <button onClick={() => verifyScoreRecord(r.id)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded flex-shrink-0">확인</button>
+                          : <Check size={12} className="text-green-500 flex-shrink-0" />
+                        }
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {recTotalPages > 1 && (
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                  <button onClick={() => setRecPage(p => Math.max(0, p - 1))} disabled={recPageClamped === 0}
+                    className="btn-secondary text-xs py-1 px-2.5 disabled:opacity-40">이전</button>
+                  <span className="text-xs text-gray-500">{recPageClamped + 1} / {recTotalPages}</span>
+                  <button onClick={() => setRecPage(p => Math.min(recTotalPages - 1, p + 1))} disabled={recPageClamped >= recTotalPages - 1}
+                    className="btn-secondary text-xs py-1 px-2.5 disabled:opacity-40">다음</button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
