@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches, shiftSlotsAfterDelay } from '../utils/scheduleUtils'
+import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches, shiftSlotsAfterDelay, moveScheduleSlot } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
-import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown } from 'lucide-react'
+import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown, Pencil } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
@@ -815,6 +815,14 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [assignResult, setAssignResult] = useState<string | null>(null)
   const [assignTeamCourts, setAssignTeamCourts] = useState(0)  // 단체전 전용 코트 수(0=분리 안 함)
   const [showConflicts, setShowConflicts] = useState(false)
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null)  // 인라인 편집 중인 슬롯
+
+  // 이 일정의 최대 코트 수(인라인 코트 이동 select 범위)
+  const planMaxCourts = Math.max(1,
+    ...(plan.days?.map(d => d.courtCount) ?? []),
+    ...plan.events.filter(e => !e.type || e.type === 'match').map(e => e.courtCount),
+    ...plan.slots.map(s => s.courtNo),
+  )
 
   const days = [...new Set([
     ...plan.slots.map(s => s.day ?? 1),
@@ -955,6 +963,12 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   function handleDelaySlot(slotId: string, delayMin: number) {
     const buffer = plan.events.find(e => !e.type || e.type === 'match')?.bufferMinutes ?? 0
     updateSchedule(plan.id, { slots: shiftSlotsAfterDelay(plan.slots, slotId, delayMin, buffer) })
+  }
+
+  // 슬롯 시작시간/코트 인라인 수정 → 영향 코트 재정렬(겹침 자동 해소).
+  function handleMoveSlot(slotId: string, patch: { startTime?: string; courtNo?: number }) {
+    const buffer = plan.events.find(e => !e.type || e.type === 'match')?.bufferMinutes ?? 0
+    updateSchedule(plan.id, { slots: moveScheduleSlot(plan.slots, slotId, patch, buffer) })
   }
 
   return (
@@ -1175,13 +1189,34 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             <div className="text-[10px] text-gray-400">{slot.gender} · 미배정</div>
                           )}
                           {(!slot.type || slot.type === 'match') && (
-                            <div className="flex items-center gap-1 mt-1 no-print">
-                              <span className="text-[9px] text-gray-400">지연</span>
-                              {[10, 30].map(d => (
-                                <button key={d} onClick={() => handleDelaySlot(slot.id, d)}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium"
-                                  title={`이 경기 +${d}분 지연 → 같은 코트 후속 자동 밀림`}>+{d}분</button>
-                              ))}
+                            <div className="mt-1 no-print">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] text-gray-400">지연</span>
+                                {[10, 30].map(d => (
+                                  <button key={d} onClick={() => handleDelaySlot(slot.id, d)}
+                                    className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium"
+                                    title={`이 경기 +${d}분 지연 → 같은 코트 후속 자동 밀림`}>+{d}분</button>
+                                ))}
+                                <button onClick={() => setEditingSlotId(editingSlotId === slot.id ? null : slot.id)}
+                                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5 ml-auto ${editingSlotId === slot.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                  title="시작시간·코트 직접 수정">
+                                  <Pencil size={9} /> 편집
+                                </button>
+                              </div>
+                              {editingSlotId === slot.id && (
+                                <div className="flex items-center gap-1.5 mt-1 p-1.5 rounded bg-blue-50 border border-blue-200">
+                                  <input type="time" value={slot.startTime}
+                                    onChange={e => e.target.value && handleMoveSlot(slot.id, { startTime: e.target.value })}
+                                    className="input py-0.5 px-1 text-[11px] w-24" />
+                                  <select value={slot.courtNo}
+                                    onChange={e => handleMoveSlot(slot.id, { courtNo: Number(e.target.value) })}
+                                    className="select py-0.5 px-1 text-[11px] w-16">
+                                    {Array.from({ length: planMaxCourts }, (_, i) => i + 1).map(c => (
+                                      <option key={c} value={c}>코트{c}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
