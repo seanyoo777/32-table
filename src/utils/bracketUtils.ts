@@ -242,6 +242,164 @@ export function wireSeededQualWinners(
   return matches
 }
 
+// ─── 더블 엘리미네이션 ────────────────────────────────────────
+// 승자조(WB) + 패자조(LB) + 단일 결승(GF). 참가자 수는 2의 거듭제곱만 지원(부전승 없음).
+// 패자는 loserNextMatchId로 LB의 지정 슬롯에 떨어지고, propagateDoubleElim이 승자·패자를 함께 전파한다.
+const GF_ROUND = 1000  // GF가 항상 최고 라운드(getFinalMatch가 결승으로 인식)
+
+export function isPow2(n: number): boolean { return n >= 2 && (n & (n - 1)) === 0 }
+
+export function generateDoubleElimBracket(
+  participants: Seeded[],
+  options?: { preserveOrder?: boolean }
+): BracketMatch[] {
+  const sorted = options?.preserveOrder ? [...participants] : [...participants].sort((a, b) => b.points - a.points)
+  const n = sorted.length
+  const S = nextPow2(n)
+  const k = Math.log2(S)              // WB 라운드 수
+  if (k < 2) return []                // 최소 4명
+  const seedOrder = buildSeedOrder(S)
+  const wbCount = (r: number) => S / Math.pow(2, r)     // WB 라운드 r(1-base) 경기 수
+  const lbRounds = 2 * k - 2
+  const lbCount = (lr: number) => {                      // LB 라운드 lr 경기 수
+    const j = Math.ceil(lr / 2)                          // minor(2j-1)·major(2j) 모두 S/2^(j+1)
+    return S / Math.pow(2, j + 1)
+  }
+  const wbId = (r: number, i: number) => `wb-r${r}m${i}`
+  const lbId = (lr: number, i: number) => `lb-r${lr}m${i}`
+  const GF = 'gf'
+  const matches: BracketMatch[] = []
+
+  // ── WB Round 1 (실제 참가자 배치) ──
+  for (let i = 1; i <= wbCount(1); i++) {
+    const s1 = seedOrder[(i - 1) * 2], s2 = seedOrder[(i - 1) * 2 + 1]
+    const p1 = s1 <= n ? sorted[s1 - 1] : null
+    const p2 = s2 <= n ? sorted[s2 - 1] : null
+    matches.push({
+      id: wbId(1, i), round: 1, position: i - 1, phase: 'wb',
+      participant1Id: p1?.id ?? null, participant2Id: p2?.id ?? null, result: null,
+      nextMatchId: k > 1 ? wbId(2, Math.ceil(i / 2)) : GF,
+      nextSlot: ((i - 1) % 2 === 0 ? 1 : 2),
+      loserNextMatchId: lbId(1, Math.ceil(i / 2)),
+      loserSlot: ((i - 1) % 2 === 0 ? 1 : 2),
+    })
+  }
+  // ── WB Round 2..k ──
+  for (let r = 2; r <= k; r++) {
+    for (let i = 1; i <= wbCount(r); i++) {
+      matches.push({
+        id: wbId(r, i), round: r, position: i - 1, phase: 'wb',
+        participant1Id: null, participant2Id: null, result: null,
+        nextMatchId: r < k ? wbId(r + 1, Math.ceil(i / 2)) : GF,
+        nextSlot: r < k ? ((i - 1) % 2 === 0 ? 1 : 2) : 1,   // WB 결승 승자 → GF 슬롯1
+        loserNextMatchId: lbId(2 * r - 2, i),                 // 패자 → LB major 라운드(2r-2)
+        loserSlot: 2,
+      })
+    }
+  }
+  // ── LB Rounds 1..(2k-2) ──
+  for (let lr = 1; lr <= lbRounds; lr++) {
+    const isMinor = lr % 2 === 1
+    for (let i = 1; i <= lbCount(lr); i++) {
+      let nextMatchId: string, nextSlot: 1 | 2
+      if (lr === lbRounds) { nextMatchId = GF; nextSlot = 2 }     // LB 결승 승자 → GF 슬롯2
+      else if (isMinor) { nextMatchId = lbId(lr + 1, i); nextSlot = 1 }  // minor 승자 → 다음 major 슬롯1
+      else { nextMatchId = lbId(lr + 1, Math.ceil(i / 2)); nextSlot = ((i - 1) % 2 === 0 ? 1 : 2) } // major 승자 → 다음 minor
+      matches.push({
+        id: lbId(lr, i), round: k + lr, position: i - 1, phase: 'lb',
+        participant1Id: null, participant2Id: null, result: null,
+        nextMatchId, nextSlot,
+      })
+    }
+  }
+  // ── Grand Final ──
+  matches.push({
+    id: GF, round: GF_ROUND, position: 0, phase: 'gf',
+    participant1Id: null, participant2Id: null, result: null, nextMatchId: null,
+  })
+
+  return matches
+}
+
+// 승자(nextMatchId/nextSlot) + 패자(loserNextMatchId/loserSlot) 동시 전파 + 연쇄 무효화
+export function propagateDoubleElim(input: BracketMatch[]): BracketMatch[] {
+  let matches = input
+  for (let pass = 0; pass < 200; pass++) {
+    let changed = false
+    const next = matches.map((m): BracketMatch => {
+      const feeders = matches.filter(f => f.nextMatchId === m.id || f.loserNextMatchId === m.id)
+      if (feeders.length === 0) return m  // 외부 입력(WB 1라운드)
+      let s1: string | null = null, s2: string | null = null
+      for (const f of feeders) {
+        if (f.nextMatchId === m.id && f.result) {
+          if (f.nextSlot === 1) s1 = f.result.winnerId; else if (f.nextSlot === 2) s2 = f.result.winnerId
+        }
+        if (f.loserNextMatchId === m.id && f.result && f.result.loserId) {
+          if (f.loserSlot === 1) s1 = f.result.loserId; else if (f.loserSlot === 2) s2 = f.result.loserId
+        }
+      }
+      let p1 = m.participant1Id, p2 = m.participant2Id, result = m.result
+      if (p1 !== s1 || p2 !== s2) { p1 = s1; p2 = s2; changed = true }
+      if (result) {
+        const ids = [p1, p2]
+        if (!p1 || !p2 || !ids.includes(result.winnerId) || (result.loserId && !ids.includes(result.loserId))) {
+          result = null; changed = true
+        }
+      }
+      return (p1 !== m.participant1Id || p2 !== m.participant2Id || result !== m.result)
+        ? { ...m, participant1Id: p1, participant2Id: p2, result }
+        : m
+    })
+    matches = next
+    if (!changed) break
+  }
+  return matches
+}
+
+// 더블 엘리미네이션 최종 순위: entityId → 성적
+export function computeDoubleElimPlacements(matches: BracketMatch[], participantIds: string[]): Record<string, string> {
+  const place: Record<string, string> = {}
+  for (const id of participantIds) place[id] = '참가'
+
+  const wbRounds = matches.filter(m => m.phase === 'wb').map(m => m.round)
+  if (wbRounds.length === 0) return place
+  const k = Math.max(...wbRounds)
+  const lbRounds = 2 * k - 2
+  const gf = matches.find(m => m.phase === 'gf')
+
+  const placeLabel = (p: number): string => {
+    if (p === 1) return '우승'
+    if (p === 2) return '준우승'
+    if (p === 3) return '3위'
+    if (p === 4) return '4위'
+    if (p <= 8) return '8강'
+    if (p <= 16) return '16강'
+    if (p <= 32) return '32강'
+    if (p <= 64) return '64강'
+    return '참가'
+  }
+
+  // GF 우승/준우승
+  if (gf?.result) {
+    if (gf.result.winnerId in place) place[gf.result.winnerId] = '우승'
+    if (gf.result.loserId && gf.result.loserId in place) place[gf.result.loserId] = '준우승'
+  }
+
+  // LB 탈락 라운드별 순위 (높은 라운드 = 상위)
+  let curPlace = 3
+  for (let lr = lbRounds; lr >= 1; lr--) {
+    const roundMatches = matches.filter(m => m.phase === 'lb' && m.round === k + lr)
+    const label = placeLabel(curPlace)
+    for (const lm of roundMatches) {
+      const loser = lm.result?.loserId
+      if (loser && loser in place && place[loser] === '참가') place[loser] = label
+    }
+    curPlace += roundMatches.length  // 이 라운드 패자 수만큼 순위 진행
+  }
+
+  return place
+}
+
 // ─── 녹아웃 승자 전파 + 연쇄 무효화 ──────────────────────────
 // feeder(이 경기로 진출하는 직전 경기)의 승자를 참가자로 채우고,
 // 상위 경기의 결과가 클리어되면 그 승자가 빠진 하위 경기 참가자·결과를 연쇄 정리한다.
@@ -400,11 +558,14 @@ export function getGroupRankedIds(
   })
 }
 
-// ─── 시드 배치 (표준 토너먼트 대진) ─────────────────────
+// ─── 시드 배치 (표준 토너먼트 대진, 폴딩) ─────────────────────
+// 각 단계마다 "현재 길이"의 보수 시드를 끼워 1↔최약체가 가장 멀리 떨어지게 배치한다.
+// (이전 구현은 보수를 최종 size 기준으로 계산해 8명+ 에서 시드가 중복·누락되는 버그가 있었음)
 function buildSeedOrder(size: number): number[] {
-  let order = [1, 2]
+  let order = [1]
   while (order.length < size) {
-    order = order.flatMap(s => [s, size + 1 - s])
+    const cur = order.length * 2
+    order = order.flatMap(s => [s, cur + 1 - s])
   }
   return order
 }

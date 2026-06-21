@@ -13,7 +13,7 @@ import type {
   BracketMatch, EventAwards, Pair, Player, Team, Tournament,
   TournamentEvent, TournamentGrade,
 } from '../types'
-import { calcStandings } from './bracketUtils'
+import { calcStandings, computeDoubleElimPlacements } from './bracketUtils'
 import {
   calcNewRatings, getPointsForResult, getEventMultiplier, eloPointsMultiplier,
 } from './ratingUtils'
@@ -58,6 +58,12 @@ export function isEventComplete(ev: TournamentEvent): boolean {
 export function computeEventPlacements(ev: TournamentEvent): Record<string, string> {
   const place: Record<string, string> = {}
   for (const id of ev.participantIds) place[id] = '참가'
+
+  // 더블 엘리미네이션: 전용 순위 계산 (WB/LB/GF)
+  if (ev.bracketFormat === '더블엘리미네이션') {
+    const de = computeDoubleElimPlacements(ev.matches, ev.participantIds)
+    return { ...place, ...de }
+  }
 
   // 리그: 순위표 기준 상위 4명
   if (ev.bracketFormat === '리그') {

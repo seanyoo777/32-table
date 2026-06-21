@@ -1,7 +1,7 @@
 export type Division = '초등' | '중등' | '고등' | '대학' | '일반' | '생활체육'
 export type EventType = '단식' | '복식' | '혼합복식' | '단체전'
 export type Gender = '남' | '여' | '혼합'
-export type BracketFormat = '토너먼트' | '리그' | '조별+토너먼트' | '시드예선'
+export type BracketFormat = '토너먼트' | '리그' | '조별+토너먼트' | '시드예선' | '더블엘리미네이션'
 export type SmartBracketFormat = 'single' | 'group' | 'league' | 'seeded'
 
 export interface SmartEventInput {
@@ -107,7 +107,11 @@ export interface BracketMatch {
   scheduledTime?: string
   isBye?: boolean
   isThirdPlace?: boolean
-  phase?: 'qual' | 'main'
+  phase?: 'qual' | 'main' | 'wb' | 'lb' | 'gf'
+  // 더블 엘리미네이션: 패자 진출 경로 + 명시적 슬롯 배정
+  loserNextMatchId?: string | null
+  nextSlot?: 1 | 2       // 승자가 nextMatch의 1·2번 슬롯 중 어디로
+  loserSlot?: 1 | 2      // 패자가 loserNextMatch의 1·2번 슬롯 중 어디로
   setScores?: Array<[number, number]>
   tableNo?: number
   teamSubMatches?: TeamSubMatch[]

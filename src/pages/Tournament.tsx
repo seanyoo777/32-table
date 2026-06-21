@@ -3,8 +3,11 @@ import { useStore } from '../store/useStore'
 import { SYNC_ENABLED } from '../lib/sync'
 import {
   generateTournamentBracket, generateLeagueMatches, generateGroups, generateSeededBracket,
-  calcStandings, getRoundName, genId
+  generateDoubleElimBracket, calcStandings, getRoundName, genId
 } from '../utils/bracketUtils'
+
+// 더블 엘리미네이션: 2의 거듭제곱 인원만 지원 → 가장 가까운 하위 2^k로 정리
+function floorPow2(n: number): number { return n < 2 ? 0 : 1 << Math.floor(Math.log2(n)) }
 import { getMedalists, isEventComplete } from '../utils/tournamentScoring'
 import {
   Plus, Trash2, Trophy, ChevronRight, ChevronLeft, X, Printer,
@@ -20,7 +23,7 @@ import { TOURNAMENT_GRADES } from '../utils/rankingUtils'
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
 const EVENT_TYPES: EventType[] = ['단식', '복식', '혼합복식', '단체전']
 const GENDERS: Gender[] = ['남', '여', '혼합']
-const FORMATS: BracketFormat[] = ['토너먼트', '리그', '조별+토너먼트', '시드예선']
+const FORMATS: BracketFormat[] = ['토너먼트', '리그', '조별+토너먼트', '시드예선', '더블엘리미네이션']
 
 const divColors: Record<Division, string> = {
   초등: 'bg-yellow-100 text-yellow-700', 중등: 'bg-green-100 text-green-700',
@@ -225,7 +228,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
       const genders: Array<'남' | '여'> = cfg.gender === 'both' ? ['남', '여'] : [cfg.gender]
       for (const gender of genders) {
         const pool = getPlayersForDiv(cfg.division, gender)
-        const participants = pool.slice(0, cfg.maxPlayers)
+        let participants = pool.slice(0, cfg.maxPlayers)
         if (participants.length < 2) continue
         const label = `${cfg.division} ${gender}자 단식`
         let matches: BracketMatch[] = []
@@ -234,6 +237,10 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
           matches = generateTournamentBracket(participants, { thirdPlace: participants.length >= 4, preserveOrder: true })
         } else if (cfg.format === '리그') {
           matches = generateLeagueMatches(participants)
+        } else if (cfg.format === '더블엘리미네이션') {
+          participants = participants.slice(0, floorPow2(participants.length))  // 2^k 인원
+          if (participants.length < 4) continue
+          matches = generateDoubleElimBracket(participants, { preserveOrder: true })
         } else if (cfg.format === '시드예선') {
           const sc = cfg.seedCount ?? 4
           const r = generateSeededBracket(participants, sc)
@@ -343,10 +350,15 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
       ? finalOrder.map(id => availableParticipants.find(p => p.id === id)!).filter(Boolean)
       : availableParticipants.filter(p => ef.selectedIds.includes(p.id)).sort((a, b) => b.points - a.points)
 
+    let deParticipantIds = ef.selectedIds
     if (ef.format === '토너먼트') {
       matches = generateTournamentBracket(seeded, { thirdPlace: ef.thirdPlace, preserveOrder: !!finalOrder })
     } else if (ef.format === '리그') {
       matches = generateLeagueMatches(seeded)
+    } else if (ef.format === '더블엘리미네이션') {
+      const deList = seeded.slice(0, floorPow2(seeded.length))   // 2^k 인원으로 정리
+      matches = generateDoubleElimBracket(deList, { preserveOrder: !!finalOrder })
+      deParticipantIds = deList.map(p => p.id)
     } else if (ef.format === '시드예선') {
       const result = generateSeededBracket(seeded, ef.seedCount)
       groups = result.groups
@@ -360,7 +372,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
     const ev: TournamentEvent = {
       id: genId(), label, eventType: ef.eventType, gender: ef.gender,
       division: ef.division, bracketFormat: ef.format,
-      participantIds: ef.selectedIds, groups, matches,
+      participantIds: deParticipantIds, groups, matches,
       pointsForWin: ef.pointsForWin, status: 'ongoing',
       hasThirdPlace: ef.format === '토너먼트' && ef.thirdPlace,
       seedCount: ef.format === '시드예선' ? ef.seedCount : undefined,
@@ -467,6 +479,7 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
                         <option value="조별+토너먼트">조별+토너먼트</option>
                         <option value="리그">리그</option>
                         <option value="시드예선">시드예선</option>
+                        <option value="더블엘리미네이션">더블엘리미네이션</option>
                       </select>
                       {cfg.format === '시드예선' && (
                         <select
@@ -549,6 +562,13 @@ function CreateForm({ players, pairs, onCancel, onCreate }: CreateFormProps) {
                     <input type="checkbox" checked={ef.thirdPlace} onChange={e => setEf(f => ({ ...f, thirdPlace: e.target.checked }))} className="rounded" />
                     <span className="text-xs text-gray-600">3·4위전 자동 생성</span>
                   </label>
+                )}
+                {ef.format === '더블엘리미네이션' && (
+                  <p className="text-[11px] text-amber-600 mt-1.5 leading-snug">
+                    {ef.selectedIds.length < 4
+                      ? '⚠ 최소 4명 필요 (2의 거듭제곱)'
+                      : `승자조·패자조 운영. 2의 거듭제곱 인원만 지원 → 상위 ${floorPow2(ef.selectedIds.length)}명으로 대진 생성`}
+                  </p>
                 )}
               </div>
               <div>
@@ -986,6 +1006,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
   const isLeague = event.bracketFormat === '리그'
   const isGrouped = event.bracketFormat === '조별+토너먼트'
   const isSeededQual = event.bracketFormat === '시드예선'
+  const isDoubleElim = event.bracketFormat === '더블엘리미네이션'
 
   const rounds = [...new Set(event.matches.map(m => m.round))].sort((a, b) => a - b)
   const roundMatches = event.matches.filter(m => m.round === selectedRound && m.participant1Id && m.participant2Id && !m.isBye)
@@ -1058,7 +1079,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
       {activeView === 'bracket' && (
         <>
           {/* Round selector — arrow navigation */}
-          {rounds.length > 0 && (() => {
+          {!isDoubleElim && rounds.length > 0 && (() => {
             const rIdx = rounds.indexOf(selectedRound)
             const rMatches = event.matches.filter(m => m.round === selectedRound && !m.isBye && m.participant1Id && m.participant2Id)
             const done = rMatches.filter(m => m.result && !m.result.walkedOver).length
@@ -1110,7 +1131,14 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
           })()}
 
           {/* Match list (always list for large, tree option for small) */}
-          {isLarge || isLeague || isGrouped ? (
+          {isDoubleElim ? (
+            <DoubleElimView
+              event={event}
+              pMap={pMap}
+              onClickMatch={(m) => setResultModal(m)}
+              onClearResult={onClearResult}
+            />
+          ) : isLarge || isLeague || isGrouped ? (
             <MatchList
               matches={roundMatches}
               pMap={pMap}
@@ -1226,6 +1254,91 @@ function BracketTree({ event, pMap, onClickMatch, onClearResult }: {
 }
 
 // ─── 경기 리스트 (대규모용) ───────────────────────────────
+// 더블 엘리미네이션 전용 뷰: 승자조 / 패자조 / 결승 섹션
+function DoubleElimView({ event, pMap, onClickMatch, onClearResult }: {
+  event: TournamentEvent
+  pMap: Record<string, any>
+  onClickMatch: (m: BracketMatch) => void
+  onClearResult: (matchId: string) => void
+}) {
+  const wb = event.matches.filter(m => m.phase === 'wb')
+  const lb = event.matches.filter(m => m.phase === 'lb')
+  const gf = event.matches.filter(m => m.phase === 'gf')
+  const k = Math.max(...wb.map(m => m.round), 1)
+  const wbRounds = [...new Set(wb.map(m => m.round))].sort((a, b) => a - b)
+  const lbRounds = [...new Set(lb.map(m => m.round))].sort((a, b) => a - b)
+
+  const wbLabel = (r: number) => r === k ? '승자조 결승' : `승자조 ${getRoundName(r, k)}`
+  const lbLabel = (idx: number) => idx === lbRounds.length - 1 ? '패자조 결승' : `패자조 ${idx + 1}R`
+
+  const RoundBlock = ({ title, matches, accent }: { title: string; matches: BracketMatch[]; accent: string }) => {
+    const done = matches.filter(m => m.result).length
+    return (
+      <div className="card p-0 overflow-hidden">
+        <div className={`px-3 py-1.5 border-b flex items-center justify-between ${accent}`}>
+          <span className="font-semibold text-xs">{title}</span>
+          <span className="text-[11px] opacity-80">{done}/{matches.length}</span>
+        </div>
+        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          {matches.map((m, i) => {
+            const p1 = m.participant1Id ? pMap[m.participant1Id] : null
+            const p2 = m.participant2Id ? pMap[m.participant2Id] : null
+            const playable = p1 && p2 && !m.result
+            const w = m.result?.winnerId
+            return (
+              <div key={m.id}
+                className={`flex items-center gap-2 px-3 py-2 text-sm ${playable ? 'hover:bg-blue-50 cursor-pointer' : ''}`}
+                onClick={() => playable && onClickMatch(m)}>
+                <span className="text-[10px] text-gray-400 w-4 flex-shrink-0">{i + 1}</span>
+                <div className={`flex-1 text-right truncate ${w === m.participant1Id ? 'font-bold text-blue-700' : w ? 'text-gray-400' : ''}`}>{p1?.name ?? '─'}</div>
+                <div className="w-12 text-center flex-shrink-0 font-bold text-gray-600">
+                  {m.result ? `${m.result.winnerId === m.participant1Id ? m.result.winnerScore : m.result.loserScore}:${m.result.winnerId === m.participant1Id ? m.result.loserScore : m.result.winnerScore}` : 'vs'}
+                </div>
+                <div className={`flex-1 truncate ${w === m.participant2Id ? 'font-bold text-blue-700' : w ? 'text-gray-400' : ''}`}>{p2?.name ?? '─'}</div>
+                {m.result && (
+                  <button onClick={(e) => { e.stopPropagation(); onClearResult(m.id) }}
+                    className="text-[10px] text-gray-300 hover:text-red-400 flex-shrink-0">취소</button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-1.5">🏆 승자조</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+          {wbRounds.map(r => (
+            <RoundBlock key={r} title={wbLabel(r) as string} accent="bg-blue-50 text-blue-700"
+              matches={wb.filter(m => m.round === r).sort((a, b) => a.position - b.position)} />
+          ))}
+        </div>
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-orange-600 mb-2 flex items-center gap-1.5">🔻 패자조</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+          {lbRounds.map((r, idx) => (
+            <RoundBlock key={r} title={lbLabel(idx)} accent="bg-orange-50 text-orange-700"
+              matches={lb.filter(m => m.round === r).sort((a, b) => a.position - b.position)} />
+          ))}
+        </div>
+      </div>
+      {gf.length > 0 && (
+        <div>
+          <h3 className="text-sm font-bold text-amber-600 mb-2 flex items-center gap-1.5">🏁 최종 결승</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+            <RoundBlock title="그랜드 파이널" accent="bg-amber-50 text-amber-700" matches={gf} />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
   matches: BracketMatch[]
   pMap: Record<string, any>

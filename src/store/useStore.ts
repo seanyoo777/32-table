@@ -5,7 +5,7 @@ import type {
   SchedulePlan, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
 } from '../types'
 import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
-import { getGroupRankedIds, wireSeededQualWinners, propagateAndCascade, wireThirdPlace } from '../utils/bracketUtils'
+import { getGroupRankedIds, wireSeededQualWinners, propagateAndCascade, wireThirdPlace, propagateDoubleElim } from '../utils/bracketUtils'
 import { applyEventSettlement } from '../utils/tournamentScoring'
 import { uploadTournament, subscribeTournament, SYNC_ENABLED } from '../lib/sync'
 
@@ -188,6 +188,15 @@ export const useStore = create<StoreState>()(
                 m.id === matchId ? { ...m, result } : m
               )
 
+              // 더블 엘리미네이션: 승자·패자 동시 전파 (조별/3·4위전 로직 미적용)
+              if (ev.bracketFormat === '더블엘리미네이션') {
+                matches = propagateDoubleElim(matches)
+                const realMatchesDE = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+                const allCompletedDE = realMatchesDE.length > 0 && realMatchesDE.every(m => m.result)
+                const newStatusDE = allCompletedDE ? 'completed' : ev.status === 'draft' ? 'ongoing' : ev.status
+                return { ...ev, matches, status: newStatusDE as TournamentEvent['status'] }
+              }
+
               // 승자 다음 라운드 진출 + 연쇄 정리
               matches = propagateAndCascade(matches)
 
@@ -259,6 +268,12 @@ export const useStore = create<StoreState>()(
               let matches = ev.matches.map((m): BracketMatch =>
                 m.id === matchId ? { ...m, result: null } : m
               )
+              if (ev.bracketFormat === '더블엘리미네이션') {
+                matches = propagateDoubleElim(matches)
+                const realDE = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+                const doneDE = realDE.length > 0 && realDE.every(m => m.result)
+                return { ...ev, matches, status: (doneDE ? 'completed' : 'ongoing') as TournamentEvent['status'] }
+              }
               matches = propagateAndCascade(matches)
               matches = wireThirdPlace(matches)
 
