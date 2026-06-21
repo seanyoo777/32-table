@@ -157,7 +157,13 @@ html, body, #root {
 @media print {
   .no-print { display: none !important; }
   nav, aside, footer { display: none !important; }
-  body { background: white; font-size: 11px; height: auto !important; overflow: visible !important; }
+  body {
+    background: white; font-size: 11px; height: auto !important; overflow: visible !important;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;  /* 막대·뱃지 색상 PDF 반영 */
+  }
+  /* 다크모드 상태로 인쇄해도 리포트는 항상 흰 바탕·검은 글씨 */
+  .dark .page-body, .dark .card, .dark .page-header { background: white !important; }
+  .dark .text-gray-800, .dark .text-gray-900 { color: #111 !important; }
   html, #root { height: auto !important; overflow: visible !important; }
   .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; break-inside: avoid; }
   .bracket-match { min-width: 130px !important; font-size: 10px; }

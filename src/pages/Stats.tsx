@@ -44,8 +44,9 @@ function Kpi({ icon, label, value, sub, color }: {
 }
 
 export default function Stats() {
-  const { tournaments, players, pairs, teams, scoreRecords } = useStore()
+  const { tournaments, players, pairs, teams, scoreRecords, appSettings } = useStore()
   const [tourFilter, setTourFilter] = useState('all')
+  const selectedTour = tourFilter === 'all' ? null : tournaments.find(t => t.id === tourFilter)
 
   // 엔티티 ID → 이름 (선수/페어/팀)
   const nameMap = useMemo(() => {
@@ -147,6 +148,22 @@ export default function Stats() {
 
       <div className="page-body overflow-y-auto">
         <div className="max-w-5xl space-y-4">
+
+          {/* 인쇄 전용 리포트 표지 */}
+          <div className="hidden print:block border-b-2 border-gray-800 pb-2 mb-2">
+            <div className="flex items-end justify-between">
+              <div>
+                {appSettings.organizerName && <div className="text-xs text-gray-500">{appSettings.organizerName}</div>}
+                <h1 className="text-xl font-bold text-gray-900">{selectedTour ? selectedTour.name : '전체 대회'} — 결과 리포트</h1>
+                <div className="text-xs text-gray-600 mt-0.5">
+                  {selectedTour ? `${selectedTour.date}${selectedTour.venue ? ` · ${selectedTour.venue}` : ''}` : `${appSettings.season} 시즌`}
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 text-right">
+                출력일 {new Date().toLocaleDateString('ko-KR')}<br />🏓 탁구대회 관리 시스템
+              </div>
+            </div>
+          </div>
 
           {/* KPI 카드 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
