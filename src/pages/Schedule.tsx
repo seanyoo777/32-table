@@ -958,6 +958,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           <button onClick={() => setViewMode('court')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
           <button onClick={exportScheduleCSV} className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1"><Download size={12} /> CSV</button>
           <button onClick={() => window.print()} className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1"><Printer size={12} /> 인쇄</button>
+          <button onClick={() => { setViewMode('court'); setTimeout(() => window.print(), 100) }}
+            className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1" title="코트마다 한 페이지씩 인쇄(현장 배부용)"><Printer size={12} /> 코트별</button>
         </div>
       </div>
 
@@ -1110,7 +1112,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           )}
 
           {viewMode === 'court' && (
-            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 court-print">
               {filteredCourts.map(c => {
                 const courtSlots = filteredSlots.filter(s => s.courtNo === c).sort((a, b) => a.startTime.localeCompare(b.startTime))
                 return (

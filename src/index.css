@@ -172,4 +172,8 @@ html, body, #root {
   h2 { font-size: 13px !important; }
   @page { margin: 1cm; size: A4 landscape; }
   .overflow-x-auto { overflow: visible !important; }
+  /* 코트순 보기 인쇄: 코트 카드마다 새 페이지(현장 배부용) */
+  .court-print { display: block !important; }
+  .court-print > * { break-inside: avoid; break-after: page; margin-bottom: 0 !important; }
+  .court-print > *:last-child { break-after: auto; }
 }
