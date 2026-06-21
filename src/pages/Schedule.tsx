@@ -322,6 +322,15 @@ export default function SchedulePage() {
         courtCount: dayConfigs[0]?.courtCount ?? 4, bufferMinutes: globalBuffer, type: 'match' as const,
       }
     })
+
+    // 운영시간 초과로 배치되지 못한 경기 감지 → 운영자에게 고지(생성된 경기는 저장됨)
+    const expectedMatches = derivedEvents.reduce((s, e) => s + e.matchCount, 0)
+    const placedMatches = slots.filter(s => !s.type || s.type === 'match').length
+    if (expectedMatches > placedMatches) {
+      alert(`⚠ 운영 시간이 부족해 ${expectedMatches - placedMatches}경기가 일정에 배치되지 못했습니다.\n` +
+        `코트 수를 늘리거나 일차를 추가한 뒤 다시 생성하세요.\n(배치된 ${placedMatches}경기는 그대로 저장됩니다)`)
+    }
+
     const plan: SchedulePlan = {
       id: genId(), name: planName, date: planDate,
       startTime: dayConfigs[0]?.startTime ?? '09:00',

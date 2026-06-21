@@ -51,6 +51,16 @@ export default function DashboardPage() {
     ...pairs.map(p => [p.id, { name: p.name, school: p.school }]),
   ])
 
+  // 체크인 검증: 선수 ID가 체크인 안 됐으면 경고(페어/팀은 구성선수 확인)
+  const checkedInIds = new Set(players.filter(p => p.checkedIn).map(p => p.id))
+  const playerIds = new Set(players.map(p => p.id))
+  const pairMembers: Record<string, string[]> = Object.fromEntries(pairs.map(p => [p.id, [p.player1Id, p.player2Id]]))
+  function isUnchecked(entityId: string | null): boolean {
+    if (!entityId) return false
+    const ids = pairMembers[entityId] ?? [entityId]
+    return ids.some(id => playerIds.has(id) && !checkedInIds.has(id))
+  }
+
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
   const allMatches = activeTournaments.flatMap(t =>
     t.events.flatMap(ev =>
@@ -267,6 +277,9 @@ export default function DashboardPage() {
                     className="flex items-center gap-2 px-2.5 py-2 bg-gray-50 rounded-lg text-xs">
                     <span className="text-gray-400 font-medium w-14 truncate flex-shrink-0">{m.eventLabel}</span>
                     <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
+                    {(isUnchecked(m.participant1Id) || isUnchecked(m.participant2Id)) && (
+                      <span className="text-amber-600 bg-amber-50 border border-amber-200 px-1 rounded flex-shrink-0 text-[10px]" title="체크인하지 않은 선수가 있습니다">미체크인</span>
+                    )}
                     {alreadyCalled && <span className="text-orange-500 flex-shrink-0 text-[10px]">호출됨</span>}
                     {!alreadyCalled && (
                       <button
@@ -314,13 +327,21 @@ export default function DashboardPage() {
                 </span>
               )}
             </h2>
-            <div className="flex gap-1.5 mb-1.5">
+            <div className="flex gap-1.5 mb-1.5 items-center">
               <input
                 className="input flex-1 min-w-0 py-1 text-xs"
                 placeholder="선수명 검색..."
                 value={callSearch}
                 onChange={e => setCallSearch(e.target.value)}
               />
+              {(() => {
+                const firstFree = courts.find(c => c.status === 'free')?.no
+                return firstFree && firstFree !== callTableNo ? (
+                  <button type="button" onClick={() => setCallTableNo(firstFree)}
+                    className="text-[10px] px-1.5 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 flex-shrink-0 whitespace-nowrap"
+                    title="비어 있는 코트로 설정">빈 {firstFree}번</button>
+                ) : null
+              })()}
               <input className="input w-14 text-center py-1" type="number" min={1} max={99}
                 value={callTableNo} onChange={e => setCallTableNo(Number(e.target.value))} />
             </div>

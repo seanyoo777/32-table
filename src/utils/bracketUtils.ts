@@ -570,24 +570,46 @@ export function calcStandings(matches: BracketMatch[], participantIds: string[])
   return s
 }
 
+// 직접대결(head-to-head): a가 b를 이긴 횟수 − b가 a를 이긴 횟수 (둘 사이 경기만, 부전승 제외)
+export function headToHead(matches: BracketMatch[], a: string, b: string): number {
+  let aw = 0, bw = 0
+  for (const m of matches) {
+    if (!m.result || m.result.walkedOver) continue
+    if (![m.participant1Id, m.participant2Id].includes(a) || ![m.participant1Id, m.participant2Id].includes(b)) continue
+    if (m.result.winnerId === a) aw++
+    else if (m.result.winnerId === b) bw++
+  }
+  return aw - bw
+}
+
+// 순위 비교자: 1)승점 2)세트득실 3)점수득실 4)직접대결 5)초기순서(결정적)
+// order = 동률 시 안정적 최종 정렬을 위한 기준 ID 배열(시드/등록 순)
+export function standingsComparator(
+  matches: BracketMatch[],
+  standings: ReturnType<typeof calcStandings>,
+  order: string[],
+) {
+  const zero = { played: 0, wins: 0, losses: 0, pts: 0, setsW: 0, setsL: 0, pointsW: 0, pointsL: 0 }
+  return (a: string, b: string): number => {
+    const sa = standings[a] ?? zero, sb = standings[b] ?? zero
+    if (sb.pts !== sa.pts) return sb.pts - sa.pts
+    const sd = (sb.setsW - sb.setsL) - (sa.setsW - sa.setsL)
+    if (sd !== 0) return sd
+    const pd = (sb.pointsW - sb.pointsL) - (sa.pointsW - sa.pointsL)
+    if (pd !== 0) return pd
+    const h2h = headToHead(matches, a, b)   // a가 b에 우세하면 양수 → a가 앞
+    if (h2h !== 0) return -h2h
+    return order.indexOf(a) - order.indexOf(b)
+  }
+}
+
 // ─── 조별 리그 완료 시 순위별 ID 반환 ────────────────────
 export function getGroupRankedIds(
   groupMatches: BracketMatch[],
   group: Group
 ): string[] {
   const standings = calcStandings(groupMatches, group.participantIds)
-  return [...group.participantIds].sort((a, b) => {
-    const sa = standings[a] ?? { pts: 0, wins: 0, setsW: 0, setsL: 0, pointsW: 0, pointsL: 0 }
-    const sb = standings[b] ?? { pts: 0, wins: 0, setsW: 0, setsL: 0, pointsW: 0, pointsL: 0 }
-    // 1) 승점, 2) 세트 득실, 3) 점수 득실
-    if (sb.pts !== sa.pts) return sb.pts - sa.pts
-    const saDiff = sa.setsW - sa.setsL
-    const sbDiff = sb.setsW - sb.setsL
-    if (sbDiff !== saDiff) return sbDiff - saDiff
-    const saPoints = sa.pointsW - sa.pointsL
-    const sbPoints = sb.pointsW - sb.pointsL
-    return sbPoints - saPoints
-  })
+  return [...group.participantIds].sort(standingsComparator(groupMatches, standings, group.participantIds))
 }
 
 // ─── 시드 배치 (표준 토너먼트 대진, 폴딩) ─────────────────────

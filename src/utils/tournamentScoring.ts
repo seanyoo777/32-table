@@ -13,7 +13,7 @@ import type {
   BracketMatch, EventAwards, Pair, Player, Team, Tournament,
   TournamentEvent, TournamentGrade,
 } from '../types'
-import { calcStandings, computeDoubleElimPlacements } from './bracketUtils'
+import { calcStandings, computeDoubleElimPlacements, standingsComparator } from './bracketUtils'
 import {
   calcNewRatings, getPointsForResult, getEventMultiplier, eloPointsMultiplier,
 } from './ratingUtils'
@@ -71,17 +71,10 @@ export function computeEventPlacements(ev: TournamentEvent): Record<string, stri
     return { ...place, ...de }
   }
 
-  // 리그: 순위표 기준 상위 4명
+  // 리그: 순위표 기준 상위 4명 (동률 시 직접대결→초기순서로 결정적 정렬)
   if (ev.bracketFormat === '리그') {
     const standings = calcStandings(ev.matches, ev.participantIds)
-    const ranked = [...ev.participantIds].sort((a, b) => {
-      const sa = standings[a], sb = standings[b]
-      if (!sa || !sb) return 0
-      if (sb.pts !== sa.pts) return sb.pts - sa.pts
-      const da = sa.setsW - sa.setsL, db = sb.setsW - sb.setsL
-      if (db !== da) return db - da
-      return (sb.pointsW - sb.pointsL) - (sa.pointsW - sa.pointsL)
-    })
+    const ranked = [...ev.participantIds].sort(standingsComparator(ev.matches, standings, ev.participantIds))
     const labels = ['우승', '준우승', '3위', '4위']
     ranked.forEach((id, i) => {
       if (i < labels.length && (standings[id]?.played ?? 0) > 0) place[id] = labels[i]
