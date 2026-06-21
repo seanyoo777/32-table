@@ -2,10 +2,10 @@ import { NavLink } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import {
   Home, Trophy, TableProperties, ClipboardList, Calendar,
-  Zap, QrCode, Monitor, Settings, LayoutDashboard, BarChart3, Sun, Moon
+  Zap, QrCode, Monitor, Settings, LayoutDashboard, BarChart3, Sun, Moon, X
 } from 'lucide-react'
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const { matchCalls, liveMatches, scoreRecords, appSettings, updateAppSettings } = useStore()
   const pendingCalls = matchCalls.filter(c => !c.acknowledged).length
   const unverified = scoreRecords.filter(r => !r.verified).length
@@ -25,9 +25,18 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="w-[220px] flex-shrink-0 h-screen bg-gray-900 flex flex-col select-none">
+    <>
+      {/* 모바일 백드롭 */}
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} />
+      )}
+      <aside className={
+        'w-[220px] flex-shrink-0 h-screen bg-gray-900 flex flex-col select-none z-50 ' +
+        'fixed inset-y-0 left-0 transition-transform duration-200 md:static md:translate-x-0 ' +
+        (mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0')
+      }>
       {/* Logo */}
-      <div className="px-5 py-4 border-b border-gray-800 flex-shrink-0">
+      <div className="px-5 py-4 border-b border-gray-800 flex-shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="text-xl">🏓</span>
           <div>
@@ -35,6 +44,7 @@ export default function Sidebar() {
             <div className="text-gray-400 text-xs">관리 시스템</div>
           </div>
         </div>
+        <button onClick={onClose} className="md:hidden text-gray-400 hover:text-white p-1"><X size={18} /></button>
       </div>
 
       {/* Nav items */}
@@ -44,6 +54,7 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={exact}
+            onClick={onClose}
             className={({ isActive }) =>
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ' +
               (isActive
@@ -73,6 +84,7 @@ export default function Sidebar() {
         </button>
         <NavLink
           to="/settings"
+          onClick={onClose}
           className={({ isActive }) =>
             'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ' +
             (isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800')
@@ -83,6 +95,7 @@ export default function Sidebar() {
         </NavLink>
         <div className="px-3 pt-1 text-xs text-gray-600">v3.7 · 탁구대회 관리</div>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

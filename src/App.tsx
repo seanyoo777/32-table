@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Menu } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useStore } from './store/useStore'
@@ -44,22 +45,33 @@ function PageLoader() {
 }
 
 function MainLayout() {
+  const [navOpen, setNavOpen] = useState(false)
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
-      <Sidebar />
-      <main className="flex-1 min-w-0 overflow-hidden">
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {pages.map(({ path, element, label }) => (
-              <Route
-                key={path}
-                path={path}
-                element={<ErrorBoundary fallbackLabel={label}>{element}</ErrorBoundary>}
-              />
-            ))}
-          </Routes>
-        </Suspense>
-      </main>
+      <Sidebar mobileOpen={navOpen} onClose={() => setNavOpen(false)} />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        {/* 모바일 상단바 (햄버거) */}
+        <div className="md:hidden flex items-center gap-2 h-12 px-3 bg-gray-900 text-white flex-shrink-0">
+          <button onClick={() => setNavOpen(true)} aria-label="메뉴 열기" className="p-1.5 -ml-1 hover:bg-gray-800 rounded-lg">
+            <Menu size={20} />
+          </button>
+          <span className="text-base">🏓</span>
+          <span className="font-bold text-sm">탁구대회 관리</span>
+        </div>
+        <main className="flex-1 min-w-0 overflow-hidden">
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {pages.map(({ path, element, label }) => (
+                <Route
+                  key={path}
+                  path={path}
+                  element={<ErrorBoundary fallbackLabel={label}>{element}</ErrorBoundary>}
+                />
+              ))}
+            </Routes>
+          </Suspense>
+        </main>
+      </div>
     </div>
   )
 }
