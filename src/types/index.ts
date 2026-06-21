@@ -112,6 +112,8 @@ export interface BracketMatch {
   loserNextMatchId?: string | null
   nextSlot?: 1 | 2       // 승자가 nextMatch의 1·2번 슬롯 중 어디로
   loserSlot?: 1 | 2      // 패자가 loserNextMatch의 1·2번 슬롯 중 어디로
+  // 조별→본선 배선: 이 경기 참가자 슬롯의 출처 ko-slot id (영구 보존 → 조 재순위 시 재해석 가능)
+  slotRef?: { p1?: string; p2?: string }
   setScores?: Array<[number, number]>
   tableNo?: number
   teamSubMatches?: TeamSubMatch[]

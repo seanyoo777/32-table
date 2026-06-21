@@ -5,7 +5,7 @@ import type {
   SchedulePlan, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
 } from '../types'
 import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
-import { getGroupRankedIds, wireSeededQualWinners, propagateAndCascade, wireThirdPlace, propagateDoubleElim } from '../utils/bracketUtils'
+import { wireSeededQualWinners, wireGroupAdvancers, propagateAndCascade, wireThirdPlace, propagateDoubleElim } from '../utils/bracketUtils'
 import { applyEventSettlement } from '../utils/tournamentScoring'
 import { uploadTournament, subscribeTournament, SYNC_ENABLED } from '../lib/sync'
 
@@ -206,25 +206,8 @@ export const useStore = create<StoreState>()(
                 matches = propagateAndCascade(matches)
               }
               if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
-                for (const group of ev.groups) {
-                  const groupMatches = matches.filter(m => m.groupId === group.id)
-                  const allDone = groupMatches.length > 0 && groupMatches.every(m => m.result)
-                  if (!allDone) continue
-                  const rankedIds = getGroupRankedIds(groupMatches, group)
-                  for (let rank = 1; rank <= group.advanceCount; rank++) {
-                    const advancerId = rankedIds[rank - 1]
-                    if (!advancerId) continue
-                    const slotId = `ko-slot-${group.id}-r${rank}`
-                    matches = matches.map((m): BracketMatch => {
-                      if (m.groupId) return m
-                      const p1Updated = m.participant1Id === slotId ? advancerId : m.participant1Id
-                      const p2Updated = m.participant2Id === slotId ? advancerId : m.participant2Id
-                      return p1Updated !== m.participant1Id || p2Updated !== m.participant2Id
-                        ? { ...m, participant1Id: p1Updated, participant2Id: p2Updated }
-                        : m
-                    })
-                  }
-                }
+                // 완료된 조의 진출자를 본선 슬롯에 idempotent 배선 (재순위·부전승 안전)
+                matches = wireGroupAdvancers(ev, matches)
                 matches = propagateAndCascade(matches)
               }
 
@@ -275,6 +258,14 @@ export const useStore = create<StoreState>()(
                 return { ...ev, matches, status: (doneDE ? 'completed' : 'ongoing') as TournamentEvent['status'] }
               }
               matches = propagateAndCascade(matches)
+              if (ev.bracketFormat === '시드예선' && ev.groups.length > 0) {
+                matches = wireSeededQualWinners(ev, matches)
+                matches = propagateAndCascade(matches)
+              }
+              if (ev.bracketFormat === '조별+토너먼트' && ev.groups.length > 0) {
+                matches = wireGroupAdvancers(ev, matches)
+                matches = propagateAndCascade(matches)
+              }
               matches = wireThirdPlace(matches)
 
               const realMatches = matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)

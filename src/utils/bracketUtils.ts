@@ -503,11 +503,53 @@ export function generateKnockoutFromGroups(
     }
   }
   const knockout = generateTournamentBracket(advancerSlots)
-  return knockout.map(m => ({
-    ...m,
-    round: m.round + maxGroupRound,
-    // keep participant slots as placeholder ids (will be filled when group stage ends)
-  }))
+  return knockout.map(m => {
+    // 1라운드 경기는 참가자가 ko-slot 플레이스홀더 → 그 출처를 slotRef에 영구 보존
+    // (조 재순위 시에도 어느 슬롯인지 알 수 있어 본선 참가자를 idempotent하게 재해석)
+    const slotRef = m.round === 1 ? {
+      p1: m.participant1Id?.startsWith('ko-slot-') ? m.participant1Id : undefined,
+      p2: m.participant2Id?.startsWith('ko-slot-') ? m.participant2Id : undefined,
+    } : undefined
+    return { ...m, round: m.round + maxGroupRound, slotRef }
+  })
+}
+
+// 조별 진출자를 본선 슬롯에 idempotent하게 배선 (조 재순위·부분완료·부전승 안전)
+// slotRef(신규) 또는 ko-slot 직접매칭(레거시) 둘 다 처리. 완료된 조만 해석.
+export function wireGroupAdvancers(
+  ev: Pick<TournamentEvent, 'groups'>,
+  matches: BracketMatch[]
+): BracketMatch[] {
+  const resolved: Record<string, string> = {}  // ko-slot id → 진출 선수 id
+  for (const group of ev.groups) {
+    const gm = matches.filter(m => m.groupId === group.id)
+    if (gm.length === 0 || !gm.every(m => m.result)) continue   // 완료된 조만
+    const ranked = getGroupRankedIds(gm, group)
+    const adv = Math.min(group.advanceCount, group.participantIds.length)
+    for (let rank = 1; rank <= adv; rank++) {
+      if (ranked[rank - 1]) resolved[`ko-slot-${group.id}-r${rank}`] = ranked[rank - 1]
+    }
+  }
+  if (Object.keys(resolved).length === 0) return matches
+
+  const resolveSlot = (id: string | null, refId?: string): string | null => {
+    const ref = refId ?? (id && id.startsWith('ko-slot-') ? id : undefined)
+    if (!ref) return id                       // 슬롯 출처 아님 → 그대로
+    return resolved[ref] ?? ref               // 완료된 조면 선수, 아니면 플레이스홀더 유지
+  }
+
+  return matches.map((m): BracketMatch => {
+    if (m.groupId || !(m.slotRef || (m.participant1Id?.startsWith('ko-slot-')) || (m.participant2Id?.startsWith('ko-slot-')))) return m
+    const np1 = resolveSlot(m.participant1Id, m.slotRef?.p1)
+    const np2 = resolveSlot(m.participant2Id, m.slotRef?.p2)
+    let result = m.result
+    if (m.isBye && result) {
+      const w = np1 ?? np2                     // 부전승 승자 = 채워진 쪽
+      if (w && result.winnerId !== w) result = { ...result, winnerId: w, loserId: '' }
+    }
+    if (np1 === m.participant1Id && np2 === m.participant2Id && result === m.result) return m
+    return { ...m, participant1Id: np1, participant2Id: np2, result }
+  })
 }
 
 // ─── 리그 (라운드 로빈) ───────────────────────────────────
