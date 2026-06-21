@@ -93,7 +93,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           <Settings size={16} strokeWidth={2} />
           설정
         </NavLink>
-        <div className="px-3 pt-1 text-xs text-gray-600">v3.8 · 탁구대회 관리</div>
+        <div className="px-3 pt-1 text-xs text-gray-600">v3.9 · 탁구대회 관리</div>
       </div>
       </aside>
     </>

@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v3.8 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v3.9 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -518,45 +518,42 @@ v3.4의 "경기마다 즉시 포인트 가산" 방식이 결과 수정·취소·
 
 ## 14. 다음 세션 계획 — 개발 후보
 
-> v3.4에서 포인트 자동집계·시드예선 방식 완성. 랭킹 시스템이 실전 운영 수준으로 업그레이드됨.
+> **v3.6~v3.9 (이번 세션)**: 7×7 종합감사 + 대규모 기능 추가로 실전 운영 수준 완성.
+> 자세한 변경은 §12-2~12-6 참조. 누적 단위테스트 70+.
 
-### ✅ v3.4에서 완료된 항목 (이전 계획에서 이동)
-- [x] 토너먼트 목록 페이지네이션 (12개/페이지)
-- [x] 대회 참가비 관리 (체크인 탭, 수납 현황 CSV)
-- [x] 스마트 대진표 시드 수동 조정 (▲▼ 버튼)
-- [x] 포인트·랭킹 자동 집계 (등급별·종목별·Elo 기반)
-- [x] 시드예선 대진 방식
+### ✅ 이번 세션(v3.6~v3.9)에서 완료
+- [x] **병렬 대진 시간표 스케줄러** (라운드 의존·조별→본선·선수충돌·코트 병렬·makespan 최소)
+- [x] **더블 엘리미네이션** (승자조+패자조+그랜드파이널 리셋)
+- [x] **시드 배정 치명버그 수정** (8명+ 단일제거 선수 누락)
+- [x] **조별→본선 idempotent 배선** (slotRef — 재순위·부전승 정확)
+- [x] 리그/조별 동률 **직접대결(head-to-head)** 정렬
+- [x] 통계·리포트 페이지 / 코트별 분리 인쇄 / 인쇄 리포트
+- [x] 다크모드 / 모바일 반응형 네비 / 코드 스플리팅
+- [x] 코트 현황판 / 미체크인 경고 / 빈코트 제안 / 일정 충돌·초과 경고
+- [x] 점수기록 페이지네이션 / 세트점수 검증 / 듀스 서브 수정 / 백업 보완
 
-### 🔴 HIGH (실전 배포 직결)
-- [ ] **Supabase DB 마이그레이션 완료** (코드 완성, DB 테이블만 생성하면 됨)  
+### 🔴 HIGH (실전 배포 직결, 사용자 수동 필요)
+- [ ] **Supabase DB 마이그레이션** (코드 완성, DB 테이블만 생성)  
   ```sql
   create table if not exists pingpong_tournaments (
     id text primary key, data jsonb not null,
     session_name text, updated_at timestamptz default now() not null
   );
   ```
-  + Cloudflare Pages 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`  
-  → 완료 시 여러 기기 동시 운영 가능
-
-- [ ] **점수 기록 목록 페이지네이션**  
-  scoreRecords가 수백 건 쌓이면 필요 — 대시보드 및 직접입력 목록에 적용
+  + Cloudflare Pages 환경변수 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  + (확장) players/pairs/teams도 동기화 — 현재 sync.ts는 tournaments만 업로드
 
 ### 🟡 MEDIUM (운영 편의)
-- [ ] **경기일정 상세보기 인쇄 개선**  
-  코트별 분리 인쇄, A4 세로 레이아웃 옵션
-
-- [ ] **SMS/카카오 경기 호출**  
-  matchCall 생성 시 선수 연락처로 자동 발송 → Twilio or 알리고 API 연동
-
-- [ ] **경기일정 생성 설정 저장/불러오기**  
-  자주 쓰는 부문·인원·코트 구성을 프리셋으로 저장 (현재는 매번 입력)
+- [ ] **병렬 스케줄러 다일차 자동분할** — 현재 단일 타임라인. makespan이 하루 운영시간 초과 시
+  자동으로 day 2/3으로 넘기기 (scheduleTournamentMatches에 dayConfig 입력 추가)
+- [ ] **종목별 전용코트 지정 UI** — 엔진은 preferredCourtStart/End 지원, UI 연결 필요 (단체전 코트 분리)
+- [ ] **일정 드래그/인라인 편집** — 경기 지연 시 후속 자동 밀림. `updateScheduleSlot` 추가
+- [ ] **SMS/카카오 경기 호출** — matchCall→선수 연락처 발송 (Twilio/알리고)
+- [ ] **경기일정 생성 프리셋 저장** — 부문·인원·코트 구성 재사용
 
 ### 🟢 LOW (완성도)
-- [ ] **대회 통계 리포트**  
-  종목별 경기 수, 부문별 참가율, 선수별 포인트 추이 차트 (recharts)
-- [ ] **다크모드** — Tailwind `dark:` + Settings 토글
-- [ ] **다국어 (i18n)** — 한국어 기본 + 영어
-- [ ] **대회 사진 갤러리** — Tournament에 `photos: string[]`
+- [ ] **복식·단체 개별 Elo** — 현재 포인트·승패만(배율 보정). 페어 평균레이팅 방식 (검증단 권고로 보류)
+- [ ] **다국어 (i18n)** / **대회 사진 갤러리** / **노쇼·운영로그**
 
 ---
 
@@ -582,4 +579,4 @@ v3.4의 "경기마다 즉시 포인트 가산" 방식이 결과 수정·취소·
 
 ---
 
-*최종 업데이트: 2026-06-18 v3.5 (토너먼트 정산 재구성·시드예선 수정·동기화 크래시 수정) | v3.4까지 Claude Sonnet 4.6 작성*
+*최종 업데이트: 2026-06-21 v3.9 (병렬 시간표 스케줄러·더블엘리미네이션·종합감사 7×7·시드/조별 배선 수정·다크모드·모바일) | v3.5까지 Claude Sonnet 4.6, v3.6~v3.9 Claude Opus 4.8 작성*
