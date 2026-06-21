@@ -1263,7 +1263,8 @@ function DoubleElimView({ event, pMap, onClickMatch, onClearResult }: {
 }) {
   const wb = event.matches.filter(m => m.phase === 'wb')
   const lb = event.matches.filter(m => m.phase === 'lb')
-  const gf = event.matches.filter(m => m.phase === 'gf')
+  // 결승: gf 항상 표시, 리셋(gf2)은 활성(양 선수 배정)일 때만
+  const gf = event.matches.filter(m => m.phase === 'gf' && (m.id !== 'gf2' || (m.participant1Id && m.participant2Id)))
   const k = Math.max(...wb.map(m => m.round), 1)
   const wbRounds = [...new Set(wb.map(m => m.round))].sort((a, b) => a - b)
   const lbRounds = [...new Set(lb.map(m => m.round))].sort((a, b) => a - b)
@@ -1331,7 +1332,10 @@ function DoubleElimView({ event, pMap, onClickMatch, onClearResult }: {
         <div>
           <h3 className="text-sm font-bold text-amber-600 mb-2 flex items-center gap-1.5">🏁 최종 결승</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-            <RoundBlock title="그랜드 파이널" accent="bg-amber-50 text-amber-700" matches={gf} />
+            {gf.map(m => (
+              <RoundBlock key={m.id} title={m.id === 'gf2' ? '그랜드 파이널 (리셋)' : '그랜드 파이널'}
+                accent="bg-amber-50 text-amber-700" matches={[m]} />
+            ))}
           </div>
         </div>
       )}

@@ -312,9 +312,15 @@ export function generateDoubleElimBracket(
       })
     }
   }
-  // ── Grand Final ──
+  // ── Grand Final + 리셋(브래킷 리셋) ──
+  // 승자조 우승자는 무패, 패자조 우승자는 1패 상태 → 패자조 우승자가 GF에서 이기면
+  // 양쪽 1패 동률이 되어 최종 1경기(gf2)를 더 치른다. 승자조 우승자가 이기면 gf2는 미실시.
   matches.push({
     id: GF, round: GF_ROUND, position: 0, phase: 'gf',
+    participant1Id: null, participant2Id: null, result: null, nextMatchId: null,
+  })
+  matches.push({
+    id: 'gf2', round: GF_ROUND + 1, position: 0, phase: 'gf',
     participant1Id: null, participant2Id: null, result: null, nextMatchId: null,
   })
 
@@ -353,6 +359,26 @@ export function propagateDoubleElim(input: BracketMatch[]): BracketMatch[] {
     matches = next
     if (!changed) break
   }
+
+  // ── 그랜드 파이널 리셋(gf2) 활성/비활성 ──
+  // 패자조 우승자(GF 슬롯2)가 GF에서 이긴 경우에만 gf2를 같은 두 선수로 재대결시킨다.
+  const gf2idx = matches.findIndex(m => m.id === 'gf2')
+  const gf = matches.find(m => m.id === 'gf')
+  if (gf2idx >= 0 && gf) {
+    const lbChampWon = !!(gf.result && gf.participant1Id && gf.participant2Id && gf.result.winnerId === gf.participant2Id)
+    let g2 = matches[gf2idx]
+    if (lbChampWon) {
+      let np1 = gf.participant1Id, np2 = gf.participant2Id, res = g2.result
+      if (res && !(np1 === g2.participant1Id && np2 === g2.participant2Id && [np1, np2].includes(res.winnerId))) res = null
+      if (g2.participant1Id !== np1 || g2.participant2Id !== np2 || res !== g2.result) {
+        g2 = { ...g2, participant1Id: np1, participant2Id: np2, result: res }
+      }
+    } else if (g2.participant1Id || g2.participant2Id || g2.result) {
+      g2 = { ...g2, participant1Id: null, participant2Id: null, result: null }
+    }
+    if (g2 !== matches[gf2idx]) matches = matches.map((m, i) => i === gf2idx ? g2 : m)
+  }
+
   return matches
 }
 
@@ -365,7 +391,10 @@ export function computeDoubleElimPlacements(matches: BracketMatch[], participant
   if (wbRounds.length === 0) return place
   const k = Math.max(...wbRounds)
   const lbRounds = 2 * k - 2
-  const gf = matches.find(m => m.phase === 'gf')
+  // 결승 판정: 리셋(gf2)이 활성(양 선수 배정)이면 gf2가 우승을 가른다
+  const gfMain = matches.find(m => m.id === 'gf')
+  const gf2 = matches.find(m => m.id === 'gf2')
+  const gf = (gf2 && gf2.participant1Id && gf2.participant2Id) ? gf2 : gfMain
 
   const placeLabel = (p: number): string => {
     if (p === 1) return '우승'

@@ -39,6 +39,12 @@ function knockoutMatches(ev: TournamentEvent): BracketMatch[] {
 // 결승전 찾기 (Elo 이변 배율·우승자 판정용)
 export function getFinalMatch(ev: TournamentEvent): BracketMatch | null {
   if (ev.bracketFormat === '리그') return null
+  // 더블 엘리미네이션: 리셋(gf2) 활성 시 gf2, 아니면 gf가 결승
+  if (ev.bracketFormat === '더블엘리미네이션') {
+    const gf2 = ev.matches.find(m => m.id === 'gf2')
+    if (gf2 && gf2.participant1Id && gf2.participant2Id) return gf2
+    return ev.matches.find(m => m.id === 'gf') ?? null
+  }
   const ko = knockoutMatches(ev).filter(m => !m.isThirdPlace)
   if (ko.length === 0) return null
   const maxR = Math.max(...ko.map(m => m.round))
