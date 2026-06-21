@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts } from '../utils/scheduleUtils'
+import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
 import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
@@ -259,7 +259,7 @@ export default function SchedulePage() {
   }, [planEvents, dayConfigs, globalMinutesPerMatch, globalTeamMinutes, globalBuffer])
 
   function resolveParticipantName(id: string | null, eventType: string): string {
-    if (!id) return '미정'
+    if (!id || id.startsWith('ko-slot-')) return '미정'
     if (eventType === '복식' || eventType === '혼합복식') {
       const pair = pairs.find(p => p.id === id)
       if (pair) {
@@ -806,7 +806,7 @@ export default function SchedulePage() {
 }
 
 function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack: () => void }) {
-  const { tournaments, updateTournament, updateSchedule, players, pairs, schedules } = useStore()
+  const { tournaments, updateTournament, updateSchedule, players, pairs, teams, schedules } = useStore()
   const plan = schedules.find(s => s.id === planProp.id) ?? planProp
   const [viewMode, setViewMode] = useState<'time' | 'court'>('time')
   const [activeDay, setActiveDay] = useState<number | null>(null)
@@ -857,7 +857,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   }
 
   function resolveParticipantName(id: string | null, eventType: string): string {
-    if (!id) return '미정'
+    if (!id || id.startsWith('ko-slot-')) return '미정'
     if (eventType === '복식' || eventType === '혼합복식') {
       const pair = pairs.find(p => p.id === id)
       if (pair) {
@@ -874,62 +874,55 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     const tour = tournaments.find(t => t.id === assignTourId)
     if (!tour) return
 
-    // 슬롯별로 같은 division+eventType+gender 기준으로 토너먼트 경기 매핑
-    const slotsByEvent = new Map<string, typeof plan.slots>()
-    for (const s of plan.slots) {
-      if (s.type && s.type !== 'match') continue
-      if (!slotsByEvent.has(s.eventId)) slotsByEvent.set(s.eventId, [])
-      slotsByEvent.get(s.eventId)!.push(s)
-    }
+    // 일정 설정에서 코트·시작시간·경기시간 도출
+    const matchCfgs = plan.events.filter(e => !e.type || e.type === 'match')
+    const courts = Math.max(1, ...matchCfgs.map(e => e.courtCount), 1)
+    const [sh, sm0] = plan.startTime.split(':').map(Number)
+    const startMin = sh * 60 + sm0
+    const indivMin = matchCfgs.find(e => e.eventType !== '단체전')?.minutesPerMatch ?? 25
+    const teamMin = matchCfgs.find(e => e.eventType === '단체전')?.minutesPerMatch ?? 120
+    const buffer = matchCfgs[0]?.bufferMinutes ?? 0
 
-    const updatedSlots = plan.slots.map(slot => {
-      if (slot.type && slot.type !== 'match') return slot
-      const tourEvent = tour.events.find(te =>
-        te.division === slot.division && te.eventType === slot.eventType && te.gender === slot.gender
-      )
-      if (!tourEvent) return slot
-      const evSlots = slotsByEvent.get(slot.eventId) ?? []
-      const slotIdx = evSlots.indexOf(slot)
-      const assignable = tourEvent.matches
-        .filter(m => m.participant1Id && m.participant2Id && !m.isBye)
-        .sort((a, b) => a.round !== b.round ? a.round - b.round : a.position - b.position)
-      const match = assignable[slotIdx]
-      if (!match) return slot
+    // 대진 의존성 기반 병렬 스케줄링 (이전 라운드 종료→다음 시작, 조별→본선, 선수충돌·휴식)
+    const sched = scheduleTournamentMatches({
+      events: tour.events.map(ev => ({ id: ev.id, eventType: ev.eventType, matches: ev.matches })),
+      courts, startMinutes: startMin, individualMin: indivMin, teamMin, bufferMin: buffer, restMin: buffer,
+      pairs, teams,
+    })
+    console.log('[ASSIGN] sched', { matches: sched.matches.length, courts, startMin })
+    if (sched.matches.length === 0) { setAssignResult('배치할 경기가 없습니다.'); return }
+
+    const minToTime = (mm: number) => `${String(Math.floor(mm / 60) % 24).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`
+    const evOf = new Map(tour.events.flatMap(ev => ev.matches.map(m => [m.id, ev])))
+
+    // 스케줄 결과 → 일정 슬롯 (실시간·코트·선수)
+    const newSlots: ScheduleSlot[] = sched.matches.map((s, i) => {
+      const ev = evOf.get(s.matchId)!
+      const m = ev.matches.find(x => x.id === s.matchId)!
       return {
-        ...slot,
-        participant1: resolveParticipantName(match.participant1Id, slot.eventType),
-        participant2: resolveParticipantName(match.participant2Id, slot.eventType),
-        round: `${match.round}라운드`,
+        id: genId(), eventId: ev.id, label: ev.label, division: ev.division, eventType: ev.eventType, gender: ev.gender,
+        courtNo: s.courtNo, startTime: minToTime(s.startMin), endTime: minToTime(s.endMin), matchNo: i + 1,
+        participant1: resolveParticipantName(m.participant1Id, ev.eventType),
+        participant2: resolveParticipantName(m.participant2Id, ev.eventType),
+        round: `${m.round}라운드`, day: 1, type: 'match' as const,
       }
     })
 
-    // 토너먼트 경기에도 시간/테이블 배정
-    const matchSlots = plan.slots.filter(s => !s.type || s.type === 'match')
-    const pendingMatches: Array<{ evId: string; matchId: string }> = []
-    for (const ev of tour.events) {
-      for (const m of ev.matches) {
-        if (m.participant1Id && m.participant2Id && !m.isBye && !m.scheduledTime) {
-          pendingMatches.push({ evId: ev.id, matchId: m.id })
-        }
-      }
-    }
-    const assigned = Math.min(pendingMatches.length, matchSlots.length)
-    if (assigned > 0) {
-      const newEvents = tour.events.map(ev => ({
-        ...ev,
-        matches: ev.matches.map(m => {
-          const idx = pendingMatches.findIndex(pm => pm.evId === ev.id && pm.matchId === m.id)
-          if (idx < 0 || idx >= matchSlots.length) return m
-          const slot = matchSlots[idx]
-          return { ...m, scheduledTime: slot.startTime, tableNo: slot.courtNo }
-        })
-      }))
-      updateTournament(assignTourId, { events: newEvents })
-    }
+    // 토너먼트 브래킷에도 시간·테이블 기록
+    const schedMap = new Map(sched.matches.map(s => [s.matchId, s]))
+    const newEvents = tour.events.map(ev => ({
+      ...ev,
+      matches: ev.matches.map(m => {
+        const s = schedMap.get(m.id)
+        return s ? { ...m, scheduledTime: minToTime(s.startMin), tableNo: s.courtNo } : m
+      })
+    }))
+    updateTournament(assignTourId, { events: newEvents })
+    updateSchedule(plan.id, { slots: newSlots, linkedTournamentId: assignTourId })
 
-    // 슬롯에 선수 이름 저장
-    updateSchedule(plan.id, { slots: updatedSlots, linkedTournamentId: assignTourId })
-    setAssignResult(`선수 배치 완료 · ${assigned}개 경기 시간 배정`)
+    const mk = sched.makespanMin - startMin
+    const hh = Math.floor(mk / 60), mmn = mk % 60
+    setAssignResult(`${sched.matches.length}경기 병렬배치 · 총 ${hh}시간${mmn ? ` ${mmn}분` : ''} · 코트 ${courts}개 가동률 ${Math.round(sched.utilization * 100)}%`)
   }
 
   return (
@@ -1048,7 +1041,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           {tournaments.length > 0 && (
             <div className="p-3">
               <h4 className="text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1">
-                <Link size={11} /> 대회 경기 배정
+                <Link size={11} /> 대회 병렬 시간표 자동생성
               </h4>
               <select className="select text-xs w-full mb-2" value={assignTourId}
                 onChange={e => { setAssignTourId(e.target.value); setAssignResult(null) }}>
@@ -1057,8 +1050,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               </select>
               <button className="btn-primary w-full text-xs py-1.5 flex items-center justify-center gap-1"
                 onClick={handleAssignTimes} disabled={!assignTourId}>
-                <Clock size={11} /> 시간 자동배정
+                <Clock size={11} /> 병렬 시간표 생성
               </button>
+              <p className="text-[10px] text-gray-400 mt-1">라운드 의존·선수충돌·휴식을 지키며 코트를 최대 병렬로 배치</p>
               {assignResult && <p className="text-xs text-green-600 mt-1.5">{assignResult}</p>}
             </div>
           )}

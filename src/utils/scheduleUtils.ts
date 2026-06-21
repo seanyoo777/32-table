@@ -1,5 +1,126 @@
 import type { Division, EventType, Gender, ScheduleEvent, ScheduleSlot } from '../types'
-import type { SmartEventInput } from '../types'
+import type { SmartEventInput, BracketMatch, Pair, Team } from '../types'
+
+// ─── 대진 의존성 기반 병렬 스케줄러 ──────────────────────────────
+// 브래킷의 의존성 그래프(이전 라운드 종료 → 다음 라운드 시작, 조별 완료 → 본선,
+// 같은 선수 동시 불가, 휴식)를 지키면서 코트를 최대 병렬로 채워 총 소요시간을 최소화한다.
+export interface SmartScheduleEventInput {
+  id: string
+  eventType: EventType
+  matches: BracketMatch[]
+  preferredCourtStart?: number   // 1-base, 이 종목 전용 코트 시작
+  preferredCourtEnd?: number
+}
+export interface SmartScheduleInput {
+  events: SmartScheduleEventInput[]
+  courts: number
+  startMinutes: number
+  individualMin: number
+  teamMin: number
+  bufferMin: number   // 코트 회전 간격
+  restMin: number     // 선수 연속 경기 최소 휴식
+  pairs?: Pair[]
+  teams?: Team[]
+}
+export interface ScheduledMatch {
+  matchId: string
+  eventId: string
+  courtNo: number
+  startMin: number
+  endMin: number
+  round: number
+}
+export interface SmartScheduleResult {
+  matches: ScheduledMatch[]
+  makespanMin: number
+  courtBusyMin: number
+  utilization: number   // 0~1, 코트 가동률
+}
+
+export function scheduleTournamentMatches(input: SmartScheduleInput): SmartScheduleResult {
+  const { events, courts, startMinutes, individualMin, teamMin, bufferMin, restMin, pairs = [], teams = [] } = input
+
+  const expand = (id: string | null | undefined): string[] => {
+    if (!id || id.startsWith('ko-slot-')) return []
+    const pair = pairs.find(p => p.id === id)
+    if (pair) return [pair.player1Id, pair.player2Id].filter(Boolean) as string[]
+    const team = teams.find(t => t.id === id)
+    if (team) return (team.playerIds ?? []).filter(Boolean)
+    return [id]
+  }
+
+  interface Node { id: string; eventId: string; dur: number; deps: string[]; players: string[]; round: number; courtFrom: number; courtTo: number }
+  const nodes: Record<string, Node> = {}
+
+  for (const ev of events) {
+    const dur = ev.eventType === '단체전' ? teamMin : individualMin
+    const cFrom = ev.preferredCourtStart ? Math.max(1, ev.preferredCourtStart) : 1
+    const cTo = ev.preferredCourtEnd ? Math.min(courts, ev.preferredCourtEnd) : courts
+    const byId = new Map(ev.matches.map(m => [m.id, m]))
+    const groupMatchIds: Record<string, string[]> = {}
+    for (const m of ev.matches) if (m.groupId && !m.isBye) (groupMatchIds[m.groupId] ??= []).push(m.id)
+
+    for (const m of ev.matches) {
+      if (m.isBye) continue
+      const deps: string[] = []
+      for (const f of ev.matches) {
+        if (f.id === m.id || f.isBye) continue
+        if (f.nextMatchId === m.id || f.loserNextMatchId === m.id) deps.push(f.id)
+      }
+      // 조별 진출 슬롯(ko-slot-{group}-r{rank}) 참가자 → 해당 조 전 경기 의존
+      for (const pid of [m.participant1Id, m.participant2Id, m.slotRef?.p1, m.slotRef?.p2]) {
+        const mt = pid && /^ko-slot-(.+)-r\d+$/.exec(pid)
+        if (mt) (groupMatchIds[mt[1]] ?? []).forEach(id => { if (id !== m.id) deps.push(id) })
+      }
+      nodes[m.id] = {
+        id: m.id, eventId: ev.id, dur,
+        deps: [...new Set(deps)].filter(d => byId.has(d)),
+        players: [...expand(m.participant1Id), ...expand(m.participant2Id)],
+        round: m.round, courtFrom: cFrom, courtTo: cTo,
+      }
+    }
+  }
+
+  const courtFree = Array(courts).fill(startMinutes)
+  const playerFree: Record<string, number> = {}
+  const endOf: Record<string, number> = {}
+  const scheduled: Record<string, ScheduledMatch> = {}
+  const done = new Set<string>()
+  const total = Object.keys(nodes).length
+  let guard = 0
+
+  while (done.size < total && guard++ < total + 5) {
+    const ready = Object.values(nodes).filter(n => !done.has(n.id) && n.deps.every(d => done.has(d) || !nodes[d]))
+    if (ready.length === 0) break
+    let best: { n: Node; court: number; start: number } | null = null
+    for (const n of ready) {
+      const depEnd = n.deps.length ? Math.max(startMinutes, ...n.deps.map(d => (endOf[d] ?? startMinutes) + bufferMin)) : startMinutes
+      const playerReady = n.players.length ? Math.max(startMinutes, ...n.players.map(p => playerFree[p] ?? startMinutes)) : startMinutes
+      const readyT = Math.max(depEnd, playerReady)
+      // 이 종목이 쓸 수 있는 코트 중 가장 빨리 비는 것
+      let bc = -1
+      for (let c = n.courtFrom - 1; c <= n.courtTo - 1; c++) if (bc < 0 || courtFree[c] < courtFree[bc]) bc = c
+      if (bc < 0) bc = 0
+      const startT = Math.max(courtFree[bc], readyT)
+      if (!best || startT < best.start || (startT === best.start && n.round < best.n.round)) best = { n, court: bc, start: startT }
+    }
+    if (!best) break
+    const { n, court, start } = best
+    const end = start + n.dur
+    courtFree[court] = end
+    endOf[n.id] = end
+    for (const p of n.players) playerFree[p] = end + restMin
+    scheduled[n.id] = { matchId: n.id, eventId: n.eventId, courtNo: court + 1, startMin: start, endMin: end, round: n.round }
+    done.add(n.id)
+  }
+
+  const result = Object.values(scheduled).sort((a, b) => a.startMin - b.startMin || a.courtNo - b.courtNo)
+  const makespanMin = result.length ? Math.max(...result.map(r => r.endMin)) : startMinutes
+  const courtBusyMin = result.reduce((s, r) => s + (r.endMin - r.startMin), 0)
+  const span = makespanMin - startMinutes
+  const utilization = span > 0 ? courtBusyMin / (courts * span) : 0
+  return { matches: result, makespanMin, courtBusyMin, utilization }
+}
 
 // ─── 시간 유틸 ─────────────────────────────────────────────
 function addMinutes(time: string, mins: number): string {
