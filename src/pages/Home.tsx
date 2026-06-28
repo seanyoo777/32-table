@@ -124,6 +124,28 @@ export default function Home() {
                     <div className="h-1 bg-green-200 rounded-full">
                       <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
+                    {/* 종목별 진행률 */}
+                    <div className="mt-2 space-y-1">
+                      {t.events.slice(0, 6).map(ev => {
+                        const evTotal = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                        const evDone = ev.matches.filter(m => m.result).length
+                        const evPct = evTotal > 0 ? Math.round(evDone / evTotal * 100) : 0
+                        return (
+                          <div key={ev.id}>
+                            <div className="flex justify-between text-[10px] mb-0.5">
+                              <span className="text-green-700 truncate flex-1 pr-1">{ev.label}</span>
+                              <span className={`flex-shrink-0 font-medium ${evPct === 100 ? 'text-green-600' : 'text-gray-400'}`}>{evPct}%</span>
+                            </div>
+                            <div className="h-0.5 bg-green-200 rounded-full">
+                              <div className={`h-full rounded-full transition-all ${evPct === 100 ? 'bg-green-600' : 'bg-green-400'}`} style={{ width: `${evPct}%` }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {t.events.length > 6 && (
+                        <div className="text-[10px] text-green-500">+{t.events.length - 6}개 종목 더</div>
+                      )}
+                    </div>
                     <div className="flex gap-1.5 mt-2">
                       <button onClick={e => { e.stopPropagation(); navigate('/score') }}
                         className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-green-700">
