@@ -212,6 +212,19 @@ export interface SchedulePlan {
   days?: { day: number; date?: string; label?: string; startTime: string; endTime: string; courtCount: number }[]
 }
 
+export interface SchedulePreset {
+  id: string
+  name: string
+  config: {
+    totalDays: number
+    dayConfigs: { day: number; date?: string; label?: string; startTime: string; endTime: string; courtCount: number }[]
+    globalMinutesPerMatch: number
+    globalTeamMinutes: number
+    globalBuffer: number
+    teamCourtCount: number
+  }
+}
+
 export interface ScoreRecord {
   id: string
   tournamentId: string

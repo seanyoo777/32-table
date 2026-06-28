@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches, shiftSlotsAfterDelay, moveScheduleSlot } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
-import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown, Pencil } from 'lucide-react'
-import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat } from '../types'
+import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown, Pencil, Bookmark, Trash2 } from 'lucide-react'
+import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat, SchedulePreset } from '../types'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
 
@@ -67,7 +67,7 @@ function formatTime12h(time: string): string {
 }
 
 export default function SchedulePage() {
-  const { schedules, addSchedule, deleteSchedule, tournaments, players, pairs } = useStore()
+  const { schedules, addSchedule, deleteSchedule, schedulePresets, addSchedulePreset, deleteSchedulePreset, tournaments, players, pairs } = useStore()
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -147,6 +147,8 @@ export default function SchedulePage() {
     return result
   }, [grid, activeDivs])
 
+  const [selectedPresetId, setSelectedPresetId] = useState('')
+
   const [totalDays, setTotalDays] = useState(1)
   const [globalMinutesPerMatch, setGlobalMinutesPerMatch] = useState(30)
   const [globalTeamMinutes, setGlobalTeamMinutes] = useState(120)
@@ -155,6 +157,39 @@ export default function SchedulePage() {
   const [dayConfigs, setDayConfigs] = useState<DayConfig[]>([
     { day: 1, date: planDate, startTime: '09:00', endTime: '20:00', courtCount: 4 }
   ])
+
+  function handleSavePreset() {
+    const name = prompt('프리셋 이름을 입력하세요 (예: 춘계대회 기본설정)')
+    if (!name?.trim()) return
+    const preset: SchedulePreset = {
+      id: genId(),
+      name: name.trim(),
+      config: { totalDays, dayConfigs, globalMinutesPerMatch, globalTeamMinutes, globalBuffer, teamCourtCount },
+    }
+    addSchedulePreset(preset)
+    setSelectedPresetId(preset.id)
+  }
+
+  function handleLoadPreset() {
+    const preset = schedulePresets.find(p => p.id === selectedPresetId)
+    if (!preset) return
+    const { config } = preset
+    setTotalDays(config.totalDays)
+    setDayConfigs(config.dayConfigs)
+    setGlobalMinutesPerMatch(config.globalMinutesPerMatch)
+    setGlobalTeamMinutes(config.globalTeamMinutes)
+    setGlobalBuffer(config.globalBuffer)
+    setTeamCourtCount(config.teamCourtCount)
+  }
+
+  function handleDeletePreset() {
+    if (!selectedPresetId) return
+    const preset = schedulePresets.find(p => p.id === selectedPresetId)
+    if (!preset) return
+    if (!confirm(`"${preset.name}" 프리셋을 삭제하시겠습니까?`)) return
+    deleteSchedulePreset(selectedPresetId)
+    setSelectedPresetId('')
+  }
 
   function updateDayCount(n: number, baseDate?: string) {
     const clamped = Math.min(7, Math.max(1, n))
@@ -360,6 +395,43 @@ export default function SchedulePage() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+          {/* ⓪ 운영 설정 프리셋 */}
+          <div className="card space-y-2">
+            <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+              <Bookmark size={14} className="text-indigo-500" /> ⓪ 운영 설정 프리셋
+              <span className="text-xs text-gray-400 font-normal">— 코트 수·경기 시간·일차 설정 저장·재사용</span>
+            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              {schedulePresets.length > 0 ? (
+                <>
+                  <select
+                    className="select text-sm flex-1 min-w-[180px]"
+                    value={selectedPresetId}
+                    onChange={e => setSelectedPresetId(e.target.value)}
+                  >
+                    <option value="">-- 저장된 프리셋 선택 --</option>
+                    {schedulePresets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                  <button
+                    onClick={handleLoadPreset}
+                    disabled={!selectedPresetId}
+                    className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40"
+                  >불러오기</button>
+                  {selectedPresetId && (
+                    <button onClick={handleDeletePreset} className="btn-danger text-sm py-1.5 px-3 flex items-center gap-1">
+                      <Trash2 size={13} /> 삭제
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-400">저장된 프리셋이 없습니다.</p>
+              )}
+              <button onClick={handleSavePreset} className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1">
+                <Bookmark size={13} /> 현재 설정 저장
+              </button>
+            </div>
+          </div>
+
           {/* ① 기본 정보 */}
           <div className="card space-y-3">
             <h2 className="font-semibold text-gray-700 text-sm">① 기본 정보</h2>

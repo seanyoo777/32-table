@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Player, Pair, Team, Tournament, TournamentEvent,
-  SchedulePlan, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
+  SchedulePlan, SchedulePreset, ScoreRecord, BracketMatch, MatchResult, LiveMatch, MatchCall
 } from '../types'
 import { generatePlayers, generatePairs, generateTournaments, generateSchedules } from '../data/mockData'
 import { wireSeededQualWinners, wireGroupAdvancers, propagateAndCascade, wireThirdPlace, propagateDoubleElim } from '../utils/bracketUtils'
@@ -39,6 +39,7 @@ interface StoreState {
   teams: Team[]
   tournaments: Tournament[]
   schedules: SchedulePlan[]
+  schedulePresets: SchedulePreset[]
   scoreRecords: ScoreRecord[]
   liveMatches: LiveMatch[]
   matchCalls: MatchCall[]
@@ -77,6 +78,8 @@ interface StoreState {
   addSchedule: (s: SchedulePlan) => void
   updateSchedule: (id: string, data: Partial<SchedulePlan>) => void
   deleteSchedule: (id: string) => void
+  addSchedulePreset: (p: SchedulePreset) => void
+  deleteSchedulePreset: (id: string) => void
 
   // Score Records
   addScoreRecord: (r: ScoreRecord) => void
@@ -116,6 +119,7 @@ export const useStore = create<StoreState>()(
       teams: [],
       tournaments: INIT_TOURS,
       schedules: INIT_SCHEDS,
+      schedulePresets: [],
       scoreRecords: [],
       liveMatches: [],
       matchCalls: [],
@@ -289,6 +293,8 @@ export const useStore = create<StoreState>()(
       addSchedule: (s) => set((st) => ({ schedules: [...st.schedules, s] })),
       updateSchedule: (id, data) => set((st) => ({ schedules: st.schedules.map(sc => sc.id === id ? { ...sc, ...data } : sc) })),
       deleteSchedule: (id) => set((s) => ({ schedules: s.schedules.filter(sc => sc.id !== id) })),
+      addSchedulePreset: (p) => set((s) => ({ schedulePresets: [...s.schedulePresets, p] })),
+      deleteSchedulePreset: (id) => set((s) => ({ schedulePresets: s.schedulePresets.filter(p => p.id !== id) })),
 
       // Score Records
       addScoreRecord: (r) => set((s) => ({ scoreRecords: [...s.scoreRecords, r] })),
