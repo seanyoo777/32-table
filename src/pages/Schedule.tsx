@@ -849,12 +849,17 @@ export default function SchedulePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {schedules.map(s => (
               <div key={s.id} className="card hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setSelectedId(s.id); setView('detail') }}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold">{s.name}</h3>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold truncate">{s.name}</h3>
                     <p className="text-xs text-gray-400 mt-1">{s.date} · {formatTime12h(s.startTime)} 시작</p>
                   </div>
-                  <span className="badge bg-purple-100 text-purple-700">{s.slots.length}경기</span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {s.days && s.days.length > 1 && (
+                      <span className="badge bg-indigo-100 text-indigo-700">{s.days.length}일</span>
+                    )}
+                    <span className="badge bg-purple-100 text-purple-700">{s.slots.length}경기</span>
+                  </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1">
                   {s.events.map(e => (
