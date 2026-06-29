@@ -848,7 +848,7 @@ export default function DashboardPage() {
                 )
                 return (
                   <div key={mKey}
-                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${hasConflict ? 'bg-red-50 border border-red-100' : 'bg-gray-50'}`}>
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${hasConflict ? 'bg-red-100 border border-red-300 ring-1 ring-red-200 ring-inset' : 'bg-gray-50'}`}>
                     {!alreadyCalled && m.participant1Id && m.participant2Id && (
                       <input
                         type="checkbox"
