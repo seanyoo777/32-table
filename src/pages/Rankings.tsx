@@ -400,6 +400,22 @@ export default function Rankings() {
     return m
   }, [players, scoreRecords])
 
+  const todayFirstWinPlayers = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+    if (todayRecs.length < 3) return []
+    return players.filter(p => {
+      if (p.wins > 0) return false
+      const todayWin = todayRecs.some(r => {
+        const isP1 = r.participant1Id === p.id
+        const isP2 = r.participant2Id === p.id
+        if (!isP1 && !isP2) return false
+        return isP1 ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+      })
+      return todayWin
+    })
+  }, [players, scoreRecords])
+
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
     .filter(p => !search || p.name.includes(search) || p.school.includes(search))
@@ -698,6 +714,18 @@ export default function Rankings() {
           </div>
         )
       })()}
+
+      {/* 오늘 첫 승리 환영 칩 */}
+      {tab === 'singles' && todayFirstWinPlayers.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] text-rose-500 font-semibold flex-shrink-0">첫 승!</span>
+          {todayFirstWinPlayers.slice(0, 5).map(p => (
+            <span key={p.id} className="text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full font-medium">
+              🎉 {p.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* 부문 퀵 필터 — singles only */}
       {tab === 'singles' && (() => {
