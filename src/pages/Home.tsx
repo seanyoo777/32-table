@@ -282,6 +282,19 @@ export default function Home() {
             <div className="h-1.5 bg-purple-200 rounded-full overflow-hidden">
               <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
+            {(() => {
+              const courtMap = new Map<number, number>()
+              todayAllSlots.filter(sl => sl.participant1 && sl.participant2).forEach(sl => courtMap.set(sl.courtNo, (courtMap.get(sl.courtNo) ?? 0) + 1))
+              if (courtMap.size < 2) return null
+              const courts = [...courtMap.entries()].sort((a, b) => a[0] - b[0])
+              return (
+                <div className="flex gap-1.5 flex-wrap">
+                  {courts.map(([c, n]) => (
+                    <span key={c} className="text-[10px] bg-white text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded-full">{c}번 {n}경기</span>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
