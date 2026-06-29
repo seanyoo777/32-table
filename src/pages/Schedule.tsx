@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches, shiftSlotsAfterDelay, moveScheduleSlot } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
-import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown, Pencil, Bookmark, Trash2 } from 'lucide-react'
+import { Plus, Calendar, Printer, Clock, Building2, Link, Sun, Users, Download, ChevronLeft, AlertTriangle, Coffee, ChevronDown, Pencil, Bookmark, Trash2, X } from 'lucide-react'
 import type { Division, EventType, Gender, ScheduleEvent, SchedulePlan, ScheduleSlot, SmartEventInput, SmartBracketFormat, SchedulePreset } from '../types'
 
 const DIVISIONS: Division[] = ['초등', '중등', '고등', '대학', '일반', '생활체육']
@@ -898,6 +898,17 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [undoSlots, setUndoSlots] = useState<typeof plan.slots | null>(null)
   const [undoTimer, setUndoTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [courtFilter, setCourtFilter] = useState<number | null>(null)       // 코트 필터
+  const [popoverSlot, setPopoverSlot] = useState<typeof plan.slots[0] | null>(null)
+  const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    if (!popoverSlot) return
+    const close = () => setPopoverSlot(null)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPopoverSlot(null) }
+    document.addEventListener('click', close)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('click', close); document.removeEventListener('keydown', onKey) }
+  }, [popoverSlot])
 
   // 이 일정의 최대 코트 수(인라인 코트 이동 select 범위)
   const planMaxCourts = Math.max(1,
@@ -1300,7 +1311,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                               return (
                                 <td key={c} className="py-1.5 px-2 border border-gray-100">
                                   {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                                  <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''}`}>
+                                  <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''}`}
+                                    onClick={e => { e.stopPropagation(); const px = Math.min(e.clientX + 8, window.innerWidth - 210); const py = Math.min(e.clientY + 8, window.innerHeight - 160); setPopoverPos({ x: px, y: py }); setPopoverSlot(slot) }}>
                                     <div className="flex items-center gap-1 mb-0.5">
                                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                                       <span className={`font-semibold text-[11px] ${isDone ? 'line-through text-gray-400' : ''}`}>{slot.division} {slot.eventType}</span>
@@ -1348,7 +1360,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       return (
                         <td key={c} className="py-1.5 px-2 border border-gray-100">
                           {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                          <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''}`}>
+                          <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''}`}
+                            onClick={e => { e.stopPropagation(); const px = Math.min(e.clientX + 8, window.innerWidth - 210); const py = Math.min(e.clientY + 8, window.innerHeight - 160); setPopoverPos({ x: px, y: py }); setPopoverSlot(slot) }}>
                             <div className="flex items-center gap-1 mb-0.5">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                               <span className={`font-semibold text-[11px] ${isDone ? 'line-through text-gray-400' : ''}`}>{slot.division} {slot.eventType}</span>
@@ -1464,6 +1477,35 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           )}
         </div>
       </div>
+
+      {/* 슬롯 상세 팝오버 */}
+      {popoverSlot && (
+        <div className="fixed z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-sm min-w-[190px] max-w-[240px] no-print"
+          style={{ left: popoverPos.x, top: popoverPos.y }}
+          onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${divColors[popoverSlot.division]}`}>{popoverSlot.division} {popoverSlot.eventType}</span>
+            <button onClick={() => setPopoverSlot(null)} className="text-gray-400 hover:text-gray-600 ml-1"><X size={13} /></button>
+          </div>
+          {popoverSlot.participant1 && popoverSlot.participant2 ? (
+            <div className="space-y-0.5 mb-2">
+              <div className="font-bold text-gray-800 text-sm">{popoverSlot.participant1}</div>
+              <div className="text-[10px] text-gray-400 text-center">vs</div>
+              <div className="font-bold text-gray-800 text-sm">{popoverSlot.participant2}</div>
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400 mb-2">{popoverSlot.gender} · 미배정</div>
+          )}
+          <div className="space-y-0.5 text-xs text-gray-500">
+            <div className="flex justify-between"><span>코트</span><span className="font-medium text-gray-700">{popoverSlot.courtNo}번</span></div>
+            <div className="flex justify-between"><span>시간</span><span className="font-medium text-gray-700">{formatTime12h(popoverSlot.startTime)}~{formatTime12h(popoverSlot.endTime)}</span></div>
+            <div className="flex justify-between"><span>경기</span><span className="font-medium text-gray-700">#{popoverSlot.matchNo} {popoverSlot.round ?? ''}</span></div>
+            {completedMatchSet.has(`${popoverSlot.eventId}-${popoverSlot.matchNo}`) && (
+              <div className="text-center text-green-600 font-bold text-[10px] pt-1">✓ 완료된 경기</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
