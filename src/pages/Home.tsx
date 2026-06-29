@@ -177,6 +177,23 @@ export default function Home() {
             )
           })()}
 
+          {/* 미체크인 선수 빠른 접근 */}
+          {activeTournaments.length > 0 && players.length > 0 && players.some(p => !p.checkedIn) && (
+            <button
+              onClick={() => navigate('/checkin')}
+              className="flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-colors text-left w-full"
+            >
+              <Users size={14} className="text-orange-500 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-orange-700">미체크인 {players.filter(p => !p.checkedIn).length}명</div>
+                <div className="text-[10px] text-orange-500">체크인 관리 →</div>
+              </div>
+              <span className="flex-shrink-0 text-xs font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
+                {Math.round(players.filter(p => p.checkedIn).length / players.length * 100)}%
+              </span>
+            </button>
+          )}
+
           {/* Active tournaments (scrollable) */}
           <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
             {activeTournaments.length > 0 ? (
