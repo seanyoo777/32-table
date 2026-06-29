@@ -1680,10 +1680,19 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             {slot.note && <span className="text-[9px] text-amber-600 ml-0.5 flex-shrink-0" title={slot.note}>✎</span>}
                           </div>
                           {slot.participant1 && slot.participant2 ? (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[12px] font-bold text-gray-800 truncate flex-1">{slot.participant1}</span>
-                              <span className="text-[10px] text-gray-400 flex-shrink-0">vs</span>
-                              <span className="text-[12px] font-bold text-gray-800 truncate flex-1 text-right">{slot.participant2}</span>
+                            <div>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-[12px] font-bold text-gray-800 truncate flex-1">{slot.participant1}</span>
+                                <span className="text-[10px] text-gray-400 flex-shrink-0">vs</span>
+                                <span className="text-[12px] font-bold text-gray-800 truncate flex-1 text-right">{slot.participant2}</span>
+                              </div>
+                              {slot.eventType && (
+                                <div className="mt-0.5">
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${slot.eventType === '복식' ? 'bg-indigo-50 text-indigo-600' : slot.eventType === '혼합복식' ? 'bg-pink-50 text-pink-600' : 'bg-blue-50 text-blue-600'}`}>
+                                    {slot.eventType}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="text-[10px] text-gray-400">{slot.gender} · 미배정</div>
