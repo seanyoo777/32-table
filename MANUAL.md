@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.38 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.41 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,35 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-147. v5.41 — 경기일정 미배정 슬롯 시각 구분
+
+자동 루프. Schedule.tsx 미배정 슬롯 border-dashed opacity-70.
+
+### 변경 (Schedule.tsx)
+- byTime/byDayTime 슬롯 카드: `(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''` 추가.
+- 코트카드 뷰 동일 조건 추가.
+
+---
+
+## 12-146. v5.40 — 대시보드 대기경기 포인트 합산 통계
+
+자동 루프. Dashboard.tsx 대기경기 목록 하단 인디고 배지.
+
+### 변경 (Dashboard.tsx)
+- filteredPendingMatches >= 2 && 포인트 데이터 있을 때 평균/최고 포인트 배지 표시.
+- IIFE 패턴으로 avg/top 계산 + topP1/topP2 이름 표시.
+
+---
+
+## 12-145. v5.39 — 랭킹 선수 모달 체크인 상태 뱃지
+
+자동 루프. Rankings.tsx PlayerStatsModal 선수명 옆 뱃지.
+
+### 변경 (Rankings.tsx)
+- checkedInIds Set 기반 체크인=초록 `체크인`, 미체크인=주황 `미체크인` 뱃지.
 
 ---
 
