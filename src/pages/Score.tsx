@@ -860,6 +860,11 @@ function ManualEntry() {
 // ── Page ────────────────────────────────────────────────
 export default function ScorePage() {
   const [mode, setMode] = useState<'live' | 'manual'>('live')
+  const { scoreRecords } = useStore()
+  const todayISO = new Date().toISOString().slice(0, 10)
+  const todayAll = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO)
+  const todayVerified = todayAll.filter(r => r.verified).length
+  const todayUnver = todayAll.length - todayVerified
 
   return (
     <div className="h-full overflow-y-auto px-5 py-4 space-y-4 bg-gray-50">
@@ -876,6 +881,13 @@ export default function ScorePage() {
           </button>
         </div>
       </div>
+      {todayAll.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap text-[11px]">
+          <span className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full font-semibold">오늘 {todayAll.length}건</span>
+          <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full">검증 {todayVerified}건</span>
+          {todayUnver > 0 && <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium">미검증 {todayUnver}건</span>}
+        </div>
+      )}
 
       {mode === 'live' ? <LiveScoreboard onClose={() => setMode('manual')} /> : <ManualEntry />}
     </div>
