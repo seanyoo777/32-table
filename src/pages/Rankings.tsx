@@ -1551,6 +1551,15 @@ function PairStatsModal({ pair, tournaments, scoreRecords, pMap, onClose }: {
     )
   ).reverse().slice(0, 20)
 
+  function handlePrint() {
+    const style = document.createElement('style')
+    style.id = '__pair-print-style'
+    style.textContent = '@media print { body * { visibility: hidden !important; } #pair-stats-modal-inner, #pair-stats-modal-inner * { visibility: visible !important; } #pair-stats-modal-inner { position: fixed !important; inset: 0 !important; max-height: none !important; overflow: visible !important; box-shadow: none !important; border-radius: 0 !important; } }'
+    document.head.appendChild(style)
+    window.print()
+    setTimeout(() => document.getElementById('__pair-print-style')?.remove(), 1000)
+  }
+
   function handleExportCSV() {
     const rows: string[] = ['﻿유형,상대,결과,점수,대회/종목,날짜']
     tourMatches.forEach(({ match, tournamentName, eventLabel }) => {
@@ -1578,16 +1587,21 @@ function PairStatsModal({ pair, tournaments, scoreRecords, pMap, onClose }: {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div id="pair-stats-modal-inner" className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800 flex items-center gap-2"><BarChart2 size={16} /> {pair.name} 전적</h3>
           <div className="flex items-center gap-2">
             {(tourMatches.length > 0 || recentRecords.length > 0) && (
-              <button onClick={handleExportCSV} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                <Download size={12} /> CSV
-              </button>
+              <>
+                <button onClick={handlePrint} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2 no-print">
+                  <Download size={12} /> PDF
+                </button>
+                <button onClick={handleExportCSV} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2 no-print">
+                  <Download size={12} /> CSV
+                </button>
+              </>
             )}
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 no-print"><X size={18} /></button>
           </div>
         </div>
 
