@@ -180,4 +180,7 @@ html, body, #root {
   .schedule-day-section { break-before: page; break-inside: avoid-page; }
   .schedule-day-section:first-child { break-before: auto; }
   .schedule-day-header { background: #4f46e5 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-radius: 0 !important; padding: 6px 12px !important; font-size: 13px !important; }
+  /* 코트별 보기: 코트 헤더를 인쇄 시 크게 */
+  .court-print > div > h3 { font-size: 18px !important; font-weight: 900 !important; padding-bottom: 6px !important; border-bottom: 2px solid #e5e7eb !important; margin-bottom: 8px !important; }
+  .court-print > div > h3 span.rounded-full { width: 28px !important; height: 28px !important; font-size: 14px !important; }
 }
