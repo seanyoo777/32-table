@@ -379,7 +379,7 @@ export default function DashboardPage() {
               </div>
               <span className="text-[11px] font-bold text-teal-700">{checkedIn}/{players.length}</span>
               <span className="text-[10px] text-teal-500">{pct}%</span>
-              {players.length - checkedIn > 0 && <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium ml-auto">미체크인 {players.length - checkedIn}명</span>}
+              {players.length - checkedIn > 0 && <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium ml-auto cursor-pointer hover:bg-orange-200" onClick={() => navigate('/checkin')}>미체크인 {players.length - checkedIn}명</span>}
             </div>
             <div className="flex gap-1 mt-1 overflow-x-auto hide-scrollbar">
               {players.filter(p => p.checkedIn).slice(0, 5).map(p => (
@@ -390,7 +390,8 @@ export default function DashboardPage() {
             {players.length - checkedIn > 0 && (
               <div className="flex gap-1 mt-0.5 overflow-x-auto hide-scrollbar">
                 {players.filter(p => !p.checkedIn).slice(0, 5).map(p => (
-                  <span key={p.id} className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.name}</span>
+                  <span key={p.id} className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 cursor-pointer hover:bg-orange-200"
+                    onClick={() => navigate('/checkin')}>{p.name}</span>
                 ))}
                 {players.length - checkedIn > 5 && <span className="text-[10px] text-orange-400 px-1 flex-shrink-0 self-center">+{players.length - checkedIn - 5}명</span>}
               </div>
