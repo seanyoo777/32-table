@@ -406,6 +406,24 @@ export default function Home() {
           </div>
         )
       })()}
+      {activeTournaments.length === 0 && tournaments.length > 0 && (
+        <div className="flex-shrink-0 flex gap-2 flex-wrap">
+          <button onClick={() => navigate('/tournament')}
+            className="text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-medium hover:bg-indigo-100">
+            대회 {tournaments.length}개
+          </button>
+          <button onClick={() => navigate('/rankings')}
+            className="text-[11px] bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-1 rounded-full font-medium hover:bg-blue-100">
+            선수 {players.length}명
+          </button>
+          {scoreRecords.length > 0 && (
+            <button onClick={() => navigate('/score')}
+              className="text-[11px] bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium hover:bg-green-100">
+              기록 {scoreRecords.length}건
+            </button>
+          )}
+        </div>
+      )}
       {todaySlotCount > 0 && (() => {
         const doneMatchSet = new Set(
           activeTournaments.flatMap(t => t.events.flatMap(ev =>
