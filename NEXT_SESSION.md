@@ -1310,7 +1310,7 @@ Dashboard.tsx 오늘 matchCalls 건수와 어제 건수를 비교해
 Stats.tsx scoreRecords 전체에서 가장 큰 |p1Score - p2Score|를
 보라 chip으로 표시. 기록 10건+ 조건.
 
-### 2-414. 홈 다음 일정 카운트다운 칩 (v5.298)
+### 2-414. ✅ 홈 다음 일정 카운트다운 칩 (완료 v5.298)
 Home.tsx 활성 대회 카드에 schedules에서 오늘 가장 빠른 미완료
 슬롯까지 남은 분을 파란 chip으로 표시. 0~60분 이내 조건.
 

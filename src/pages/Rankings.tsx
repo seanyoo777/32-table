@@ -715,6 +715,31 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 오늘 최다 점수차 승리 칩 */}
+      {tab === 'singles' && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+        if (todayRecs.length < 3) return null
+        const best = todayRecs
+          .map(r => {
+            const diff = Math.abs(r.p1Score - r.p2Score)
+            const winnerId = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+            return { diff, winnerId, s1: Math.max(r.p1Score, r.p2Score), s2: Math.min(r.p1Score, r.p2Score) }
+          })
+          .sort((a, b) => b.diff - a.diff)[0]
+        if (!best || best.diff < 2) return null
+        const name = players.find(p => p.id === best.winnerId)?.name
+        if (!name) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-amber-600 font-semibold flex-shrink-0">압승</span>
+            <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+              {name} {best.s1}:{best.s2}
+            </span>
+          </div>
+        )
+      })()}
+
       {/* 오늘 첫 승리 환영 칩 */}
       {tab === 'singles' && todayFirstWinPlayers.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
