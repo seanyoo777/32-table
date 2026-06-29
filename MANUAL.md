@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.20 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.23 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,30 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-129. v5.23 — 경기일정 코트 번호 색상 배지
+
+자동 루프 세션. Schedule.tsx 코트 번호 시각화 개선.
+
+### 변경 (Schedule.tsx)
+- `courtBadgeColor(c)` 함수: 1=blue-500, 2=green-500, 3=orange-500, 4=purple-500, 5+=gray-500.
+- 단일/멀티데이 테이블 컬럼 헤더와 코트 카드 섹션 헤더에 원형 배지 적용.
+
+## 12-128. v5.22 — 홈 미체크인 목록 전체 스크롤 패널
+
+자동 루프 세션. Home.tsx 미체크인 팝업 전체 목록 표시.
+
+### 변경 (Home.tsx)
+- 5명 한정 + "+N명 더" 제거, max-h-[180px] overflow-y-auto 스크롤 패널로 전체 표시.
+- 상단에 "미체크인 전체 N명" 소제목 추가.
+
+## 12-127. v5.21 — 랭킹 선수 목록 오늘 경기 수 뱃지
+
+자동 루프 세션. Rankings.tsx 선수 행에 오늘 날짜 경기 수 칩 추가.
+
+### 변경 (Rankings.tsx)
+- `todayPlayerMatchCount` useMemo: scoreRecords 기반 오늘(ISO date) 경기 수 집계.
+- 선수 이름 옆에 파란 "오늘 N경기" 칩 (1경기 이상 시).
 
 ## 12-126. v5.20 — 대시보드 대기경기 선수명 검색 필터
 
