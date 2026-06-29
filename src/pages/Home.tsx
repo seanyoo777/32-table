@@ -449,7 +449,14 @@ export default function Home() {
                     onClick={() => navigate(`/tournament?open=${t.id}`)}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-                      <div className="font-semibold text-green-800 text-sm truncate flex-1">{t.name}</div>
+                      <div className="font-semibold text-green-800 text-sm truncate flex-1">
+                        {t.name}
+                        {(t.date || t.venue) && (
+                          <div className="text-[10px] text-green-600 font-normal mt-0.5 truncate">
+                            {t.date && <span>{t.date}</span>}{t.date && t.venue && <span className="mx-1">·</span>}{t.venue && <span>{t.venue}</span>}
+                          </div>
+                        )}
+                      </div>
                       {ddayChip}
                       {tourCalls > 0 && (
                         <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold animate-pulse flex-shrink-0">
