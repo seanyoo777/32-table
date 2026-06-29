@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.47 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.50 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,36 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-157. v5.50 — 경기일정 전체 슬롯 일괄 시간 이동
+
+자동 루프. Schedule.tsx 헤더 ±N분 일괄 시프트.
+
+### 변경 (Schedule.tsx)
+- `bulkShiftMin` state 추가.
+- `handleBulkShift(deltaMin)`: t2m/m2t 인라인 변환, 모든 슬롯 startTime/endTime shift.
+- undo 8초 타이머 공유. 헤더에 input + -/+ 버튼 UI 추가.
+
+---
+
+## 12-156. v5.49 — Dashboard 미확인 기록 선수명 랭킹 이동
+
+자동 루프. Dashboard.tsx unverified 기록 선수명 클릭.
+
+### 변경 (Dashboard.tsx)
+- p1/p2 이름 `<button>` 변환. `/rankings?search=NAME` navigate.
+
+---
+
+## 12-155. v5.48 — 홈 체크인 바 도넛 차트
+
+자동 루프. Home.tsx 체크인 바 옆 28px SVG 도넛.
+
+### 변경 (Home.tsx)
+- IIFE: `checkedCount/players.length` R=11 도넛. 중앙 N / /M 2줄 text.
+- teal=진행중, green=전원완료.
 
 ---
 

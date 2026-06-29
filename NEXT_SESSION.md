@@ -414,17 +414,26 @@ filteredPendingMatches 종목별 건수 상위 4개 인라인 가로 바. 종목
 ### 2-157. ✅ 경기일정 팝오버 이전/다음 슬롯 이동 버튼 (완료 v5.47)
 같은 코트 시간순 기준 ← / → 네비게이션. 처음/마지막 비활성화.
 
-### 2-158. 홈 체크인 도넛 차트 실시간 갱신 (v5.48)
-Home.tsx 전체 완료율 도넛 차트에 체크인 완료 선수 수 / 전체 선수 수 텍스트 추가.
-현재 도넛 중앙에 % 만 있으므로 "N/M" 형태 추가.
+### 2-158. ✅ 홈 체크인 바 SVG 도넛 차트 추가 (완료 v5.48)
+Home.tsx 체크인 바 옆에 28px SVG 도넛 + N/M 중앙 표시. teal=진행중, green=전원완료.
 
-### 2-159. 대시보드 미확인 기록 목록 선수명 클릭 랭킹 이동 (v5.49)
-Dashboard.tsx 미확인 scoreRecords 목록에서 선수명 클릭 → /rankings?search=NAME.
-pMap으로 participant1Id/2Id → 이름 변환 후 navigate.
+### 2-159. ✅ 대시보드 미확인 기록 선수명 클릭 → 랭킹 이동 (완료 v5.49)
+unverifiedRecords p1/p2 이름 버튼화. /rankings?search=NAME navigate.
 
-### 2-160. 경기일정 슬롯 일괄 시간 이동 (v5.50)
-Schedule.tsx 헤더에 "전체 N분 이동" 입력 + 버튼 추가.
-모든 슬롯의 startTime/endTime을 분 단위로 일괄 앞당기거나 미루기.
+### 2-160. ✅ 경기일정 전체 슬롯 일괄 시간 이동 (완료 v5.50)
+Schedule.tsx 헤더 ±N분 일괄 시프트. input + -/+ 버튼. undo 8초 공유.
+
+### 2-161. 랭킹 선수 모달 대회별 순위 표시 (v5.51)
+Rankings.tsx PlayerStatsModal에 참가 대회별 최종 순위(종목 내 등수) 표시.
+scoreRecords 기반 해당 대회+종목 내 승수 계산, "N위" 배지.
+
+### 2-162. 홈 오늘 코트 가동률 칩 (v5.52)
+Home.tsx 경기 현황 바에 오늘 사용 중 코트 수 / 전체 코트 수 "코트 N/M" 칩 추가.
+schedulePlans의 오늘 슬롯 courtNo Set 기준.
+
+### 2-163. 대시보드 LIVE 경기 종목 필터 칩 (v5.53)
+Dashboard.tsx 실시간 진행중 목록에 종목 필터 칩 추가.
+활성 종목 수 2개 이상 시 표시. 선택 시 해당 종목 LIVE만 필터링.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
