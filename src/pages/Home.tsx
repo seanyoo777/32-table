@@ -739,6 +739,20 @@ export default function Home() {
                         </div>
                       )
                     })()}
+                    {(() => {
+                      const tourCalls = matchCalls.filter(c => c.tournamentId === t.id).sort((a, b) => (b.calledAt ?? '').localeCompare(a.calledAt ?? ''))
+                      if (tourCalls.length === 0) return null
+                      const last = tourCalls[0]
+                      const minAgo = Math.round((Date.now() - new Date(last.calledAt).getTime()) / 60000)
+                      const label = minAgo < 1 ? '방금' : `${minAgo}분 전`
+                      const isOld = minAgo >= 30
+                      return (
+                        <div className="mt-1.5 flex items-center gap-1">
+                          <span className="text-[10px] text-gray-400">마지막 호출</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isOld ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-sky-50 text-sky-600 border border-sky-200'}`}>{label}</span>
+                        </div>
+                      )
+                    })()}
                     <div className="flex gap-1.5 mt-2">
                       <button onClick={e => { e.stopPropagation(); navigate('/score') }}
                         className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-green-700">
