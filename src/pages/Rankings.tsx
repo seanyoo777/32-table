@@ -239,6 +239,23 @@ export default function Rankings() {
     return m
   }, [pairs, scoreRecords])
 
+  const playerWinStreak = useMemo(() => {
+    const m = new Map<string, number>()
+    players.forEach(p => {
+      const recs = scoreRecords
+        .filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+        .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))
+      let streak = 0
+      for (let i = recs.length - 1; i >= 0; i--) {
+        const r = recs[i]
+        const won = r.participant1Id === p.id ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+        if (won) streak++; else break
+      }
+      if (streak >= 3) m.set(p.id, streak)
+    })
+    return m
+  }, [players, scoreRecords])
+
   const lastMatchDaysAgo = useMemo(() => {
     const todayMs = new Date().setHours(0, 0, 0, 0)
     const m = new Map<string, number>()
@@ -762,6 +779,15 @@ export default function Rankings() {
                               오늘
                               {wl.wins > 0 && <span className="text-green-600 font-bold">{wl.wins}승</span>}
                               {wl.losses > 0 && <span className="text-red-500 font-bold">{wl.losses}패</span>}
+                            </span>
+                          )
+                        })()}
+                        {(() => {
+                          const streak = playerWinStreak.get(p.id)
+                          if (!streak) return null
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold flex-shrink-0">
+                              🔥{streak}연승
                             </span>
                           )
                         })()}
