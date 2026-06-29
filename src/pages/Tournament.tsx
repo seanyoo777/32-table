@@ -1187,8 +1187,13 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
                           setSelectedRound(r)
                           if (selectedRound === r) setExpandedRounds(prev => { const s = new Set(prev); isCollapsed ? s.delete(r) : s.add(r); return s })
                         }}
-                        className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1 ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : d === rm.length && rm.length > 0 ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>
-                        {lbl} {d}/{rm.length}{selectedRound === r ? <span className="opacity-70">{isCollapsed ? '▶' : '▼'}</span> : null}
+                        className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex flex-col items-stretch min-w-[52px] ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : d === rm.length && rm.length > 0 ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>
+                        <span className="flex items-center gap-1">{lbl} {d}/{rm.length}{selectedRound === r ? <span className="opacity-70">{isCollapsed ? '▶' : '▼'}</span> : null}</span>
+                        {rm.length > 0 && (
+                          <div className={`w-full h-0.5 rounded-full mt-0.5 ${selectedRound === r ? 'bg-blue-400' : 'bg-gray-200'}`}>
+                            <div className={`h-full rounded-full transition-all ${d === rm.length ? 'bg-green-400' : selectedRound === r ? 'bg-white' : 'bg-blue-400'}`} style={{ width: `${rm.length > 0 ? Math.round(d / rm.length * 100) : 0}%` }} />
+                          </div>
+                        )}
                       </button>
                     )
                   })}
