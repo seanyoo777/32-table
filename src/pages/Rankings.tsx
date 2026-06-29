@@ -89,6 +89,7 @@ export default function Rankings() {
   const [filterPairDiv, setFilterPairDiv] = useState<Division | 'all'>('all')
   const [filterTournamentId, setFilterTournamentId] = useState<string>('')
   const [filterCheckIn, setFilterCheckIn] = useState<'all' | 'checked' | 'unchecked'>('all')
+  const [hideZeroPoints, setHideZeroPoints] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const search = searchParams.get('search') ?? ''
   function setSearch(val: string) {
@@ -159,12 +160,13 @@ export default function Rankings() {
     if (search) list = list.filter(p => p.name.includes(search) || p.school.includes(search))
     if (filterCheckIn === 'checked') list = list.filter(p => p.checkedIn)
     else if (filterCheckIn === 'unchecked') list = list.filter(p => !p.checkedIn)
+    if (hideZeroPoints) list = list.filter(p => p.points > 0)
     return list.sort((a, b) =>
       sortBy === 'elo' ? (b.rating ?? 1000) - (a.rating ?? 1000)
       : sortBy === 'wins' ? b.wins - a.wins
       : b.points - a.points
     )
-  }, [players, rankView, subGender, sortBy, search, filterCheckIn, isDivView, tournamentParticipantIds])
+  }, [players, rankView, subGender, sortBy, search, filterCheckIn, hideZeroPoints, isDivView, tournamentParticipantIds])
 
   const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
   const pagedPlayers = filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -582,9 +584,15 @@ export default function Rankings() {
       {/* Singles Table */}
       {tab === 'singles' && (
         <div className="card p-0 overflow-hidden">
-          <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between">
+          <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between gap-2 flex-wrap">
             <span className="font-semibold text-gray-700 text-sm">{rankTitle}</span>
-            <span className="text-xs text-gray-400">{filteredPlayers.length}명 · {sortBy === 'elo' ? 'Elo 순' : '포인트 순'}</span>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+                <input type="checkbox" checked={hideZeroPoints} onChange={e => { setHideZeroPoints(e.target.checked); setPage(1) }} className="rounded" />
+                포인트 없는 선수 숨기기
+              </label>
+              <span className="text-xs text-gray-400">{filteredPlayers.length}명 · {sortBy === 'elo' ? 'Elo 순' : '포인트 순'}</span>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

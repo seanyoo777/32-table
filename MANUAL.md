@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.65 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.68 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,37 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-175. v5.68 — 점수입력 오늘 기록 요약 칩
+
+자동 루프. Score.tsx ScorePage.
+
+### 변경 (Score.tsx)
+- `useStore().scoreRecords` 접근, `todayISO` 기준 집계.
+- 오늘 기록 / 검증 / 미검증 3개 칩. 기록 0건 시 미표시.
+
+---
+
+## 12-174. v5.67 — 대회 라운드 접기/펼치기
+
+자동 루프. Tournament.tsx EventBracket.
+
+### 변경 (Tournament.tsx)
+- `expandedRounds` Set 상태 추가.
+- 라운드 버튼 재클릭 시 Set 토글. ▼/▶ 아이콘.
+- `!expandedRounds.has(selectedRound)` 조건으로 MatchList 표시 제어.
+
+---
+
+## 12-173. v5.66 — 통계 시간대×요일 히트맵
+
+자동 루프. Stats.tsx.
+
+### 변경 (Stats.tsx)
+- 7×24 grid 계산. activeHours 범위만 표시.
+- indigo rgba 색농도, 0=bg-gray-100. 5건+ 조건.
 
 ---
 
