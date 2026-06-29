@@ -1492,7 +1492,11 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
               const w = m.result?.winnerId
               return (
                 <div key={m.id}
-                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${isPlayable ? 'hover:bg-blue-50 cursor-pointer' : ''}`}
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                    m.result ? 'bg-green-50' :
+                    isPlayable ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer' :
+                    'bg-gray-50'
+                  }`}
                   onClick={() => isPlayable && onClickMatch(m)}>
                   <div className="flex flex-col items-center w-10 flex-shrink-0">
                     <span className="text-xs text-gray-400">{i + 1}</span>
