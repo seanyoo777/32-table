@@ -1331,6 +1331,25 @@ export default function Rankings() {
                 </>
               )}
               <span className="text-xs text-gray-400 ml-auto">{filteredPairs.length}페어 · 포인트 순</span>
+              {(() => {
+                const todayISO = new Date().toISOString().split('T')[0]
+                const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+                if (todayRecs.length < 3) return null
+                const pairCounts = new Map<string, number>()
+                pairs.forEach(p => {
+                  const n = todayRecs.filter(r => r.participant1Id === p.id || r.participant2Id === p.id || r.participant1Id === p.player1Id || r.participant2Id === p.player2Id).length
+                  if (n > 0) pairCounts.set(p.id, n)
+                })
+                if (pairCounts.size === 0) return null
+                const top = [...pairCounts.entries()].sort((a, b) => b[1] - a[1])[0]
+                if (top[1] < 2) return null
+                const pairName = pairs.find(p => p.id === top[0])?.name ?? '?'
+                return (
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-medium">
+                    오늘 최다 {pairName} {top[1]}경기
+                  </span>
+                )
+              })()}
             </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
