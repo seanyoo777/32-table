@@ -353,14 +353,21 @@ export default function Home() {
           .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
           .slice(0, 3)
         if (recent3.length === 0) return null
+        const nowMs = Date.now()
         return (
           <div className="flex-shrink-0 flex items-center gap-2 flex-wrap px-1">
             <span className="text-[11px] text-gray-400 flex-shrink-0">최근 체크인</span>
-            {recent3.map(p => (
-              <span key={p.id} className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-medium">
-                {p.name}
-              </span>
-            ))}
+            {recent3.map((p, i) => {
+              const minAgo = p.createdAt ? Math.max(0, Math.floor((nowMs - new Date(p.createdAt).getTime()) / 60000)) : null
+              const timeStr = i === 0 && minAgo !== null ? (minAgo === 0 ? '방금' : `${minAgo}분 전`) : null
+              return (
+                <button key={p.id} onClick={() => navigate('/checkin')}
+                  className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-medium hover:bg-teal-100 transition-colors flex items-center gap-1">
+                  {p.name}
+                  {timeStr && <span className="text-[9px] text-teal-500 opacity-80">{timeStr}</span>}
+                </button>
+              )
+            })}
           </div>
         )
       })()}
