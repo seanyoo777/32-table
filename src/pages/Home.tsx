@@ -129,6 +129,12 @@ export default function Home() {
             {dLabel && <span className="text-[11px] bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full font-bold">{dLabel}</span>}
             {completedN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium hover:bg-gray-200 transition-colors">완료 {completedN}</button>}
             {(() => {
+              const todayMs = new Date().setHours(0,0,0,0)
+              const recent = tournaments.filter(t => t.status === 'completed' && t.date).map(t => ({ t, diff: Math.round((todayMs - new Date(t.date).setHours(0,0,0,0)) / 86400000) })).filter(x => x.diff >= 0 && x.diff <= 5).sort((a, b) => a.diff - b.diff)[0]
+              if (!recent) return null
+              return <span className="text-[10px] bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">{recent.t.name} {recent.diff === 0 ? '오늘 종료' : `${recent.diff}일 전 종료`}</span>
+            })()}
+            {(() => {
               const liveN = matchCalls.filter(c => !c.acknowledged).length
               if (liveN === 0) return null
               return (
