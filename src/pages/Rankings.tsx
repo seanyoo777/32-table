@@ -2094,9 +2094,11 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
                 {rows.map((row, i) => {
                   const total = row.wins + row.losses
                   const isTop = total === maxTotal && i === 0
+                  const isFrequent = total >= 3
                   return (
-                    <div key={row.name} className={`flex items-center gap-2 text-xs py-1 px-2 rounded-lg border ${isTop ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
+                    <div key={row.name} className={`flex items-center gap-2 text-xs py-1 px-2 rounded-lg border ${isFrequent ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
                       <span className="flex-1 truncate font-medium text-gray-700">{row.name}</span>
+                      {isTop && <span className="text-[9px] bg-amber-200 text-amber-800 px-1 py-0.5 rounded font-bold flex-shrink-0">최다 대결</span>}
                       <span className="text-green-600 font-bold">{row.wins}승</span>
                       <span className="text-gray-300">/</span>
                       <span className="text-red-500">{row.losses}패</span>
