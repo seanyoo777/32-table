@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.93 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.96 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,39 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-103. v4.96 — 대시보드 LIVE 타이머 3단계 색상
+
+자동 루프 세션. Dashboard.tsx LIVE 경기 경과 시간 배지 색상 3단계로 확장.
+
+### 변경 (Dashboard.tsx)
+- 0-29분: `bg-blue-100 text-blue-600`.
+- 30-59분: `bg-yellow-100 text-yellow-700`.
+- 60분+: `bg-red-200 text-red-700`.
+- 기존에는 15분 기준 1단계(회색→빨강).
+
+---
+
+## 12-102. v4.95 — 홈 경기일정 완료 슬롯 표시
+
+자동 루프 세션. Home.tsx 다가오는 경기 섹션에 최근 완료 슬롯 추가.
+
+### 변경 (Home.tsx)
+- 30분 이상 지난 슬롯(최대 2개) → 회색 배경 + "완료" 뱃지.
+- 기존 다가오는 경기 리스트 위에 표시.
+- 미래 슬롯 없고 완료 슬롯도 없으면 섹션 자체 숨김.
+
+---
+
+## 12-101. v4.94 — 랭킹 검색어 하이라이트
+
+자동 루프 세션. Rankings.tsx 검색어 일치 부분 노란 하이라이트.
+
+### 변경 (Rankings.tsx)
+- `highlight(text)` 함수: 검색어 위치를 `<mark className="bg-yellow-200 rounded-sm">` 으로 감쌈.
+- 이름·소속 컬럼 모두 적용. 대소문자 무시.
 
 ---
 
