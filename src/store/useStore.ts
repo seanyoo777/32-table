@@ -100,6 +100,10 @@ interface StoreState {
   toggleFeePaid: (id: string) => void
   resetFeePaid: () => void
 
+  // Announcement
+  announcement: string
+  setAnnouncement: (text: string) => void
+
   // App settings
   updateAppSettings: (s: Partial<AppSettings>) => void
 
@@ -124,6 +128,7 @@ export const useStore = create<StoreState>()(
       scoreRecords: [],
       liveMatches: [],
       matchCalls: [],
+      announcement: '',
       appSettings: DEFAULT_SETTINGS,
       syncStatus: 'idle' as const,
 
@@ -333,6 +338,7 @@ export const useStore = create<StoreState>()(
       })),
 
       // App settings
+      setAnnouncement: (text) => set({ announcement: text }),
       updateAppSettings: (s) => set((st) => ({ appSettings: { ...st.appSettings, ...s } })),
 
       // Sync
