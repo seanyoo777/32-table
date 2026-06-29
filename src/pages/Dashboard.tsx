@@ -72,6 +72,7 @@ export default function DashboardPage() {
   const [copiedCallId, setCopiedCallId] = useState<string | null>(null)
   const [flashAckCallId, setFlashAckCallId] = useState<string | null>(null)
   const [liveEventFilter, setLiveEventFilter] = useState<string | null>(null)
+  const [showCallHistory, setShowCallHistory] = useState(false)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
   useEffect(() => {
@@ -1119,6 +1120,42 @@ export default function DashboardPage() {
               })()}
             </div>
           </div>
+
+          {/* 오늘 호출 완료 히스토리 */}
+          {(() => {
+            const todayStr = now.toISOString().slice(0, 10)
+            const todayAcked = [...matchCalls]
+              .filter(c => c.acknowledged && c.calledAt.slice(0, 10) === todayStr)
+              .sort((a, b) => b.calledAt.localeCompare(a.calledAt))
+              .slice(0, 5)
+            if (todayAcked.length === 0) return null
+            return (
+              <div className="card flex-shrink-0">
+                <button
+                  onClick={() => setShowCallHistory(v => !v)}
+                  className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-700 transition-colors">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <CheckCircle size={12} className="text-green-500" />
+                    오늘 호출 완료 {todayAcked.length}건
+                  </span>
+                  <span>{showCallHistory ? '▲' : '▼'}</span>
+                </button>
+                {showCallHistory && (
+                  <div className="mt-2 space-y-1">
+                    {todayAcked.map(c => (
+                      <div key={c.id} className="flex items-center gap-2 text-xs text-gray-500 py-0.5">
+                        <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium flex-shrink-0">{c.tableNo}번</span>
+                        <span className="flex-1 truncate">{c.participant1Name} vs {c.participant2Name}</span>
+                        <span className="flex-shrink-0 text-[10px] text-gray-400">
+                          {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Event progress */}
           {activeTournaments.length > 0 && (() => {
