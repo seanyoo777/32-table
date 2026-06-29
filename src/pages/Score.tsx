@@ -722,6 +722,16 @@ function ManualEntry() {
                 미확인만 {recUnverifiedCount}
               </button>
             )}
+            {recUnverifiedCount >= 3 && (
+              <button
+                onClick={() => {
+                  filteredRecords.filter(r => !r.verified).forEach(r => verifyScoreRecord(r.id))
+                  setRecUnverifiedOnly(false)
+                }}
+                className="text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 bg-green-50 text-green-700 hover:bg-green-100 transition-colors">
+                일괄확인 {filteredRecords.filter(r => !r.verified).length}건
+              </button>
+            )}
           </div>
           {scoreRecords.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">입력된 기록이 없습니다</p>
