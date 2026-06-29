@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const [liveEventFilter, setLiveEventFilter] = useState<string | null>(null)
   const [showCallHistory, setShowCallHistory] = useState(false)
   const [dismissPendingBanner, setDismissPendingBanner] = useState(false)
+  const [dismissOverdueBanner, setDismissOverdueBanner] = useState(false)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
   useEffect(() => {
@@ -513,6 +514,19 @@ export default function DashboardPage() {
             className="ml-auto text-amber-400 hover:text-amber-600 flex-shrink-0">✕</button>
         </div>
       )}
+
+      {/* 미응답 경기 알림 배너 */}
+      {!dismissOverdueBanner && (() => {
+        const overdueN = matchCalls.filter(c => !c.acknowledged && (Date.now() - new Date(c.calledAt).getTime()) >= 15 * 60 * 1000).length
+        if (overdueN === 0) return null
+        return (
+          <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 flex items-center gap-2">
+            <span className="text-red-500 flex-shrink-0">🚨</span>
+            <span className="text-xs font-semibold text-red-700 flex-shrink-0">응답 없음 {overdueN}경기 — 확인 필요</span>
+            <button onClick={() => setDismissOverdueBanner(true)} className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0">✕</button>
+          </div>
+        )
+      })()}
 
       {/* 코트 현황판 */}
       <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-100">
