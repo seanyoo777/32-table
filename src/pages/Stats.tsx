@@ -714,6 +714,39 @@ export default function Stats() {
             )
           })()}
 
+          {/* 선수 포인트 분포 히스토그램 */}
+          {(() => {
+            const pts = players.filter(p => p.points > 0).map(p => p.points)
+            if (pts.length < 3) return null
+            const maxPt = Math.max(...pts)
+            const bucketSize = Math.ceil(maxPt / 5 / 100) * 100 || 100
+            const buckets: { label: string; count: number }[] = []
+            for (let i = 0; i < 5; i++) {
+              const lo = i * bucketSize, hi = (i + 1) * bucketSize
+              const count = pts.filter(p => p >= lo && p < hi).length
+              if (count > 0 || i === 0) buckets.push({ label: `${lo}-${hi - 1}`, count })
+            }
+            const maxCount = Math.max(...buckets.map(b => b.count), 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <BarChart3 size={14} className="text-blue-500" /> 선수 포인트 분포
+                </h2>
+                <div className="space-y-1.5">
+                  {buckets.map((b, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 w-20 flex-shrink-0 text-right">{b.label}P</span>
+                      <div className="flex-1 h-4 bg-gray-100 rounded overflow-hidden">
+                        <div className="h-full bg-blue-400 rounded transition-all" style={{ width: `${Math.round(b.count / maxCount * 100)}%` }} />
+                      </div>
+                      <span className="text-[10px] text-gray-600 font-medium w-8 flex-shrink-0">{b.count}명</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 종목별 완료율 도넛 그리드 */}
           {(() => {
             const activeTours = tournaments.filter(t => t.status === 'ongoing')
