@@ -1576,6 +1576,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
                   </div>
                   {/* Status */}
                   <div className="w-20 flex-shrink-0 text-right flex flex-col items-end gap-0.5">
+                    {p1 && p2 && (() => { const total = (p1.points ?? 0) + (p2.points ?? 0); return total >= 50 ? <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{total.toLocaleString()} pt</span> : null })()}
                     {m.result && !m.result.walkedOver && <span className="text-xs text-green-500">✓완료</span>}
                     {m.result?.walkedOver && <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-semibold not-italic">부전승</span>}
                     {isPlayable && <span className="text-xs text-blue-500">입력 →</span>}
