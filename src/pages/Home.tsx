@@ -206,6 +206,12 @@ export default function Home() {
       })()}
 
       {/* ── 오늘 일정 요약 ── */}
+      {activeTournaments.length > 0 && todaySlotCount === 0 && (
+        <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-400">
+          <span>📅</span>
+          <span className="text-xs">오늘 배정된 경기 일정이 없습니다</span>
+        </div>
+      )}
       {todaySlotCount > 0 && (
         <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-xl border border-purple-100 text-sm">
           <span className="text-purple-400 text-xs font-medium flex-shrink-0">📅 오늘 일정</span>
