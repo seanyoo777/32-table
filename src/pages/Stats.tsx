@@ -290,6 +290,24 @@ export default function Stats() {
               label="메달 확정 종목" value={totalMedalEvents} sub={`${matchStats.events}종목`} />
           </div>
 
+          {/* 최다 경기 대회 인디고 칩 */}
+          {tournaments.length >= 2 && (() => {
+            const items = tournaments.map(t => {
+              const total = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
+              return { name: t.name, total }
+            }).filter(x => x.total >= 10).sort((a, b) => b.total - a.total)
+            if (items.length === 0) return null
+            const top = items[0]
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-indigo-600 font-semibold flex-shrink-0">최다 경기 대회</span>
+                <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">
+                  {top.name.length > 14 ? top.name.slice(0, 12) + '…' : top.name} {top.total}경기
+                </span>
+              </div>
+            )
+          })()}
+
           {/* 오늘/어제/그제 경기 수 비교 */}
           {(() => {
             const dates = [0, 1, 2].map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0] })
