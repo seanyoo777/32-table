@@ -1871,6 +1871,38 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 종목별 기록 수 TOP3 바 */}
+          {(() => {
+            const todayISO = new Date().toISOString().split('T')[0]
+            const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.eventId)
+            if (todayRecs.length < 5) return null
+            const counts = new Map<string, number>()
+            todayRecs.forEach(r => { if (r.eventId) counts.set(r.eventId, (counts.get(r.eventId) ?? 0) + 1) })
+            if (counts.size < 2) return null
+            const evLabelMap = new Map<string, string>()
+            tournaments.forEach(t => t.events.forEach(ev => evLabelMap.set(ev.id, ev.label)))
+            const top3 = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+            const maxN = top3[0][1]
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-2">
+                  <BarChart3 size={14} className="text-violet-500" /> 오늘 종목별 기록 수
+                </h2>
+                <div className="space-y-1.5">
+                  {top3.map(([evId, n]) => (
+                    <div key={evId} className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 w-20 flex-shrink-0 truncate">{evLabelMap.get(evId) ?? evId}</span>
+                      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-violet-400 rounded-full transition-all" style={{ width: `${Math.round(n / maxN * 100)}%` }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-violet-700 w-6 text-right flex-shrink-0">{n}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
