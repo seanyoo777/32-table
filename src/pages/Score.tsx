@@ -877,6 +877,19 @@ function ManualEntry() {
               )
             })()}
             {(() => {
+              const todayISO3 = new Date().toISOString().split('T')[0]
+              const todayRecs3 = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO3) && r.p1Score != null && r.p2Score != null)
+              if (todayRecs3.length < 5) return null
+              const closeGames = todayRecs3.filter(r => Math.abs((r.p1Score ?? 0) - (r.p2Score ?? 0)) === 1)
+              const pct = Math.round(closeGames.length / todayRecs3.length * 100)
+              if (closeGames.length === 0) return null
+              return (
+                <span className="text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  박빙 {pct}% ({closeGames.length}건)
+                </span>
+              )
+            })()}
+            {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
               if (todayRecs.length < 5) return null
