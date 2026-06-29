@@ -90,6 +90,7 @@ export default function Rankings() {
   const [filterTournamentId, setFilterTournamentId] = useState<string>('')
   const [filterCheckIn, setFilterCheckIn] = useState<'all' | 'checked' | 'unchecked'>('all')
   const [hideZeroPoints, setHideZeroPoints] = useState(false)
+  const [groupBySchool, setGroupBySchool] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const search = searchParams.get('search') ?? ''
   function setSearch(val: string) {
@@ -591,6 +592,10 @@ export default function Rankings() {
                 <input type="checkbox" checked={hideZeroPoints} onChange={e => { setHideZeroPoints(e.target.checked); setPage(1) }} className="rounded" />
                 포인트 없는 선수 숨기기
               </label>
+              <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+                <input type="checkbox" checked={groupBySchool} onChange={e => setGroupBySchool(e.target.checked)} className="rounded" />
+                학교별 보기
+              </label>
               <span className="text-xs text-gray-400">{filteredPlayers.length}명 · {sortBy === 'elo' ? 'Elo 순' : '포인트 순'}</span>
             </div>
           </div>
@@ -616,7 +621,31 @@ export default function Rankings() {
                 </tr>
               </thead>
               <tbody>
-                {pagedPlayers.map((p, i) => {
+                {groupBySchool && (() => {
+                  const schools = [...new Map(filteredPlayers.map(p => [p.school || '(미입력)', p])).keys()].sort()
+                  const bySchool = new Map(schools.map(s => [s, filteredPlayers.filter(p => (p.school || '(미입력)') === s)]))
+                  return Array.from(bySchool.entries()).flatMap(([school, sPlayers]) => [
+                    <tr key={`hdr-${school}`} className="bg-blue-50 border-b border-blue-100">
+                      <td colSpan={9} className="py-1.5 px-4 text-xs font-semibold text-blue-700">{school} ({sPlayers.length}명)</td>
+                    </tr>,
+                    ...sPlayers.map((p, idx) => {
+                      const rank = filteredPlayers.indexOf(p) + 1
+                      return (
+                        <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
+                          <td className="py-2 px-4 text-center text-xs text-gray-400">{rank}</td>
+                          <td className="py-2 px-4 font-medium text-gray-800">{highlight(p.name)}</td>
+                          <td className="py-2 px-4 text-xs text-gray-500">{highlight(p.school ?? '')}</td>
+                          <td colSpan={2} />
+                          <td className="py-2 px-4 text-right font-bold text-blue-600">{p.points}</td>
+                          <td className="py-2 px-4 text-right text-xs text-gray-400">{p.rating ?? 1000}</td>
+                          <td className="py-2 px-4 text-center text-xs text-gray-400">{p.wins}/{p.losses}</td>
+                          <td />
+                        </tr>
+                      )
+                    })
+                  ])
+                })()}
+                {!groupBySchool && pagedPlayers.map((p, i) => {
                   const globalRank = (page - 1) * PAGE_SIZE + i + 1
                   const rLabel = getRatingLabel(p.rating ?? 1000)
                   const showDiv = rankView === '통합' || rankView === '남자' || rankView === '여자'
@@ -679,7 +708,7 @@ export default function Rankings() {
                     </td>
                   </tr>
                 )})}
-                {pagedPlayers.length === 0 && (
+                {!groupBySchool && pagedPlayers.length === 0 && (
                   <tr>
                     <td colSpan={9} className="py-10 text-center">
                       {search || filterCheckIn !== 'all' ? (
