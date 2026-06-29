@@ -681,6 +681,11 @@ export default function DashboardPage() {
                           <div className="text-xs text-gray-400">세트 {sets2}</div>
                         </div>
                       </div>
+                      <button
+                        className="mt-2 w-full text-[11px] font-medium text-red-600 bg-red-100 hover:bg-red-200 rounded-lg py-1 flex items-center justify-center gap-1"
+                        onClick={e => { e.stopPropagation(); navigate('/score') }}>
+                        ⚡ 스코어 입력 →
+                      </button>
                     </div>
                   )
                   })
