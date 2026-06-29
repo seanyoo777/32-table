@@ -39,20 +39,28 @@ function exportTournamentCSV(
   tournament: Tournament,
   pMap: Record<string, { name: string; school: string; points: number; gender: string }>
 ) {
-  const rows: string[] = ['대회명,종목,라운드,선수1,학교1,선수2,학교2,승자,세트스코어']
+  const MAX_SETS = 5
+  const setHeaders = Array.from({ length: MAX_SETS }, (_, i) => `세트${i + 1}`)
+  const rows: string[] = [`대회명,종목,라운드,선수1,학교1,선수2,학교2,승자,세트수,총점스코어,${setHeaders.join(',')}`]
   for (const ev of tournament.events) {
-    const completed = ev.matches.filter(m => m.result && m.participant1Id && m.participant2Id && !m.isBye)
+    const completed = ev.matches
+      .filter(m => m.result && m.participant1Id && m.participant2Id && !m.isBye)
+      .sort((a, b) => a.round !== b.round ? a.round - b.round : a.position - b.position)
     for (const m of completed) {
       const p1 = pMap[m.participant1Id!]
       const p2 = pMap[m.participant2Id!]
       const winner = pMap[m.result!.winnerId]
-      const setStr = m.result!.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${m.result!.winnerScore}-${m.result!.loserScore}`
+      const sets = m.result!.sets ?? []
+      const totalStr = `${m.result!.winnerScore}-${m.result!.loserScore}`
+      const setCols = Array.from({ length: MAX_SETS }, (_, i) => sets[i] ? `${sets[i][0]}-${sets[i][1]}` : '')
       rows.push([
         tournament.name, ev.label, `R${m.round}`,
         p1?.name ?? '', p1?.school ?? '',
         p2?.name ?? '', p2?.school ?? '',
         winner?.name ?? '',
-        m.result!.walkedOver ? '부전승' : setStr
+        m.result!.walkedOver ? '부전승' : sets.length || '',
+        m.result!.walkedOver ? '' : totalStr,
+        ...setCols
       ].join(','))
     }
   }
