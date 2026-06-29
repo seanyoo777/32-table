@@ -1009,6 +1009,10 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     const map: Record<number, string> = { 1: 'bg-blue-500', 2: 'bg-green-500', 3: 'bg-orange-500', 4: 'bg-purple-500' }
     return map[c] ?? 'bg-gray-500'
   }
+  const courtCardAccent = (c: number) => {
+    const map: Record<number, string> = { 1: 'border-l-blue-400', 2: 'border-l-green-400', 3: 'border-l-amber-400', 4: 'border-l-rose-400' }
+    return `border-l-[3px] ${map[c] ?? 'border-l-purple-400'}`
+  }
 
   const slotEventColors = (slot: ScheduleSlot) => {
     if (slot.type && slot.type !== 'match') return eventColors[slot.type] ?? 'bg-gray-400'
@@ -1364,7 +1368,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                               return (
                                 <td key={c} className="py-1.5 px-2 border border-gray-100">
                                   {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                                  <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                                  <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                                     onClick={e => { e.stopPropagation(); const px = Math.min(e.clientX + 8, window.innerWidth - 210); const py = Math.min(e.clientY + 8, window.innerHeight - 160); setPopoverPos({ x: px, y: py }); setPopoverSlot(slot) }}>
                                     <div className="flex items-center gap-1 mb-0.5">
                                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
@@ -1415,7 +1419,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       return (
                         <td key={c} className="py-1.5 px-2 border border-gray-100">
                           {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                          <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                          <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                             onClick={e => { e.stopPropagation(); const px = Math.min(e.clientX + 8, window.innerWidth - 210); const py = Math.min(e.clientY + 8, window.innerHeight - 160); setPopoverPos({ x: px, y: py }); setPopoverSlot(slot) }}>
                             <div className="flex items-center gap-1 mb-0.5">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
@@ -1463,7 +1467,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                     <div className="space-y-1.5">
                       {courtSlots.map(slot => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
                         <div key={slot.id}
-                          className={`p-1.5 rounded border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                          className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                           draggable={!slot.type || slot.type === 'match'}
                           onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('slotId', slot.id); setDraggingSlotId(slot.id); setEditingSlotId(null) }}
                           onDragEnd={() => { setDraggingSlotId(null); setDragOverCourt(null) }}
