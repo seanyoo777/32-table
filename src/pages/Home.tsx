@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Trophy, Calendar, ClipboardList, TableProperties, Zap, QrCode, Monitor, Bell, LayoutDashboard, Users, Award, Star } from 'lucide-react'
 
 export default function Home() {
-  const { players, pairs, tournaments, schedules, appSettings, matchCalls, liveMatches } = useStore()
+  const { players, pairs, tournaments, schedules, appSettings, matchCalls, liveMatches, scoreRecords } = useStore()
   const navigate = useNavigate()
 
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
@@ -76,6 +76,11 @@ export default function Home() {
           {matchCalls.filter(c => !c.acknowledged).length > 0 && (
             <span className="flex-shrink-0 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
               미확인 호출 {matchCalls.filter(c => !c.acknowledged).length}
+            </span>
+          )}
+          {scoreRecords.filter(r => !r.verified).length > 0 && (
+            <span className="flex-shrink-0 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+              미확인 기록 {scoreRecords.filter(r => !r.verified).length}
             </span>
           )}
         </div>

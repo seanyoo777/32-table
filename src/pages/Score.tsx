@@ -465,10 +465,22 @@ function ManualEntry() {
     setSets([['', '']])
     setSubmitted(true)
     setTimeout(() => setSubmitted(false), 3000)
-    // 저장 후 다음 미완료 경기로 자동 이동
+    // 저장 후 다음 미완료 경기로 자동 이동 (없으면 다음 종목으로)
     const remaining = pendingMatches.filter(m => m.id !== selMatch.id)
-    const nextMatch = remaining[0]
-    setSel(s => ({ ...s, matchId: nextMatch?.id ?? '' }))
+    if (remaining[0]) {
+      setSel(s => ({ ...s, matchId: remaining[0].id }))
+    } else {
+      const nextEv = selTournament.events.find(ev =>
+        ev.id !== selEvent.id &&
+        ev.matches.some(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
+      )
+      if (nextEv) {
+        const firstPending = nextEv.matches.find(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
+        setSel({ tournamentId: selTournament.id, eventId: nextEv.id, matchId: firstPending?.id ?? '' })
+      } else {
+        setSel(s => ({ ...s, matchId: '' }))
+      }
+    }
   }
 
   const roundName = (round: number) => {
