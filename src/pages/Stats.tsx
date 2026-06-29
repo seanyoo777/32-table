@@ -721,6 +721,47 @@ export default function Stats() {
             )
           })()}
 
+          {/* 일별 선수 등록 수 바 차트 */}
+          {(() => {
+            const today = new Date()
+            const days = Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(today)
+              d.setDate(today.getDate() - (6 - i))
+              return d.toISOString().slice(0, 10)
+            })
+            const counts = days.map(iso => ({ iso, count: players.filter(p => p.createdAt?.slice(0, 10) === iso).length }))
+            const nonZeroDays = counts.filter(d => d.count > 0)
+            if (nonZeroDays.length < 2) return null
+            const maxCount = Math.max(...counts.map(d => d.count), 1)
+            const todayISO = today.toISOString().slice(0, 10)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Users size={14} className="text-slate-500" /> 일별 선수 등록 수 (최근 7일)
+                </h2>
+                <div className="flex items-end gap-1.5 h-16">
+                  {counts.map(({ iso, count }) => {
+                    const isToday = iso === todayISO
+                    const pct = count / maxCount * 100
+                    const label = iso.slice(5).replace('-', '/')
+                    return (
+                      <div key={iso} className="flex flex-col items-center flex-1 gap-1">
+                        {count > 0 && <span className="text-[9px] font-bold text-gray-600">{count}</span>}
+                        <div className="w-full flex-1 flex items-end">
+                          <div
+                            className={`w-full rounded-t transition-all ${isToday ? 'bg-indigo-500' : 'bg-slate-300'}`}
+                            style={{ height: `${Math.max(pct, count > 0 ? 8 : 2)}%` }}
+                          />
+                        </div>
+                        <span className={`text-[9px] ${isToday ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}>{label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 종목별 평균 세트 수 */}
           {eventSetStats.length > 0 && (
             <section className="card">
