@@ -140,6 +140,14 @@ export default function DashboardPage() {
     )
   )
   const pendingMatches = allMatches.filter(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
+  const avgMatchMin = (() => {
+    const withTime = scoreRecords.filter(r => r.sets && r.sets.length > 0)
+    if (withTime.length < 3) return null
+    const totalSets = withTime.reduce((s, r) => s + (r.sets?.length ?? 0), 0)
+    const avgSets = totalSets / withTime.length
+    const estMin = Math.round(avgSets * 5)
+    return estMin > 0 ? estMin : null
+  })()
   const filteredPendingMatches = (() => {
     let list = pendingTourFilter ? pendingMatches.filter(m => m.tournamentId === pendingTourFilter) : pendingMatches
     if (pendingSearch.trim()) {
@@ -284,7 +292,7 @@ export default function DashboardPage() {
           <>
             <div className="flex-shrink-0 grid grid-cols-6 gap-3 px-4 py-3 bg-white border-b border-gray-100">
               <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
-              <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
+              <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" sub={avgMatchMin && pendingMatches.length > 0 ? `약 ${pendingMatches.length * avgMatchMin}분` : undefined} />
               <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" sub={todayRecords > 0 ? `오늘 ${todayRecords}건` : undefined} />
               <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
               <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" sub={todayStreakStr} />
