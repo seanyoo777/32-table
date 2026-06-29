@@ -153,6 +153,50 @@ export default function Home() {
         )
       })()}
 
+      {/* ── 다가오는 대회 D-N 예고 카드 ── */}
+      {(() => {
+        const upcomingWithDate = tournaments
+          .filter(t => (t.status === 'draft' || t.status === 'upcoming') && t.date)
+          .sort((a, b) => a.date.localeCompare(b.date))
+        if (upcomingWithDate.length === 0) return null
+        const next = upcomingWithDate[0]
+        const diff = Math.round((new Date(next.date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+        if (diff < 0 || diff > 7) return null
+        const dLabel = diff === 0 ? 'D-Day' : `D-${diff}`
+        const tM = next.events.reduce((s, ev) => s + ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
+        const dM = next.events.reduce((s, ev) => s + ev.matches.filter(m => m.result).length, 0)
+        const tPct = tM > 0 ? Math.round(dM / tM * 100) : 0
+        const R2 = 9, CX2 = 12, circumf2 = +(2 * Math.PI * R2).toFixed(2)
+        const arc2 = +(circumf2 * tPct / 100).toFixed(2)
+        return (
+          <div
+            className="flex-shrink-0 bg-indigo-50 border border-indigo-200 rounded-xl p-3 cursor-pointer hover:bg-indigo-100 transition-colors"
+            onClick={() => navigate(`/tournament?open=${next.id}`)}>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold flex-shrink-0">{dLabel}</span>
+                  <span className="font-semibold text-indigo-800 text-sm truncate">{next.name}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-indigo-400 flex-wrap">
+                  {next.date && <span>{next.date}</span>}
+                  {next.venue && <><span>·</span><span>{next.venue}</span></>}
+                  {next.events.length > 0 && <><span>·</span><span>{next.events.length}종목</span></>}
+                </div>
+              </div>
+              {tM > 0 && (
+                <svg width="24" height="24" viewBox="0 0 24 24" className="flex-shrink-0" title={`${tPct}%`}>
+                  <circle cx={CX2} cy={CX2} r={R2} fill="none" stroke="#c7d2fe" strokeWidth="3" />
+                  <circle cx={CX2} cy={CX2} r={R2} fill="none" stroke="#6366f1" strokeWidth="3"
+                    strokeDasharray={`${arc2} ${circumf2}`} strokeLinecap="round"
+                    transform={`rotate(-90 ${CX2} ${CX2})`} />
+                </svg>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── 경기 현황 요약 ── */}
       {activeTournaments.length > 0 && (
         <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-100 text-sm">
