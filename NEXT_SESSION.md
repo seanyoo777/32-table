@@ -950,17 +950,29 @@ players.createdAt 역순 1명. 클릭 → /checkin. 1명+ 조건.
 Rankings.tsx 복식 페어 목록 행에 pairType(남복/여복/혼복) 아이콘 + 색상 뱃지 표시.
 남복=파랑♂, 여복=분홍♀, 혼복=보라⚤. 이름 셀 옆에 표시.
 
-### 2-321. 랭킹 단식 탭 검색 결과 범위 칩 (v5.205)
+### 2-321. ✅ 랭킹 단식 탭 검색 결과 범위 칩 (완료 v5.205)
 Rankings.tsx singles 탭 상단 통계 카드 행에 검색/필터 활성 시 "N명 검색됨 (전체 M명 중)" gray 칩 표시.
 search || filterDivision || filterCheckIn 활성 조건. filteredPlayers.length !== players.length 시 표시.
 
-### 2-322. 홈 화면 오늘 남은 경기 수 칩 (v5.206)
+### 2-322. ✅ 홈 화면 오늘 남은 경기 수 칩 (완료 v5.206)
 Home.tsx 오늘 일정 요약 섹션 코트 칩 행에 현재 시각 이후 남은 slotCount blue 칩 추가.
 todayAllSlots에서 startTime >= nowHHmm 필터. "앞으로 N경기" 형태. 1경기+ 조건.
 
-### 2-323. 대시보드 코트 활성/빈 현황 칩 요약 (v5.207)
+### 2-323. ✅ 대시보드 코트 활성/빈 현황 칩 요약 (완료 v5.207)
 Dashboard.tsx 코트 현황판 타이틀 옆에 "N코트 활성 · M코트 빈" 컴팩트 칩 추가.
 liveCourtSet/emptyCourtNos 기반. 코트 2개+ 조건.
+
+### 2-324. 점수 기록 탭 오늘 경기 승자 TOP3 칩 (v5.208)
+Score.tsx 기록 탭 상단에 오늘 recordedAt 기준 기록에서 승자별 승수 집계.
+TOP3 승자 이름 + 승수 amber 칩 행 표시. 오늘 기록 3건+ 조건.
+
+### 2-325. 대진표 경기 목록 선수 포인트 합산 칩 (v5.209)
+Tournament.tsx MatchList 경기 행에 두 선수 포인트 합산 "N pt" gray 칩 표시.
+pMap[participant1Id]?.points + pMap[participant2Id]?.points 합산. 배정된 경기만. 50pt+ 시 표시.
+
+### 2-326. 통계 탭 경기 호출 응답률 트렌드 칩 (v5.210)
+Stats.tsx 하단에 matchCalls 기준 오늘/어제 응답률 비교 칩.
+오늘 acknowledged 비율 vs 어제 비율. 오늘 3건+ 조건. 상승=green↑, 하락=red↓.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

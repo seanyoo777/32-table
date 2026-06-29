@@ -1100,11 +1100,15 @@ function ManualEntry() {
 // ── Page ────────────────────────────────────────────────
 export default function ScorePage() {
   const [mode, setMode] = useState<'live' | 'manual'>('live')
-  const { scoreRecords } = useStore()
+  const { scoreRecords, players, pairs } = useStore()
   const todayISO = new Date().toISOString().slice(0, 10)
   const todayAll = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO)
   const todayVerified = todayAll.filter(r => r.verified).length
   const todayUnver = todayAll.length - todayVerified
+  const nameMap = new Map<string, string>([
+    ...players.map(p => [p.id, p.name] as [string, string]),
+    ...pairs.map(p => [p.id, p.name] as [string, string]),
+  ])
 
   return (
     <div className="h-full overflow-y-auto px-5 py-4 space-y-4 bg-gray-50">
@@ -1128,6 +1132,25 @@ export default function ScorePage() {
           {todayUnver > 0 && <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium">미검증 {todayUnver}건</span>}
         </div>
       )}
+      {todayAll.length >= 3 && (() => {
+        const winCount = new Map<string, number>()
+        todayAll.forEach(r => {
+          const winnerId = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+          winCount.set(winnerId, (winCount.get(winnerId) ?? 0) + 1)
+        })
+        const top3 = [...winCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).filter(([, n]) => n >= 1)
+        if (top3.length === 0) return null
+        return (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] text-gray-400 font-medium">오늘 TOP</span>
+            {top3.map(([id, n], i) => (
+              <span key={id} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {nameMap.get(id) ?? id.slice(0, 6)} {n}승
+              </span>
+            ))}
+          </div>
+        )
+      })()}
 
       {mode === 'live' ? <LiveScoreboard onClose={() => setMode('manual')} /> : <ManualEntry />}
     </div>
