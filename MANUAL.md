@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.79 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.85 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,73 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-92. v4.85 — 홈 미체크인 선수 목록 팝업
+
+자동 루프 세션. Home.tsx 미체크인 N 칩을 토글 버튼으로 변경, 클릭 시 드롭다운 표시.
+
+### 변경 (Home.tsx)
+- "미체크인 N" span → 상대위치 div + 버튼으로 교체. ▼/▲ 표시 토글.
+- 드롭다운: 선수 이름·부문 최대 5명, 초과 시 "+N명 더" 텍스트.
+- "체크인 관리 →" 버튼 클릭 시 드롭다운 닫고 `/checkin` 이동.
+
+---
+
+## 12-91. v4.84 — 통계 최근 30일 경기 히트맵
+
+자동 루프 세션. Stats.tsx에 30일 경기 히트맵 캘린더 추가.
+
+### 변경 (Stats.tsx)
+- 최근 30일 날짜 배열 생성, 각 날 scoreRecords.recordedAt 집계.
+- 주 단위(7칸) 컬럼 분할, 빈 칸 padding.
+- 색상: count=0=gray-100, 1단계~4단계=indigo-200~500. 오늘=indigo-500 강조.
+- 하단 범례 (적음~많음 5단계).
+
+---
+
+## 12-90. v4.83 — 대회 경기 목록 호출 버튼
+
+자동 루프 세션. Tournament.tsx MatchList에 경기 호출 단축버튼 추가.
+
+### 변경 (Tournament.tsx)
+- `MatchList`에 `tournamentId`, `eventId`, `eventLabel` 선택적 props 추가.
+- `useStore().addMatchCall` 직접 사용.
+- 미완료(isPlayable) + 미호출(acknowledged=false 기록 없음) 시 "호출" 주황 버튼 표시.
+- `EventBracket`에 `tournamentId` prop 추가, `TournamentDetail`에서 `tournament.id` 전달.
+
+---
+
+## 12-89. v4.82 — 랭킹 오늘의 MVP 카드
+
+자동 루프 세션. Rankings.tsx 상단 오늘 최다 승리 선수 카드.
+
+### 변경 (Rankings.tsx)
+- 오늘 날짜 scoreRecords에서 승자 집계, 최다 승리 선수 찾기.
+- 황금 그라데이션 배경, 승수·최근 상대, "전적 보기" 버튼.
+- singles 탭만 + 오늘 기록 없으면 숨김.
+
+---
+
+## 12-88. v4.81 — 홈 다음 경기 슬롯 카운트다운 칩
+
+자동 루프 세션. Home.tsx 다가오는 경기 첫 슬롯에 실시간 카운트다운 추가.
+
+### 변경 (Home.tsx)
+- `now` state + 30초 interval 추가.
+- 첫 번째 upcoming 슬롯 우측에 "N분 후"/"지금" 칩.
+- 5분 이하=red animate-pulse, 그 외=purple. 0~60분 범위 내만 표시.
+
+---
+
+## 12-87. v4.80 — 대시보드 빈 코트 번호 칩
+
+자동 루프 세션. Dashboard.tsx 코트 현황 카운트 옆에 빈 코트 번호 칩 추가.
+
+### 변경 (Dashboard.tsx)
+- `freeCourts <= 6` 조건으로 빈 코트 번호 칩 목록 표시.
+- 회색 rounded 칩으로 "N번" 표시. 7개 이상이면 카운트만 표시.
 
 ---
 
