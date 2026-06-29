@@ -877,7 +877,21 @@ export default function Rankings() {
                   return (
                   <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : ''}`}>
                     <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
-                    <td className="py-3 px-4 font-medium">{p.name}</td>
+                    <td className="py-3 px-4 font-medium">
+                      <div>{p.name}</div>
+                      {(() => {
+                        const pl1 = players.find(pl => pl.id === p.player1Id)
+                        const pl2 = players.find(pl => pl.id === p.player2Id)
+                        if (!pl1 && !pl2) return null
+                        const both = pl1?.checkedIn && pl2?.checkedIn
+                        const none = !pl1?.checkedIn && !pl2?.checkedIn
+                        return (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${both ? 'bg-green-100 text-green-700' : none ? 'bg-gray-100 text-gray-500' : 'bg-amber-100 text-amber-700'}`}>
+                            {both ? '✓ 체크인' : none ? '✗ 미체크인' : '△ 일부'}
+                          </span>
+                        )
+                      })()}
+                    </td>
                     <td className="py-3 px-4 text-gray-500 text-xs">{p.school}</td>
                     <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>
                     <td className="py-3 px-4 text-center">
