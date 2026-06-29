@@ -86,6 +86,7 @@ export default function Rankings() {
   const [subGender, setSubGender] = useState<'all' | '남' | '여'>('all')
   const [sortBy, setSortBy] = useState<SortBy>('points')
   const [filterPairDiv, setFilterPairDiv] = useState<Division | 'all'>('all')
+  const [filterTournamentId, setFilterTournamentId] = useState<string>('')
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [pointsModal, setPointsModal] = useState<{ id: string; name: string } | null>(null)
@@ -125,9 +126,17 @@ export default function Rankings() {
 
   const isDivView = DIVISIONS.includes(rankView as Division)
 
+  const tournamentParticipantIds = useMemo(() => {
+    if (!filterTournamentId) return null
+    const t = tournaments.find(x => x.id === filterTournamentId)
+    if (!t) return null
+    return new Set(t.events.flatMap(ev => ev.participantIds))
+  }, [filterTournamentId, tournaments])
+
   const filteredPlayers = useMemo(() => {
     setPage(1)
     let list = [...players]
+    if (tournamentParticipantIds) list = list.filter(p => tournamentParticipantIds.has(p.id))
     if (rankView === '남자') list = list.filter(p => p.gender === '남')
     else if (rankView === '여자') list = list.filter(p => p.gender === '여')
     else if (isDivView) {
@@ -136,7 +145,7 @@ export default function Rankings() {
     }
     if (search) list = list.filter(p => p.name.includes(search) || p.school.includes(search))
     return list.sort((a, b) => sortBy === 'elo' ? (b.rating ?? 1000) - (a.rating ?? 1000) : b.points - a.points)
-  }, [players, rankView, subGender, sortBy, search, isDivView])
+  }, [players, rankView, subGender, sortBy, search, isDivView, tournamentParticipantIds])
 
   const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
   const pagedPlayers = filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -342,10 +351,24 @@ export default function Rankings() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input className="input pl-8" placeholder="이름·학교 검색" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Search + tournament filter */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="input pl-8" placeholder="이름·학교 검색" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        {tab === 'singles' && tournaments.length > 0 && (
+          <select
+            className="select text-sm min-w-[160px]"
+            value={filterTournamentId}
+            onChange={e => { setFilterTournamentId(e.target.value); setPage(1) }}
+          >
+            <option value="">전체 대회</option>
+            {tournaments.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Rank view selector — singles only */}

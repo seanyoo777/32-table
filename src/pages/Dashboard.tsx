@@ -155,6 +155,28 @@ export default function DashboardPage() {
         <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
       </div>
 
+      {/* 대회별 진행률 요약 */}
+      {activeTournaments.length > 0 && (
+        <div className="flex-shrink-0 px-4 py-2 bg-gray-50 border-b border-gray-100">
+          <div className="flex flex-wrap gap-x-6 gap-y-1.5 items-center">
+            {activeTournaments.map(t => {
+              const total = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
+              const done = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.result).length, 0)
+              const pct = total > 0 ? Math.round(done / total * 100) : 0
+              return (
+                <div key={t.id} className="flex items-center gap-2 min-w-[180px]">
+                  <span className="text-xs text-gray-600 truncate max-w-[100px]" title={t.name}>{t.name}</span>
+                  <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className={`text-xs font-bold flex-shrink-0 ${pct === 100 ? 'text-green-600' : 'text-blue-600'}`}>{pct}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 코트 현황판 */}
       <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-100">
         <div className="flex items-center gap-2">

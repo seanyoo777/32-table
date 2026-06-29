@@ -640,19 +640,28 @@ function ManualEntry() {
                     const n2 = pMap[r.participant2Id]?.name ?? '?'
                     const isP1Win = r.p1Score > r.p2Score
                     return (
-                      <div key={r.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-sm">
-                        <span className={`flex-1 text-right truncate font-medium ${isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n1}</span>
-                        <span className="font-bold text-gray-600 flex-shrink-0">{r.p1Score} - {r.p2Score}</span>
-                        <span className={`flex-1 truncate font-medium ${!isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n2}</span>
-                        {!r.verified
-                          ? <button onClick={() => verifyScoreRecord(r.id)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded flex-shrink-0">확인</button>
-                          : <Check size={12} className="text-green-500 flex-shrink-0" />
-                        }
-                        <button
-                          onClick={() => { if (window.confirm('이 기록을 삭제하시겠습니까?')) removeScoreRecord(r.id) }}
-                          className="text-xs text-red-400 hover:text-red-600 px-1.5 py-0.5 rounded flex-shrink-0"
-                          title="기록 삭제"
-                        ><X size={11} /></button>
+                      <div key={r.id} className="p-2 bg-gray-50 rounded-lg text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`flex-1 text-right truncate font-medium ${isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n1}</span>
+                          <span className="font-bold text-gray-700 flex-shrink-0">{r.p1Score} - {r.p2Score}</span>
+                          <span className={`flex-1 truncate font-medium ${!isP1Win ? 'text-blue-600' : 'text-gray-400'}`}>{n2}</span>
+                          {!r.verified
+                            ? <button onClick={() => verifyScoreRecord(r.id)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded flex-shrink-0">확인</button>
+                            : <Check size={12} className="text-green-500 flex-shrink-0" />
+                          }
+                          <button
+                            onClick={() => { if (window.confirm('이 기록을 삭제하시겠습니까?')) removeScoreRecord(r.id) }}
+                            className="text-xs text-red-400 hover:text-red-600 px-1.5 py-0.5 rounded flex-shrink-0"
+                            title="기록 삭제"
+                          ><X size={11} /></button>
+                        </div>
+                        {r.sets && r.sets.length > 0 && (
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {r.sets.map(([a, b], i) => (
+                              <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${a > b ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-500'}`}>{a}-{b}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
