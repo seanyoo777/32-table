@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.74 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.77 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,36 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-184. v5.77 — 홈 최근 완료 경기 칩
+
+자동 루프. Home.tsx.
+
+### 변경 (Home.tsx)
+- `scoreRecords.reverse().slice(0,3)` → 승자+점수 green 칩 행.
+- 체크인 현황 바 위에 삽입.
+
+---
+
+## 12-183. v5.76 — 랭킹 학교별 그룹 보기
+
+자동 루프. Rankings.tsx.
+
+### 변경 (Rankings.tsx)
+- `groupBySchool` state + 체크박스.
+- school 헤더 tr + 소속 선수 tr 교대 렌더링.
+
+---
+
+## 12-182. v5.75 — 대시보드 LIVE 스코어 입력 버튼
+
+자동 루프. Dashboard.tsx.
+
+### 변경 (Dashboard.tsx)
+- LIVE 카드 하단 `⚡ 스코어 입력 →` 버튼.
+- stopPropagation + navigate('/score').
 
 ---
 

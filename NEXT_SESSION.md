@@ -501,17 +501,26 @@ Stats.tsx 대회 2개+ amber 바. done/total 집계.
 ### 2-184. ✅ 일정 인쇄 전용 헤더 (완료 v5.74)
 Schedule.tsx hidden print:block 헤더. plan.name·코트·슬롯수·출력일.
 
-### 2-185. 대시보드 라이브 경기 테이블 오버레이 클릭 → 스코어 이동 (v5.75)
-Dashboard.tsx LIVE 라이브 코트 팝오버에 "스코어 입력 →" 버튼 추가.
-클릭 시 `/score` 페이지로 navigate.
+### 2-185. ✅ 대시보드 LIVE 카드 스코어 입력 버튼 (완료 v5.75)
+각 LIVE 카드 하단 "⚡ 스코어 입력 →" 버튼. /score navigate.
 
-### 2-186. 랭킹 탭 학교별 그룹 보기 (v5.76)
-Rankings.tsx 단식 탭에 "학교별 보기" 토글 추가.
-school 기준으로 players 그룹핑, 학교명 헤더 + 소속 선수 인덴트 행.
+### 2-186. ✅ 랭킹 학교별 그룹 보기 토글 (완료 v5.76)
+groupBySchool 체크박스. 학교 헤더 행 + 소속 선수 인덴트 행.
 
-### 2-187. 홈 경기 현황 최근 완료 경기 3건 인라인 (v5.77)
-Home.tsx 경기 현황 바 아래에 최근 완료된 경기 3건 인라인 표시.
-scoreRecords 역순 slice(0,3), 승자+점수 한 줄 표시.
+### 2-187. ✅ 홈 최근 완료 경기 3건 인라인 (완료 v5.77)
+scoreRecords 역순 3건 green 칩 행. 승자+점수.
+
+### 2-188. 대시보드 종목별 대기 경기 수 바 (v5.78)
+Dashboard.tsx 대기 경기 섹션 상단에 종목별 대기 경기 수 인라인 바 추가.
+activeTournaments.events 기준, 완료 안 된 경기 수 집계.
+
+### 2-189. 통계 탭 선수 승률 TOP 5 상세 카드 (v5.79)
+Stats.tsx 승률 TOP 5 섹션에 각 선수 클릭 시 상세 팝업(전적·포인트·부서).
+useState playerDetail, 간단한 인라인 팝업.
+
+### 2-190. 일정 탭 종목별 색상 범례 표시 (v5.80)
+Schedule.tsx 뷰 전환 버튼 옆에 현재 일정에 존재하는 종목 색상 범례 칩 표시.
+eventColors 기반, filteredSlots에 있는 고유 종목들만.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
