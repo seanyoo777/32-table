@@ -759,8 +759,22 @@ export default function Home() {
             ) : (
               <div className="card text-center py-6">
                 <Trophy size={28} className="mx-auto mb-2 text-gray-300" />
-                <p className="text-sm text-gray-400 mb-2">진행중인 대회 없음</p>
-                <button onClick={() => navigate('/tournament')} className="btn-primary text-xs">대회 만들기</button>
+                {tournaments.length === 0 ? (
+                  <>
+                    <p className="text-sm font-semibold text-gray-600 mb-1">처음 시작하시나요?</p>
+                    <p className="text-xs text-gray-400 mb-3">대회를 만들고 선수를 등록하면<br/>경기 진행 및 점수 관리를 시작할 수 있습니다.</p>
+                    <div className="flex flex-col gap-1.5 max-w-[160px] mx-auto">
+                      <button onClick={() => navigate('/tournament')} className="btn-primary text-xs py-1.5">1. 대회 만들기 →</button>
+                      <button onClick={() => navigate('/rankings')} className="btn-secondary text-xs py-1.5 text-green-700 border-green-200">2. 선수 등록 →</button>
+                      <button onClick={() => navigate('/schedule')} className="btn-secondary text-xs py-1.5">3. 일정 설정 →</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-400 mb-2">진행중인 대회 없음</p>
+                    <button onClick={() => navigate('/tournament')} className="btn-primary text-xs">대회 만들기</button>
+                  </>
+                )}
               </div>
             )}
           </div>
