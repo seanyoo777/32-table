@@ -737,6 +737,15 @@ export default function Home() {
                             )
                           })}
                           {t.events.length > 4 && <span className="text-xs text-gray-400">+{t.events.length - 4}</span>}
+                          {(() => {
+                            const doneEvs = t.events.filter(ev => {
+                              const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                              return total > 0 && ev.matches.filter(m => m.result).length === total
+                            }).length
+                            if (doneEvs === 0) return null
+                            const allDone = doneEvs === t.events.length
+                            return <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${allDone ? 'bg-green-200 text-green-800' : 'bg-amber-100 text-amber-700'}`}>{doneEvs}/{t.events.length} 종목 완료</span>
+                          })()}
                         </div>
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
                           <span>{t.date}</span>
