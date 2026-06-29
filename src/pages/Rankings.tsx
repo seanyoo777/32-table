@@ -1432,7 +1432,13 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
               {player.name[0]}
             </div>
             <div className="flex-1">
-              <div className="font-bold text-lg">{player.name}</div>
+              <div className="font-bold text-lg flex items-center gap-2">
+                {player.name}
+                {player.checkedIn
+                  ? <span className="text-[11px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold flex items-center gap-0.5"><CheckCircle size={10} /> 체크인</span>
+                  : <span className="text-[11px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-semibold">미체크인</span>
+                }
+              </div>
               <div className="text-sm text-gray-500">{player.school} · {player.division} · {player.gender}</div>
             </div>
             <div className="text-right">
