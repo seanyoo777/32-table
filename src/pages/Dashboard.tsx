@@ -998,6 +998,15 @@ export default function DashboardPage() {
                   {pendingCalls.length}건
                 </span>
               )}
+              {(() => {
+                const todayISO = new Date().toISOString().split('T')[0]
+                const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO))
+                if (todayCalls.length < 3) return null
+                const acked = todayCalls.filter(c => c.acknowledged).length
+                const rate = Math.round(acked / todayCalls.length * 100)
+                const color = rate >= 80 ? 'bg-green-100 text-green-700' : rate >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                return <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${color}`}>응답률 {rate}%</span>
+              })()}
             </h2>
             <div className="flex gap-1.5 mb-1.5 items-center">
               <input

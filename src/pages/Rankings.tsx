@@ -1952,6 +1952,20 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
+        {/* 역대 최고 연승 */}
+        {recentRecords.length >= 2 && (() => {
+          const wins = recentRecords.map(r => r.participant1Id === player.id ? r.p1Score > r.p2Score : r.p2Score > r.p1Score)
+          let maxStreak = 0, cur = 0
+          wins.forEach(w => { if (w) { cur++; if (cur > maxStreak) maxStreak = cur } else cur = 0 })
+          if (maxStreak < 2) return null
+          return (
+            <div className="flex items-center gap-2 mb-3 text-xs">
+              <span className="text-gray-400">역대 최고 연승:</span>
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold">🔥 {maxStreak}연승</span>
+            </div>
+          )
+        })()}
+
         {/* 승률 추이 미니 SVG 선 그래프 (최근 10경기) */}
         {(() => {
           const allGames = [
