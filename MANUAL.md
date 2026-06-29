@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.14 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.17 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,31 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-123. v5.17 — 경기일정 슬롯 참가자별 경기 수 뱃지
+
+자동 루프 세션. Schedule.tsx 슬롯 카드에 선수별 당일 배정 경기 수 표시.
+
+### 변경 (Schedule.tsx)
+- `participantMatchCount` Map: filteredSlots 기준 선수별 경기 수 집계.
+- 단일/멀티데이 뷰 모두: 2경기 이상 시 이름 옆 오렌지 소형 뱃지 (예: `3경기`).
+
+## 12-122. v5.16 — 홈 빠른 메모 위젯 색상 분류
+
+자동 루프 세션. Home.tsx 메모에 5색 선택 추가.
+
+### 변경 (Home.tsx)
+- `Memo` 타입 `{text, color}`, 기존 string 메모 자동 마이그레이션.
+- 회색/빨강/노랑/초록/파랑 5가지 점(circle) 색상 선택기.
+- 메모 카드 배경·테두리 선택 색상 반영.
+
+## 12-121. v5.15 — 대회 상세 종목 완료 알림 토스트
+
+자동 루프 세션. Tournament.tsx 마지막 경기 결과 입력 시 완료 토스트.
+
+### 변경 (Tournament.tsx)
+- `completionToast` state. pendingMatches.length === 1 → 입력 후 토스트 1500ms.
+- fixed 하단 중앙, animate-bounce, bg-green-600.
 
 ## 12-120. v5.14 — 홈 체크인 전원 완료 강조
 
