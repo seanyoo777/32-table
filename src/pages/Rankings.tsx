@@ -803,6 +803,31 @@ export default function Rankings() {
         )
       })()}
 
+      {tab === 'singles' && (() => {
+        const schoolMap = new Map<string, number>()
+        players.forEach(p => { const s = p.school || '(미입력)'; schoolMap.set(s, (schoolMap.get(s) ?? 0) + 1) })
+        if (schoolMap.size < 3) return null
+        const top5 = [...schoolMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).filter(([, n]) => n >= 2)
+        if (top5.length < 3) return null
+        const maxN = top5[0][1]
+        return (
+          <div className="card">
+            <div className="text-xs font-semibold text-gray-600 mb-2">학교별 참가자 수 TOP{top5.length}</div>
+            <div className="space-y-1.5">
+              {top5.map(([school, cnt]) => (
+                <div key={school} className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-600 w-24 truncate flex-shrink-0">{school}</span>
+                  <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-violet-400 rounded-full transition-all" style={{ width: `${Math.round(cnt / maxN * 100)}%` }} />
+                  </div>
+                  <span className="text-[11px] font-bold text-violet-700 w-6 text-right flex-shrink-0">{cnt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Doubles / Pairs Table */}
       {tab === 'doubles' && (
         <div className="card p-0 overflow-hidden">
