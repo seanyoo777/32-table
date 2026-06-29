@@ -389,6 +389,20 @@ export default function DashboardPage() {
               ))}
               {checkedIn > 5 && <span className="text-[10px] text-teal-400 px-1 flex-shrink-0 self-center">+{checkedIn - 5}명</span>}
             </div>
+            {(() => {
+              const ci = players.filter(p => p.checkedIn)
+              const morning = ci.filter(p => new Date(p.createdAt).getHours() < 12).length
+              const afternoon = ci.filter(p => { const h = new Date(p.createdAt).getHours(); return h >= 12 && h < 18 }).length
+              const evening = ci.filter(p => new Date(p.createdAt).getHours() >= 18).length
+              if (morning + afternoon + evening < 2) return null
+              return (
+                <div className="flex gap-1 mt-0.5">
+                  {morning > 0 && <span className="text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-full font-medium">오전 {morning}</span>}
+                  {afternoon > 0 && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">오후 {afternoon}</span>}
+                  {evening > 0 && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-medium">저녁 {evening}</span>}
+                </div>
+              )
+            })()}
             {players.length - checkedIn > 0 && (
               <div className="flex gap-1 mt-0.5 overflow-x-auto hide-scrollbar">
                 {players.filter(p => !p.checkedIn).slice(0, 5).map(p => (
