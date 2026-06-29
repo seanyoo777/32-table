@@ -1,4 +1,5 @@
 ﻿import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { SYNC_ENABLED } from '../lib/sync'
 import {
@@ -1440,6 +1441,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
   eventLabel?: string
 }) {
   const { addMatchCall, matchCalls, scoreRecords } = useStore()
+  const navigate = useNavigate()
   if (matches.length === 0) {
     return <div className="text-center py-8 text-gray-400 text-sm">이 라운드에 경기가 없습니다</div>
   }
@@ -1504,7 +1506,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
                   </div>
                   {/* P1 */}
                   <div className={`flex-1 text-sm font-medium text-right ${w === m.participant1Id ? 'text-blue-700' : w ? 'text-gray-400' : ''}`}>
-                    <div>{p1?.name ?? '-'}</div>
+                    <div onClick={e => { if (p1) { e.stopPropagation(); navigate(`/rankings?search=${encodeURIComponent(p1.name)}`) } }} className={p1 ? 'cursor-pointer hover:underline' : ''}>{p1?.name ?? '-'}</div>
                     <div className="text-xs text-gray-400 font-normal">{p1?.school}</div>
                   </div>
                   {/* Score */}
@@ -1534,7 +1536,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
                   </div>
                   {/* P2 */}
                   <div className={`flex-1 text-sm font-medium ${w === m.participant2Id ? 'text-blue-700' : w ? 'text-gray-400' : ''}`}>
-                    <div>{p2?.name ?? '-'}</div>
+                    <div onClick={e => { if (p2) { e.stopPropagation(); navigate(`/rankings?search=${encodeURIComponent(p2.name)}`) } }} className={p2 ? 'cursor-pointer hover:underline' : ''}>{p2?.name ?? '-'}</div>
                     <div className="text-xs text-gray-400 font-normal">{p2?.school}</div>
                   </div>
                   {/* Status */}
