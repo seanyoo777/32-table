@@ -1071,6 +1071,15 @@ export default function DashboardPage() {
                 ⚠ {pendingMatches.length}적체
               </span>
             )}
+            {(() => {
+              const unassigned = pendingMatches.filter(m => !m.participant1Id || !m.participant2Id).length
+              if (unassigned < 1) return null
+              return (
+                <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-semibold">
+                  미배정 {unassigned}
+                </span>
+              )
+            })()}
             {callablePendingKeys.length > 0 && (
               <div className="ml-auto flex items-center gap-1.5">
                 <label className="flex items-center gap-1 cursor-pointer text-[11px] text-gray-500">
