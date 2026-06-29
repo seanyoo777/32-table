@@ -269,7 +269,7 @@ export default function DashboardPage() {
             <div className="flex-shrink-0 grid grid-cols-6 gap-3 px-4 py-3 bg-white border-b border-gray-100">
               <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
               <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
-              <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
+              <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" sub={todayRecords > 0 ? `오늘 ${todayRecords}건` : undefined} />
               <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
               <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" />
               {(() => {
@@ -980,12 +980,13 @@ export default function DashboardPage() {
   )
 }
 
-function DashCard({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+function DashCard({ icon, label, value, color, sub }: { icon: string; label: string; value: number; color: string; sub?: string }) {
   return (
     <div className={`border-2 rounded-xl p-3 text-center ${color}`}>
       <div className="text-xl mb-0.5">{icon}</div>
       <div className="text-2xl font-bold text-gray-800">{value}</div>
       <div className="text-xs text-gray-500">{label}</div>
+      {sub && <div className="text-[10px] text-gray-400 mt-0.5">{sub}</div>}
     </div>
   )
 }
