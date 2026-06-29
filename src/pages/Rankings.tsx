@@ -638,6 +638,30 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 최다 연패 선수 칩 */}
+      {tab === 'singles' && (() => {
+        if (scoreRecords.length < 5) return null
+        const lossStreak = new Map<string, number>()
+        const sorted = [...scoreRecords].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
+        sorted.forEach(r => {
+          const winner = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+          const loser = r.p1Score > r.p2Score ? r.participant2Id : r.participant1Id
+          lossStreak.set(loser, (lossStreak.get(loser) ?? 0) + 1)
+          lossStreak.set(winner, 0)
+        })
+        const top = [...lossStreak.entries()].sort((a, b) => b[1] - a[1])[0]
+        if (!top || top[1] < 3) return null
+        const name = players.find(p => p.id === top[0])?.name
+        if (!name) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full font-medium">
+              {name} {top[1]}연패 중
+            </span>
+          </div>
+        )
+      })()}
+
       {/* 부문 퀵 필터 — singles only */}
       {tab === 'singles' && (() => {
         const divCounts = DIVISIONS.map(d => ({ d, n: players.filter(p => p.division === d).length })).filter(x => x.n > 0)
