@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [callMatchKey, setCallMatchKey] = useState('')
   const [callSearch, setCallSearch] = useState('')
   const [courtPopover, setCourtPopover] = useState<number | null>(null)
+  const [highlightCallId, setHighlightCallId] = useState<string | null>(null)
   const [rowTableNos, setRowTableNos] = useState<Record<string, number>>({})
   const [selectedMatchKeys, setSelectedMatchKeys] = useState<Set<string>>(new Set())
   const [pendingTourFilter, setPendingTourFilter] = useState('')
@@ -308,7 +309,17 @@ export default function DashboardPage() {
                 <div key={c.no} className="relative flex-shrink-0">
                   <div
                     className={`rounded-lg border px-2 py-1 min-w-[92px] ${cls} ${isActive ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-                    onClick={() => isActive && setCourtPopover(courtPopover === c.no ? null : c.no)}
+                    onClick={() => {
+                      if (c.status === 'called') {
+                        const call = pendingCalls.find(pc => pc.tableNo === c.no)
+                        if (call) {
+                          setHighlightCallId(call.id)
+                          setTimeout(() => setHighlightCallId(null), 2500)
+                          document.getElementById(`call-${call.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                        }
+                      }
+                      isActive && setCourtPopover(courtPopover === c.no ? null : c.no)
+                    }}
                   >
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-xs font-bold text-gray-700">{c.no}번대</span>
@@ -650,8 +661,8 @@ export default function DashboardPage() {
                   const callElapsed = Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000)
                   const isOverdue = !c.acknowledged && callElapsed >= 5
                   return (
-                  <div key={c.id}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${c.acknowledged ? 'bg-gray-50 opacity-60' : isOverdue ? 'bg-red-50 border border-red-400 animate-pulse' : 'bg-orange-50 border border-orange-200'}`}>
+                  <div key={c.id} id={`call-${c.id}`}
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-all ${c.acknowledged ? 'bg-gray-50 opacity-60' : isOverdue ? 'bg-red-50 border border-red-400 animate-pulse' : highlightCallId === c.id ? 'bg-yellow-50 border border-yellow-400 ring-2 ring-yellow-300' : 'bg-orange-50 border border-orange-200'}`}>
                     <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : isOverdue ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>
                       {c.tableNo}번
                     </span>
