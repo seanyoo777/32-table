@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/useStore'
 import {
-  BarChart3, Trophy, Users, Activity, TrendingUp, Medal, Layers, Grid3x3, Printer,
+  BarChart3, Trophy, Users, Activity, TrendingUp, Medal, Layers, Grid3x3, Printer, Download, CheckCircle,
 } from 'lucide-react'
 import { getMedalists } from '../utils/tournamentScoring'
 import { getRatingLabel, RATING_LABELS } from '../utils/ratingUtils'
@@ -118,6 +118,33 @@ export default function Stats() {
     return RATING_LABELS.map(r => ({ label: r.label, value: c[r.label], color: r.color }))
   }, [players])
   const rtMax = Math.max(1, ...ratingDist.map(r => r.value))
+
+  // 체크인 분석
+  const checkInStats = useMemo(() => {
+    const byDiv: Record<Division, { total: number; checked: number }> = Object.fromEntries(
+      DIVISIONS.map(d => [d, { total: 0, checked: 0 }])
+    ) as Record<Division, { total: number; checked: number }>
+    players.forEach(p => {
+      if (!(p.division in byDiv)) return
+      byDiv[p.division].total++
+      if (p.checkedIn) byDiv[p.division].checked++
+    })
+    const total = players.length
+    const checked = players.filter(p => p.checkedIn).length
+    const unchecked = players.filter(p => !p.checkedIn)
+    return { total, checked, unchecked, byDiv }
+  }, [players])
+
+  function exportUncheckedCSV() {
+    const rows = ['이름,소속,부문,성별,레이팅']
+    checkInStats.unchecked.sort((a, b) => a.division.localeCompare(b.division) || a.name.localeCompare(b.name))
+      .forEach(p => rows.push([p.name, p.school, p.division, p.gender, p.rating].join(',')))
+    const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `미체크인_${new Date().toISOString().slice(0,10)}.csv`; a.click()
+    URL.revokeObjectURL(url)
+  }
 
   // 대진 형식 분포
   const formatDist = useMemo(() => {
@@ -340,6 +367,51 @@ export default function Stats() {
               </div>
             </section>
           </div>
+
+          {/* 체크인 현황 분석 */}
+          {checkInStats.total > 0 && (
+            <section className="card">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+                  <CheckCircle size={14} className="text-green-500" /> 체크인 현황 분석
+                </h2>
+                {checkInStats.unchecked.length > 0 && (
+                  <button onClick={exportUncheckedCSV} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-2 py-1 rounded-lg bg-white no-print">
+                    <Download size={11} /> 미체크인 CSV
+                  </button>
+                )}
+              </div>
+              {/* 전체 진행률 */}
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>전체 체크인</span>
+                  <span className="font-medium text-gray-700">{checkInStats.checked}/{checkInStats.total}명 ({checkInStats.total > 0 ? Math.round(checkInStats.checked / checkInStats.total * 100) : 0}%)</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${checkInStats.total > 0 ? Math.round(checkInStats.checked / checkInStats.total * 100) : 0}%` }} />
+                </div>
+              </div>
+              {/* 부문별 */}
+              <div className="space-y-1.5">
+                {DIVISIONS.filter(d => checkInStats.byDiv[d].total > 0).map(d => {
+                  const { total, checked } = checkInStats.byDiv[d]
+                  const pct = Math.round(checked / total * 100)
+                  return (
+                    <div key={d} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-14 flex-shrink-0">{d}</span>
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${DIV_COLORS[d]}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs text-gray-500 w-20 text-right flex-shrink-0">{checked}/{total} ({pct}%)</span>
+                    </div>
+                  )
+                })}
+              </div>
+              {checkInStats.unchecked.length > 0 && (
+                <p className="text-xs text-orange-500 mt-2">미체크인 {checkInStats.unchecked.length}명</p>
+              )}
+            </section>
+          )}
 
         </div>
       </div>
