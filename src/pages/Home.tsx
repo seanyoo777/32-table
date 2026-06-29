@@ -137,6 +137,16 @@ export default function Home() {
                 </button>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayDoneN = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).length
+              if (todayDoneN === 0) return null
+              return (
+                <button onClick={() => navigate('/score')} className="text-[11px] bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-blue-200 transition-colors">
+                  오늘 완료 {todayDoneN}경기
+                </button>
+              )
+            })()}
             {totalM > 0 && (
               <span className="flex items-center gap-1 ml-1" title={`전체 경기 완료율 ${donePct}% (${doneM}/${totalM})`}>
                 <svg width={28} height={28} viewBox="0 0 28 28">
