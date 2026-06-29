@@ -1036,6 +1036,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
   const [selectedRound, setSelectedRound] = useState(1)
   const [resultModal, setResultModal] = useState<BracketMatch | null>(null)
   const [matchSearch, setMatchSearch] = useState('')
+  const [completionToast, setCompletionToast] = useState<string | null>(null)
 
   const realMatches = event.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
   // 미완료 경기 목록 (라운드→포지션 순) — 모달 next/prev 이동용
@@ -1242,6 +1243,11 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
           totalPending={pendingMatches.length}
           onSubmit={(result) => {
             onRecord(resultModal.id, result)
+            // 마지막 미완료 경기 완료 시 토스트
+            if (pendingMatches.length === 1) {
+              setCompletionToast(`🎉 ${event.label} 완료!`)
+              setTimeout(() => setCompletionToast(null), 1500)
+            }
             // 다음 미완료 경기로 자동 이동 (없으면 닫기)
             const next = pendingMatches.find((m, i) => i > modalIdx)
             setResultModal(next ?? null)
@@ -1250,6 +1256,11 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
           onNext={modalIdx < pendingMatches.length - 1 ? () => openNextPending(1) : undefined}
           onClose={() => setResultModal(null)}
         />
+      )}
+      {completionToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white font-bold text-sm px-6 py-3 rounded-2xl shadow-xl animate-bounce pointer-events-none">
+          {completionToast}
+        </div>
       )}
     </div>
   )
