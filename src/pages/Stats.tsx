@@ -44,7 +44,7 @@ function Kpi({ icon, label, value, sub, color }: {
 }
 
 export default function Stats() {
-  const { tournaments, players, pairs, teams, scoreRecords, matchCalls, appSettings } = useStore()
+  const { tournaments, players, pairs, teams, scoreRecords, matchCalls, schedules, appSettings } = useStore()
   const [tourFilter, setTourFilter] = useState('all')
   const [winRateDetailId, setWinRateDetailId] = useState<string | null>(null)
   const selectedTour = tourFilter === 'all' ? null : tournaments.find(t => t.id === tourFilter)
@@ -1423,6 +1423,37 @@ export default function Stats() {
                       </div>
                       <span className="text-[11px] font-bold text-rose-700 w-6 text-right flex-shrink-0">{count}</span>
                       <span className="text-[10px] text-gray-400 w-8 text-right flex-shrink-0">{Math.round(count / total * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
+          {/* 코트별 경기 수 바 차트 */}
+          {(() => {
+            const courtMap = new Map<number, number>()
+            schedules.flatMap(s => s.slots).filter(sl => sl.participant1 && sl.participant2).forEach(sl => {
+              courtMap.set(sl.courtNo, (courtMap.get(sl.courtNo) ?? 0) + 1)
+            })
+            const total = [...courtMap.values()].reduce((s, n) => s + n, 0)
+            if (courtMap.size < 2 || total < 5) return null
+            const maxN = Math.max(...courtMap.values())
+            const rows = [...courtMap.entries()].sort((a, b) => a[0] - b[0])
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Layers size={14} className="text-violet-500" /> 코트별 배정 경기 수
+                </h2>
+                <div className="space-y-1.5">
+                  {rows.map(([c, n]) => (
+                    <div key={c} className="flex items-center gap-2">
+                      <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">{c}번 코트</span>
+                      <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-violet-400 rounded-full transition-all" style={{ width: `${Math.round(n / maxN * 100)}%` }} />
+                      </div>
+                      <span className="text-[11px] font-bold text-violet-700 w-6 text-right flex-shrink-0">{n}</span>
+                      <span className="text-[10px] text-gray-400 w-8 text-right flex-shrink-0">{Math.round(n / total * 100)}%</span>
                     </div>
                   ))}
                 </div>
