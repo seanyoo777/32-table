@@ -449,9 +449,21 @@ completedMatchSet 기반으로 오늘 슬롯 중 완료된 비율 표시.
 Rankings.tsx 복식 페어 목록 행에도 동일한 ↑/↓/— 트렌드 화살표 추가.
 pairTrend useMemo, scoreRecords 기반 최근 3경기.
 
-### 2-169. 대시보드 오늘 완료 경기 스트릭 표시 (v5.59)
+### 2-169. ✅ 대시보드 오늘 완료 경기 스트릭 표시 (완료 v5.59)
 Dashboard.tsx "오늘 N건" 완료 기록 카드 하단에 연속 기록 스트릭 표시.
 scoreRecords 오늘 기록 기준 연속 승리/패배 스트릭.
+
+### 2-170. 랭킹 탭 선수 검색 URL 파라미터 유지 (v5.60)
+Rankings.tsx 검색창의 search 파라미터를 URL query(`?search=NAME`)로 동기화.
+페이지 새로고침/공유해도 검색 상태 유지. useSearchParams 사용.
+
+### 2-171. 대시보드 종목별 완료율 미니 테이블 (v5.61)
+Dashboard.tsx 하단에 종목별 경기 완료율을 간단한 행 테이블로 표시.
+evLabel | N/M경기 | ██████░░ 바 형식. activeTournaments 기반.
+
+### 2-172. 일정 페이지 코트별 색상 구분 (v5.62)
+Schedule.tsx 슬롯 카드 배경/테두리를 코트번호별 다른 색으로 구분.
+코트 1=blue, 2=green, 3=amber, 4=rose, 5+=purple. 컬러 배열 매핑.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
