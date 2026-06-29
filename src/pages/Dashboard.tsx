@@ -321,6 +321,13 @@ export default function DashboardPage() {
               {calledCourts > 0 && <span className="text-orange-500 font-semibold">호출 {calledCourts}</span>}
               <span>빈 {freeCourts}/{courts.length}</span>
             </span>
+            {freeCourts > 0 && freeCourts <= 6 && (
+              <div className="flex items-center gap-1">
+                {courts.filter(c => c.status === 'free').map(c => (
+                  <span key={c.no} className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">{c.no}번</span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
             {courts.map(c => {
