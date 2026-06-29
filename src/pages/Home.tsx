@@ -133,7 +133,7 @@ export default function Home() {
                 return (
                   <div key={t.id}
                     className="bg-green-50 border border-green-200 rounded-xl p-3 cursor-pointer hover:bg-green-100 transition-colors"
-                    onClick={() => navigate('/tournament')}>
+                    onClick={() => navigate(`/tournament?open=${t.id}`)}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
                       <div className="font-semibold text-green-800 text-sm truncate flex-1">{t.name}</div>
@@ -250,7 +250,7 @@ export default function Home() {
                     return (
                       <div key={t.id}
                         className="border border-gray-100 rounded-lg p-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => navigate('/tournament')}>
+                        onClick={() => navigate(`/tournament?open=${t.id}`)}>
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <div className="font-medium text-sm truncate flex-1">{t.name}</div>
                           <StatusBadge status={t.status} />

@@ -79,8 +79,9 @@ export default function TournamentPage() {
   const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
-  const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const openId = new URLSearchParams(window.location.search).get('open')
+  const [view, setView] = useState<'list' | 'create' | 'detail'>(openId ? 'detail' : 'list')
+  const [selectedId, setSelectedId] = useState<string | null>(openId)
   const [tourPage, setTourPage] = useState(0)
   const [tourFilter, setTourFilter] = useState<'all' | 'ongoing' | 'completed' | 'draft'>('all')
   const TOUR_PAGE_SIZE = 12
