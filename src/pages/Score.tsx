@@ -29,7 +29,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
   const [tableNo, setTableNo] = useState(1)
   const [format, setFormat] = useState<MatchFormat>(DEFAULT_FORMAT)
-  const [recorder, setRecorder] = useState('')
+  const [recorder, setRecorder] = useState(() => localStorage.getItem('pp-recorder') ?? '')
   const [matchDone, setMatchDone] = useState<{ name: string; sets: string } | null>(null)
   const [matchSearch, setMatchSearch] = useState('')
 
@@ -235,7 +235,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">심판</label>
-              <input className="input" placeholder="심판 이름" value={recorder} onChange={e => setRecorder(e.target.value)} />
+              <input className="input" placeholder="심판 이름" value={recorder} onChange={e => { setRecorder(e.target.value); localStorage.setItem('pp-recorder', e.target.value) }} />
             </div>
           </div>
           {selMatch && (
@@ -376,7 +376,7 @@ function ManualEntry() {
   const { players, pairs, tournaments, scoreRecords, addScoreRecord, updateScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
   const [submitted, setSubmitted] = useState(false)
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
-  const [recorder, setRecorder] = useState('')
+  const [recorder, setRecorder] = useState(() => localStorage.getItem('pp-recorder') ?? '')
   const [sets, setSets] = useState<Array<[string, string]>>([['', '']])
   const [matchSearch, setMatchSearch] = useState('')
   const [recSearch, setRecSearch] = useState('')
@@ -591,7 +591,7 @@ function ManualEntry() {
           )}
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1">입력자</label>
-            <input className="input" placeholder="심판 이름" value={recorder} onChange={e => setRecorder(e.target.value)} />
+            <input className="input" placeholder="심판 이름" value={recorder} onChange={e => { setRecorder(e.target.value); localStorage.setItem('pp-recorder', e.target.value) }} />
           </div>
         </div>
 
