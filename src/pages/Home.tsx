@@ -193,10 +193,11 @@ export default function Home() {
           .filter(sl => sl.participant1 && sl.participant2)
           .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.courtNo - b.courtNo)
         const upcoming = allSlots.filter(sl => sl.startTime >= nowHHmm).slice(0, 3)
+        const inProgress = allSlots.filter(sl => sl.startTime < nowHHmm && nowMins - slotMins(sl.startTime) < 30)
         const recentDone = allSlots
           .filter(sl => sl.startTime < nowHHmm && nowMins - slotMins(sl.startTime) >= 30)
           .slice(-2)
-        if (upcoming.length === 0 && recentDone.length === 0) return null
+        if (upcoming.length === 0 && recentDone.length === 0 && inProgress.length === 0) return null
         const nextSlotMinutes = (hhmm: string) => slotMins(hhmm) - nowMins
         return (
           <div className="flex-shrink-0 space-y-1.5">
@@ -210,6 +211,25 @@ export default function Home() {
                 <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full flex-shrink-0">완료</span>
               </button>
             ))}
+            {inProgress.map(sl => {
+              const elapsed = nowMins - slotMins(sl.startTime)
+              const pct = Math.min(100, Math.round((elapsed / 30) * 100))
+              const barColor = pct < 50 ? 'bg-green-400' : pct < 80 ? 'bg-yellow-400' : 'bg-red-400'
+              return (
+              <button key={sl.id} onClick={() => navigate('/schedule')}
+                className="w-full flex flex-col gap-1 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors text-left">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-bold text-blue-700 w-10 flex-shrink-0">{sl.startTime}</span>
+                  <span className="text-[10px] text-blue-500 w-8 flex-shrink-0">코트{sl.courtNo}</span>
+                  <span className="flex-1 text-xs text-gray-700 truncate font-medium">{sl.participant1} vs {sl.participant2}</span>
+                  <span className="text-[10px] font-bold text-blue-600 flex-shrink-0 bg-blue-100 px-1.5 py-0.5 rounded-full">{elapsed}분 경과</span>
+                </div>
+                <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                </div>
+              </button>
+              )
+            })}
             {upcoming.map((sl, idx) => {
               const minsLeft = nextSlotMinutes(sl.startTime)
               const isNext = idx === 0
