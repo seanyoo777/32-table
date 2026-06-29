@@ -255,12 +255,32 @@ export default function DashboardPage() {
         const currentHour = now.getHours()
         return (
           <>
-            <div className="flex-shrink-0 grid grid-cols-5 gap-3 px-4 py-3 bg-white border-b border-gray-100">
+            <div className="flex-shrink-0 grid grid-cols-6 gap-3 px-4 py-3 bg-white border-b border-gray-100">
               <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
               <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
               <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
               <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
               <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" />
+              {(() => {
+                const R = 11, circ = 2 * Math.PI * R
+                const verifiedN = todayRecs.filter(r => r.verified).length
+                const unverN = todayRecs.length - verifiedN
+                if (todayRecs.length === 0) return <DashCard icon="📊" label="검증 현황" value={0} color="border-gray-200 bg-gray-50" />
+                const verPct = Math.round(verifiedN / todayRecs.length * 100)
+                const dash = (verifiedN / todayRecs.length) * circ
+                return (
+                  <div className="border-2 border-green-200 bg-green-50 rounded-xl p-3 text-center flex flex-col items-center justify-center">
+                    <svg width={26} height={26} viewBox="0 0 26 26" className="mb-0.5">
+                      <circle cx={13} cy={13} r={R} fill="none" stroke="#fde68a" strokeWidth={4} />
+                      <circle cx={13} cy={13} r={R} fill="none" stroke="#22c55e" strokeWidth={4}
+                        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" transform="rotate(-90 13 13)" />
+                      <text x={13} y={16} textAnchor="middle" fontSize="6" fill="#374151" fontWeight="bold">{verPct}%</text>
+                    </svg>
+                    <div className="text-[10px] text-gray-500 leading-tight">검증 {verifiedN}/{todayRecs.length}</div>
+                    {unverN > 0 && <div className="text-[9px] text-amber-600">미확인 {unverN}</div>}
+                  </div>
+                )
+              })()}
             </div>
             {todayRecords > 0 && (
               <div className="flex-shrink-0 px-4 py-1.5 bg-white border-b border-gray-50 flex items-end gap-0.5" title="오늘 시간대별 경기 기록 수">
