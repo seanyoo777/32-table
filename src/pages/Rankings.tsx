@@ -634,6 +634,39 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 부문별 참가자 수 파이 차트 */}
+      {tab === 'singles' && (() => {
+        const PIE_COLORS = ['#6366f1','#22d3ee','#f59e0b','#34d399','#f87171','#a78bfa']
+        const divCounts = DIVISIONS.map((d, i) => ({ d, n: players.filter(p => p.division === d).length, color: PIE_COLORS[i % PIE_COLORS.length] })).filter(x => x.n > 0)
+        const total = divCounts.reduce((s, x) => s + x.n, 0)
+        if (divCounts.length < 2 || total < 10) return null
+        let angle = -Math.PI / 2
+        const R = 32, cx = 36, cy = 36
+        const slices = divCounts.map(({ d, n, color }) => {
+          const sweep = (n / total) * 2 * Math.PI
+          const x1 = cx + R * Math.cos(angle), y1 = cy + R * Math.sin(angle)
+          angle += sweep
+          const x2 = cx + R * Math.cos(angle), y2 = cy + R * Math.sin(angle)
+          const large = sweep > Math.PI ? 1 : 0
+          return { d, n, color, path: `M${cx},${cy} L${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} Z` }
+        })
+        return (
+          <div className="card py-2 flex items-center gap-3">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} opacity={0.9} />)}
+            </svg>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+              {slices.map(s => (
+                <span key={s.d} className="flex items-center gap-1 text-[11px] text-gray-600">
+                  <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                  {s.d} <span className="font-semibold text-gray-800">{s.n}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Rank view selector — singles only */}
       {tab === 'singles' && (
         <div className="card space-y-3 py-3">
