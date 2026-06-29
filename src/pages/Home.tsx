@@ -152,6 +152,20 @@ export default function Home() {
             const n = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO).length
             return n > 0 ? <span className="flex-shrink-0 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">오늘 기록 {n}건</span> : null
           })()}
+          {(() => {
+            const todayCourtSet = new Set(todaySchedules.flatMap(s => s.slots).map(s => s.courtNo))
+            if (todayCourtSet.size === 0) return null
+            const activeCourtSet = new Set([
+              ...liveMatches.map(m => m.tableNo),
+              ...matchCalls.filter(c => !c.acknowledged).map(c => c.tableNo),
+            ])
+            const used = [...activeCourtSet].filter(c => todayCourtSet.has(c)).length
+            return (
+              <span className="flex-shrink-0 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium" title="활성 코트 / 오늘 일정 코트">
+                코트 {used}/{todayCourtSet.size}
+              </span>
+            )
+          })()}
         </div>
       )}
 
