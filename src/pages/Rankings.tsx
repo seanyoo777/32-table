@@ -532,8 +532,9 @@ export default function Rankings() {
                   const rLabel = getRatingLabel(p.rating ?? 1000)
                   const showDiv = rankView === '통합' || rankView === '남자' || rankView === '여자'
                   const showGender = rankView === '통합' || isDivView
+                  const anyChecked = players.some(pl => pl.checkedIn)
                   return (
-                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : ''}`}>
+                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : anyChecked && !p.checkedIn ? 'bg-orange-50' : ''}`}>
                     <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
