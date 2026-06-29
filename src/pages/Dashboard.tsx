@@ -32,6 +32,22 @@ function exportScoreRecordsCSV(records: ScoreRecord[], pMap: Record<string, { na
   URL.revokeObjectURL(url)
 }
 
+function exportMatchCallsCSV(calls: MatchCall[]) {
+  const rows = ['호출시각,코트번호,선수1,선수2,상태']
+  for (const c of [...calls].reverse()) {
+    const at = new Date(c.calledAt).toLocaleString('ko-KR')
+    const status = c.acknowledged ? '확인완료' : '대기중'
+    rows.push([at, `${c.tableNo}번`, c.participant1Name, c.participant2Name, status].join(','))
+  }
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `경기호출이력_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
 export default function DashboardPage() {
@@ -679,7 +695,11 @@ export default function DashboardPage() {
               <div className="card flex-shrink-0">
                 <h2 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
                   <Bell size={13} className="text-gray-400" /> 최근 호출 이력
-                  <span className="text-xs text-gray-400 font-normal ml-auto">최근 {recentCalls.length}건</span>
+                  <span className="text-xs text-gray-400 font-normal">최근 {recentCalls.length}건</span>
+                  <button onClick={() => exportMatchCallsCSV(matchCalls)}
+                    className="ml-auto flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded hover:bg-gray-100">
+                    <Download size={11} /> CSV
+                  </button>
                 </h2>
                 <div className="space-y-1">
                   {recentCalls.map(c => (
