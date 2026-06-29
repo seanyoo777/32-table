@@ -789,6 +789,62 @@ export default function Stats() {
             )
           })()}
 
+          {/* 시간대별 경기 완료 히트맵 */}
+          {scoreRecords.length >= 5 && (() => {
+            const HOURS = Array.from({ length: 24 }, (_, i) => i)
+            const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+            const grid = Array.from({ length: 7 }, () => new Array(24).fill(0))
+            scoreRecords.forEach(r => {
+              const d = new Date(r.recordedAt)
+              grid[d.getDay()][d.getHours()]++
+            })
+            const maxVal = Math.max(...grid.flat(), 1)
+            const peakHours = HOURS.filter(h => grid.flat().slice(h).some((_, idx) => idx % 24 === 0 && grid[Math.floor(idx/24)][h] > 0))
+            const activeHours = HOURS.filter(h => DAYS.some((_, d) => grid[d][h] > 0))
+            if (activeHours.length === 0) return null
+            const hMin = Math.min(...activeHours), hMax = Math.max(...activeHours)
+            const visHours = HOURS.slice(hMin, hMax + 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Grid3x3 size={14} className="text-violet-500" /> 시간대별 경기 기록
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="text-[10px] border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="w-5 pr-1" />
+                        {visHours.map(h => (
+                          <th key={h} className="w-5 text-center text-gray-400 font-normal pb-1">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DAYS.map((day, d) => (
+                        <tr key={d}>
+                          <td className="pr-1 text-gray-400 font-medium text-right">{day}</td>
+                          {visHours.map(h => {
+                            const n = grid[d][h]
+                            const opacity = n === 0 ? 0 : Math.max(0.15, n / maxVal)
+                            return (
+                              <td key={h} className="p-0.5">
+                                <div
+                                  className="w-4 h-4 rounded-sm"
+                                  style={{ backgroundColor: n === 0 ? '#f3f4f6' : `rgba(99,102,241,${opacity})` }}
+                                  title={`${day}요일 ${h}시: ${n}경기`}
+                                />
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>

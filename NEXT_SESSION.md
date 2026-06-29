@@ -465,17 +465,26 @@ evLabel | N/M | ████░░░░ | % 컬럼. 100%=green, 진행=blue.
 Schedule.tsx 슬롯 카드에 courtCardAccent() 좌측 테두리 색 추가.
 코트 1=blue, 2=green, 3=amber, 4=rose, 5+=purple. 3가지 뷰 모두 적용.
 
-### 2-173. 대시보드 선수별 오늘 경기 수 상위 바 (v5.63)
-Dashboard.tsx "오늘 기록" 섹션 아래에 오늘 경기 횟수 상위 3선수 인라인 바.
-todayRecs 기준 participant1Id/2Id 빈도 집계, 이름+횟수+가로 바.
+### 2-173. ✅ 대시보드 선수별 오늘 경기 수 상위 바 (완료 v5.63)
+Dashboard.tsx 오늘 최다 경기 상위 3선수 인라인 바. 2경기+ 시 표시.
 
-### 2-174. 홈 대회 카운트다운 칩 (v5.64)
-Home.tsx 각 activeTournament 헤더에 대회 시작일까지 D-N 칩 표시.
-tournament.startDate 기준, D-day=당일 초록, D-N=파랑, 경과=회색.
+### 2-174. ✅ 홈 대회 카운트다운 칩 (완료 v5.64)
+Home.tsx 각 activeTournament 헤더에 D-day 칩. D-0=초록, D-N=파랑, D+N=회색.
 
-### 2-175. 랭킹 탭 부서별 포인트 분포 미니 차트 (v5.65)
-Rankings.tsx 단식 탭 하단에 부서별(division) 평균 포인트 가로 바.
-divColors 기반 색상. players.filter(p => p.points > 0) 기준.
+### 2-175. ✅ 랭킹 부서별 평균 포인트 가로 바 (완료 v5.65)
+Rankings.tsx 단식 탭 하단 부서별(6종) 평균 포인트 가로 바. 3명+ 시 표시.
+
+### 2-176. 통계 탭 시간대별 경기 완료 히트맵 (v5.66)
+Stats.tsx scoreRecords를 시간대(0~23시) × 요일(월~일) 히트맵으로 표시.
+각 셀: count 기반 색농도. 최대값=진한 색, 0=회색. 인라인 SVG 또는 div grid.
+
+### 2-177. 대회 경기 목록 라운드별 접기/펼치기 (v5.67)
+Tournament.tsx 각 라운드 헤더 클릭 시 해당 라운드 경기 목록 접기/펼치기.
+expandedRounds Set 상태로 관리. 기본=모두 펼침.
+
+### 2-178. 점수 입력 탭 오늘 기록 요약 헤더 바 (v5.68)
+Score.tsx 상단에 오늘 기록 N건 / 검증 N건 / 미검증 N건 인라인 요약 칩 바.
+todayISO 기준 scoreRecords 집계.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
