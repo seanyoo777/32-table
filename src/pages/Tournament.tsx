@@ -84,7 +84,7 @@ function useParticipantMap(players: Player[], pairs: Pair[], teams: import('../t
 
 // ─── 메인 ────────────────────────────────────────────────
 export default function TournamentPage() {
-  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult } = useStore()
+  const { players, pairs, teams, tournaments, addTournament, deleteTournament, updateTournament, recordMatchResult, clearMatchResult, addMatchCall } = useStore()
   const pMap = useParticipantMap(players, pairs, teams)
 
   const openId = new URLSearchParams(window.location.search).get('open')
@@ -893,6 +893,7 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
           pMap={pMap}
           onRecord={(mId, result) => onRecord(activeEvent.id, mId, result)}
           onClearResult={(mId) => onClearResult(activeEvent.id, mId)}
+          tournamentId={tournament.id}
         />
       )}
     </div>
@@ -1024,11 +1025,12 @@ function TournamentSummary({ tournament, pMap }: {
 }
 
 // ─── 종목 대진표 ──────────────────────────────────────────
-function EventBracket({ event, pMap, onRecord, onClearResult }: {
+function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
   event: TournamentEvent
   pMap: Record<string, { name: string; school: string; points: number; gender: string }>
   onRecord: (matchId: string, result: MatchResult) => void
   onClearResult: (matchId: string) => void
+  tournamentId?: string
 }) {
   const [activeView, setActiveView] = useState<'bracket' | 'standings'>('bracket')
   const [selectedRound, setSelectedRound] = useState(1)
@@ -1214,6 +1216,9 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
                 onClickMatch={(m) => setResultModal(m)}
                 onClearResult={onClearResult}
                 groupMap={Object.fromEntries(event.groups.map(g => [g.id, g.name]))}
+                tournamentId={tournamentId}
+                eventId={event.id}
+                eventLabel={event.label}
               />
             </>
           ) : (
@@ -1413,13 +1418,17 @@ function DoubleElimView({ event, pMap, onClickMatch, onClearResult }: {
   )
 }
 
-function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
+function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tournamentId, eventId, eventLabel }: {
   matches: BracketMatch[]
   pMap: Record<string, any>
   onClickMatch: (m: BracketMatch) => void
   onClearResult: (matchId: string) => void
   groupMap: Record<string, string>
+  tournamentId?: string
+  eventId?: string
+  eventLabel?: string
 }) {
+  const { addMatchCall, matchCalls } = useStore()
   if (matches.length === 0) {
     return <div className="text-center py-8 text-gray-400 text-sm">이 라운드에 경기가 없습니다</div>
   }
@@ -1505,6 +1514,13 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap }: {
                     {m.result && !m.result.walkedOver && <span className="text-xs text-green-500">✓완료</span>}
                     {m.result?.walkedOver && <span className="text-xs text-gray-400">부전승</span>}
                     {isPlayable && <span className="text-xs text-blue-500">입력 →</span>}
+                    {isPlayable && tournamentId && eventId && !matchCalls.some(c => !c.acknowledged && c.matchId === m.id) && (
+                      <button
+                        onClick={e => { e.stopPropagation(); addMatchCall({ id: Math.random().toString(36).slice(2,10), matchId: m.id, tournamentId, eventId, tableNo: m.tableNo ?? 1, participant1Name: p1?.name ?? '?', participant2Name: p2?.name ?? '?', eventLabel: eventLabel ?? '', calledAt: new Date().toISOString(), acknowledged: false }) }}
+                        className="text-[10px] bg-orange-100 text-orange-600 hover:bg-orange-200 px-1.5 py-0.5 rounded no-print">
+                        호출
+                      </button>
+                    )}
                     {m.result && (
                       <button
                         onClick={e => { e.stopPropagation(); if (confirm('결과를 취소하시겠습니까?')) onClearResult(m.id) }}
