@@ -10,8 +10,8 @@ git pull && npm run dev
 ```
 Claude에게: **"NEXT_SESSION.md 읽고 남은 항목 루프 구현"**
 
-## 1. 현재 상태 (v5.171)
-- **HEAD**: a904256 — push·자동배포(https://32-table.pages.dev)
+## 1. 현재 상태 (v5.183)
+- **HEAD**: 8969c32 — push·자동배포(https://32-table.pages.dev)
 - **미커밋 파일**: 없음 (클린)
 - **이번 세션 완료 10기능**:
   1. Score.tsx 7일 추이 SVG 선 그래프 — v5.153
@@ -753,14 +753,11 @@ scoreRecords 세트 수 × 5분 × 잔여 경기 수 amber 칩. 3건+ 조건.
 ### 2-265. ✅ 홈 Col3 운영 상태 요약 칩 (완료 v5.150)
 체크인율/LIVE경기수/미완료종목수 칩. 전 종목 완료 시 emerald 칩.
 
-### 2-266. 랭킹 선수 모달 승자/패자 세트 점수 평균 (v5.151)
-Rankings.tsx PlayerStatsModal에 평균 세트 득점/실점 표시.
-recentRecords 기반 평균 세트득점 · 세트실점 두 값 gray 칩.
-세트 데이터 있는 기록 3건 이상 조건.
+### 2-266. ⏭ 랭킹 선수 모달 승자/패자 세트 점수 평균 (이미 구현됨 Rankings.tsx:1822)
+평균 세트 득점/실점 blue/red 칩 이미 존재. 스킵.
 
-### 2-267. 대시보드 호출 경기 중복 선수 배경 강조 (v5.152)
-Dashboard.tsx 대기 경기 목록에서 이미 호출된 선수를 포함하는 경기 행 배경 강화.
-현재 '충돌' 텍스트만 있는 것을 bg-red-100 + border-red-300 ring으로 강화.
+### 2-267. ⏭ 대시보드 호출 경기 중복 선수 배경 강조 (이미 구현됨 Dashboard.tsx:865)
+hasConflict 시 bg-red-100 + border-red-300 + ring-1 ring-red-200 이미 존재. 스킵.
 
 ### 2-268. 점수 기록 탭 기간별 트렌드 라인 (v5.153) ✅ Done
 Score.tsx 기록 탭 상단에 최근 7일 일별 기록 수 인라인 SVG 선 그래프 추가.
@@ -839,17 +836,67 @@ filteredRecords 세트 데이터 10건+ 조건. rose 가로 바 + 건수 + %.
 Tournament.tsx TournamentDetail 종목 탭 버튼에 완료율 % 칩 추가.
 100%=green, 50%+=blue, 미달=gray. 활성 탭은 blue-500 배경.
 
-### 2-287. 대진표 종목 탭 참가자 수 뱃지 (v5.172)
-Tournament.tsx 종목 탭 버튼에 참가자(unique player) 수 칩 추가.
-ev.matches에서 participant1Id/participant2Id 중복 제거 후 카운트. 현재 done/total 옆에 표시.
+### 2-287. ✅ 대진표 종목 탭 참가자 수 뱃지 (완료 v5.172)
+Tournament.tsx 종목 탭 버튼에 unique 참가자 수 violet 뱃지 추가.
+ev.matches participant1Id/participant2Id 중복 제거 카운트. 0명이면 숨김.
 
-### 2-288. 랭킹 복식 페어 마지막 경기 날짜 (v5.173)
-Rankings.tsx 복식 탭 페어 목록 행에 마지막 경기 날짜 "N일 전" gray 텍스트 추가.
-scoreRecords participant1Id/participant2Id 기준 최근 기록 날짜. 1경기+ 페어만.
+### 2-288. ✅ 랭킹 복식 페어 마지막 경기 날짜 (완료 v5.173)
+Rankings.tsx 복식 탭 페어 목록 승/패 셀에 "N일 전"/"오늘" gray 텍스트 추가.
+pairLastMatchDays useMemo. 1경기+ 페어만 표시.
 
-### 2-289. 경기일정 오늘 남은 경기 예상 완료 시각 (v5.174)
-Schedule.tsx ScheduleDetail 헤더 Stats 바에 오늘 남은 슬롯 기준 예상 완료 시각 칩 추가.
-마지막 슬롯 startTime + 평균 경기시간(30분) = HH:MM teal 칩. 슬롯 2개+ 조건.
+### 2-289. ✅ 경기일정 오늘 남은 경기 예상 완료 시각 (완료 v5.174)
+Schedule.tsx Stats 바에 마지막 슬롯 startTime + 30분 = "완료 예상 HH:MM" teal 칩.
+슬롯 2개+ & startTime 있는 경우만. 충돌 버튼 앞에 배치.
+
+### 2-290. ⏭ 홈 대회 카드 마지막 경기 승자 표시 (이미 구현됨 Home.tsx:663)
+tourRecs 최근 기록 승자 "최근: [이름] N분 전" 이미 존재 (v5.143). 스킵.
+
+### 2-291. ✅ 랭킹 선수 행 Elo 변화 인디케이터 (완료 v5.176)
+Rankings.tsx Elo 숫자 옆 최근 3경기 누적 ±N green/red. playerEloDelta useMemo.
+
+### 2-292. ✅ 대시보드 체크인 부문별 현황 미니 표 (완료 v5.177)
+Dashboard.tsx 체크인 섹션 부문별 N/M 3열 compact 표. 2개 부문+ 조건.
+
+### 2-293. ⏭ 홈 화면 날짜·요일 표시 (이미 구현됨 Home.tsx:873)
+toLocaleDateString + day 이미 시계 카드에 존재. 스킵.
+
+### 2-294. ✅ 랭킹 선수 모달 최고 연승 기록 표시 (완료 v5.179)
+Rankings.tsx PlayerStatsModal 역대 최고 연승 amber 뱃지. recentRecords 전체 순회. 2연승+ 조건.
+
+### 2-295. ✅ 대시보드 경기 호출 응답률 칩 (완료 v5.180)
+Dashboard.tsx 경기 호출 헤더 "응답률 N%" 칩. 오늘 matchCalls 3건+ 조건. 80+=green, 50+=amber.
+
+### 2-296. ✅ 점수 기록 탭 상대별 전적 미니 표 (완료 v5.181)
+Score.tsx 기록 탭 상대 매치업 W/L 표. filteredRecords 쌍 집계. 2명+ 조건.
+
+### 2-297. ✅ 경기일정 슬롯 순서 번호 표시 (완료 v5.182)
+Schedule.tsx 코트뷰 슬롯 카드 si+1 gray 원형 칩. 3슬롯+ 코트만.
+
+### 2-298. ✅ 홈 최근 완료 경기 피드 종목 칩 추가 (완료 v5.183)
+Home.tsx 피드 행 끝에 tournament→event.label gray 칩. 있는 경우만.
+
+### 2-299. ⏭ 통계 탭 최근 7일 일별 완료 경기 바 차트 (이미 구현됨 Stats.tsx:986)
+dailyMatchCounts 기반 세로 바 차트 이미 존재. 스킵.
+
+### 2-300. ✅ 대시보드 LIVE 경기 최장 진행 코트 강조 (완료 v5.185)
+Dashboard.tsx 코트 현황판 LIVE 2개+ 시 calledAt 기준 가장 오래된 코트 셀에
+animate-pulse ring-2 ring-amber-400 테두리 추가. 단일 코트만 강조.
+
+### 2-301. ✅ 경기일정 헤더 총 선수 수 purple 칩 (완료 v5.186)
+Schedule.tsx Stats 바에 filteredSlots participant1/participant2 중복 제거 후
+"선수 N명" purple 칩 표시. 1명+ 조건.
+
+### 2-302. 랭킹 복식 페어 모달 개인 Elo 표시 (v5.187)
+Rankings.tsx PairStatsModal에 두 선수(player1Id/player2Id) 각각의 Elo 레이팅
+나란히 indigo 칩으로 표시. 두 선수 모두 찾을 수 있는 경우만 표시.
+
+### 2-303. 점수 기록 탭 종목별 평균 세트 수 미니 표 (v5.188)
+Score.tsx ManualEntry 기록 탭에 종목별 평균 세트 수 미니 gray 표 추가.
+filteredRecords 기준 종목 그룹화. 2종목+ && 5건+ 조건.
+
+### 2-304. 홈 LIVE 호출 선수 이름 칩 (v5.189)
+Home.tsx 상태 칩 행에 미확인 matchCall 선수명 teal 칩 최대 3개 표시.
+matchCalls.filter(acknowledged=false) 기준. 클릭 → /dashboard. 호출 1건+ 조건.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

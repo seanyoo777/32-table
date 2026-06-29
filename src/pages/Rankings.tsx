@@ -1432,6 +1432,7 @@ export default function Rankings() {
           pair={pairStatsModal}
           tournaments={tournaments}
           scoreRecords={scoreRecords}
+          players={players}
           pMap={Object.fromEntries([...players.map(p => [p.id, p.name]), ...pairs.map(p => [p.id, p.name])])}
           onClose={() => setPairStatsModal(null)}
         />
@@ -2155,10 +2156,11 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
   )
 }
 
-function PairStatsModal({ pair, tournaments, scoreRecords, pMap, onClose }: {
+function PairStatsModal({ pair, tournaments, scoreRecords, players, pMap, onClose }: {
   pair: Pair
   tournaments: Tournament[]
   scoreRecords: ScoreRecord[]
+  players: Player[]
   pMap: Record<string, string>
   onClose: () => void
 }) {
@@ -2256,6 +2258,18 @@ function PairStatsModal({ pair, tournaments, scoreRecords, pMap, onClose }: {
           </div>
         </div>
 
+        {(() => {
+          const p1 = players.find(p => p.id === pair.player1Id)
+          const p2 = players.find(p => p.id === pair.player2Id)
+          if (!p1 || !p2) return null
+          return (
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <span className="text-xs text-gray-400">개인 레이팅:</span>
+              <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">{p1.name} {p1.rating}</span>
+              <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">{p2.name} {p2.rating}</span>
+            </div>
+          )
+        })()}
         {tourMatches.length > 0 && (
           <div className="mb-4">
             <h4 className="font-semibold text-sm text-gray-700 mb-2">대회 경기 기록</h4>
