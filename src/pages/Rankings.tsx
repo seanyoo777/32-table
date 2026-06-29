@@ -709,6 +709,19 @@ export default function Rankings() {
         </div>
       )}
 
+      {/* 성별 분포 칩 */}
+      {tab === 'singles' && (() => {
+        const male = filteredPlayers.filter(p => p.gender === '남').length
+        const female = filteredPlayers.filter(p => p.gender === '여').length
+        if (male < 1 || female < 1) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-medium">♂ 남 {male}명</span>
+            <span className="text-[11px] bg-pink-50 text-pink-600 border border-pink-200 px-2 py-0.5 rounded-full font-medium">♀ 여 {female}명</span>
+          </div>
+        )
+      })()}
+
       {/* 포인트 분포 히스토그램 */}
       {tab === 'singles' && players.length >= 2 && (() => {
         const pts = players.map(p => p.points).filter(v => v > 0)
