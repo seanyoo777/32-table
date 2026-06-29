@@ -1041,11 +1041,13 @@ export default function Stats() {
             const rows = [...tournaments]
               .map(t => {
                 const ids = new Set(t.events.flatMap(ev => ev.matches.flatMap(m => [m.participant1Id, m.participant2Id].filter(Boolean) as string[])))
-                return { name: t.name.length > 8 ? t.name.slice(0, 8) + '…' : t.name, count: ids.size, status: t.status }
+                const checkedIn = [...ids].filter(id => players.find(p => p.id === id)?.checkedIn).length
+                return { name: t.name.length > 8 ? t.name.slice(0, 8) + '…' : t.name, count: ids.size, checkedIn, status: t.status }
               })
               .sort((a, b) => b.count - a.count)
               .slice(0, 5)
             const maxVal = Math.max(...rows.map(r => r.count), 1)
+            const hasCheckinData = rows.some(r => r.checkedIn > 0)
             return (
               <section className="card">
                 <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
@@ -1062,6 +1064,11 @@ export default function Stats() {
                         />
                       </div>
                       <span className="text-[10px] font-bold text-gray-600 w-6 text-right flex-shrink-0">{r.count}</span>
+                      {hasCheckinData && r.count > 0 && (
+                        <span className={`text-[9px] px-1 py-0.5 rounded flex-shrink-0 font-medium ${r.checkedIn === r.count ? 'text-green-600 bg-green-50' : r.checkedIn > 0 ? 'text-teal-600 bg-teal-50' : 'text-gray-400 bg-gray-100'}`}>
+                          체크인 {Math.round(r.checkedIn / r.count * 100)}%
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
