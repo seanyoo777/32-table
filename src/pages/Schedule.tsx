@@ -1494,8 +1494,17 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
                     </h3>
                     <div className="space-y-1.5">
-                      {courtSlots.map(slot => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                        <div key={slot.id}
+                      {courtSlots.map((slot, si) => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`);
+                        const toMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
+                        const gapMin = si > 0 && courtSlots[si - 1].endTime ? toMins(slot.startTime) - toMins(courtSlots[si - 1].endTime) : 0
+                        return (
+                        <div key={slot.id}>
+                        {gapMin >= 30 && (
+                          <div className="text-center py-0.5 mb-1">
+                            <span className="text-[9px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">휴식 {gapMin}분</span>
+                          </div>
+                        )}
+                        <div
                           className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                           draggable={!slot.type || slot.type === 'match'}
                           onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('slotId', slot.id); setDraggingSlotId(slot.id); setEditingSlotId(null) }}
@@ -1547,6 +1556,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                               )}
                             </div>
                           )}
+                        </div>
                         </div>
                       )})}
                     </div>
