@@ -674,6 +674,46 @@ export default function Stats() {
             )
           })()}
 
+          {/* 최다 참가 선수 TOP 3 */}
+          {scoreRecords.length > 0 && (() => {
+            const countMap = new Map<string, number>()
+            scoreRecords.forEach(r => {
+              if (r.participant1Id) countMap.set(r.participant1Id, (countMap.get(r.participant1Id) ?? 0) + 1)
+              if (r.participant2Id) countMap.set(r.participant2Id, (countMap.get(r.participant2Id) ?? 0) + 1)
+            })
+            const top3 = [...countMap.entries()]
+              .map(([id, cnt]) => {
+                const p = players.find(pl => pl.id === id)
+                if (!p || cnt < 3) return null
+                const total = p.wins + p.losses
+                const wr = total > 0 ? Math.round(p.wins / total * 100) : 0
+                return { p, cnt, wr }
+              })
+              .filter(Boolean)
+              .sort((a, b) => b!.cnt - a!.cnt)
+              .slice(0, 3) as { p: typeof players[0]; cnt: number; wr: number }[]
+            if (top3.length === 0) return null
+            const medals = ['🥇', '🥈', '🥉']
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Users size={14} className="text-teal-500" /> 최다 참가 선수 TOP 3
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {top3.map(({ p, cnt, wr }, i) => (
+                    <div key={p.id} className="rounded-xl border border-teal-200 bg-teal-50 p-3 text-center">
+                      <div className="text-2xl mb-1">{medals[i]}</div>
+                      <div className="font-bold text-sm text-gray-800 truncate">{p.name}</div>
+                      <div className="text-xs text-gray-500 truncate mb-1.5">{p.school}</div>
+                      <div className="font-black text-teal-600 text-base">{cnt}경기</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">승률 {wr}%</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
