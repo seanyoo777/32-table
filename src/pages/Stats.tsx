@@ -622,6 +622,42 @@ export default function Stats() {
             )
           })()}
 
+          {/* 체크인 효과 — 평균 승률 비교 */}
+          {checkInStats.checked >= 2 && checkInStats.unchecked.length >= 2 && (() => {
+            const ciPlayers = players.filter(p => p.checkedIn && p.wins + p.losses > 0)
+            const nciPlayers = players.filter(p => !p.checkedIn && p.wins + p.losses > 0)
+            if (ciPlayers.length < 1 || nciPlayers.length < 1) return null
+            const avgRate = (ps: typeof players) =>
+              Math.round(ps.reduce((s, p) => s + p.wins / (p.wins + p.losses) * 100, 0) / ps.length)
+            const ciRate = avgRate(ciPlayers)
+            const nciRate = avgRate(nciPlayers)
+            const bars = [
+              { label: '체크인 완료', rate: ciRate, count: ciPlayers.length, color: 'bg-teal-500', textColor: 'text-teal-700' },
+              { label: '미체크인', rate: nciRate, count: nciPlayers.length, color: 'bg-gray-400', textColor: 'text-gray-600' },
+            ]
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <CheckCircle size={14} className="text-green-500" /> 체크인 효과 — 평균 승률 비교
+                </h2>
+                <div className="space-y-2">
+                  {bars.map(({ label, rate, count, color, textColor }) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <div className="w-20 text-xs text-gray-600 text-right flex-shrink-0">{label}</div>
+                      <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${rate}%` }} />
+                      </div>
+                      <div className={`w-20 text-xs font-semibold ${textColor} flex-shrink-0`}>
+                        {rate}% <span className="text-gray-400 font-normal">({count}명)</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2">경기 기록이 있는 선수만 집계</p>
+              </section>
+            )
+          })()}
+
           {/* 종목별 평균 세트 수 */}
           {eventSetStats.length > 0 && (
             <section className="card">
