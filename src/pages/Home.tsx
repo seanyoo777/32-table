@@ -86,6 +86,29 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── 체크인 현황 미니 바 ── */}
+      {players.length > 0 && players.some(p => p.checkedIn) && (
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-teal-50 rounded-xl border border-teal-100 text-sm">
+          <span className="text-teal-500 text-xs font-medium flex-shrink-0">체크인</span>
+          <div className="flex-1 min-w-0 flex items-center gap-2">
+            <div className="flex-1 h-2 bg-teal-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all"
+                style={{ width: `${Math.round(players.filter(p => p.checkedIn).length / players.length * 100)}%` }}
+              />
+            </div>
+            <span className="text-teal-700 font-semibold flex-shrink-0 text-xs">
+              {players.filter(p => p.checkedIn).length}/{players.length}명
+            </span>
+          </div>
+          {players.filter(p => !p.checkedIn).length > 0 && (
+            <span className="flex-shrink-0 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+              미체크인 {players.filter(p => !p.checkedIn).length}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* ── 오늘 일정 요약 ── */}
       {todaySlotCount > 0 && (
         <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-xl border border-purple-100 text-sm">
