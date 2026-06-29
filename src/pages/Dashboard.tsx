@@ -11,16 +11,17 @@ function exportScoreRecordsCSV(records: ScoreRecord[], pMap: Record<string, { na
     tourMap[t.id] = t.name
     for (const ev of t.events) eventMap[t.id + '|' + ev.id] = ev.label
   }
-  const rows = ['일시,대회명,종목,선수1,선수2,세트스코어,입력자,검증여부']
+  const rows = ['일시,대회명,종목,선수1,선수2,세트결과,세트상세,입력자,검증여부']
   for (const r of [...records].reverse()) {
     const p1 = pMap[r.participant1Id]?.name ?? r.participant1Id
     const p2 = pMap[r.participant2Id]?.name ?? r.participant2Id
     const score = `${r.p1Score}-${r.p2Score}`
+    const setDetail = r.sets && r.sets.length > 0 ? r.sets.map(([a, b]) => `${a}-${b}`).join(' ') : ''
     const verified = r.verified ? '확인' : '미확인'
     const at = new Date(r.recordedAt).toLocaleString('ko-KR')
     const tourName = tourMap[r.tournamentId] ?? ''
     const evLabel = eventMap[r.tournamentId + '|' + r.eventId] ?? ''
-    rows.push([at, tourName, evLabel, p1, p2, score, r.recordedBy ?? '', verified].join(','))
+    rows.push([at, tourName, evLabel, p1, p2, score, setDetail, r.recordedBy ?? '', verified].join(','))
   }
   const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
