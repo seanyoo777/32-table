@@ -1205,6 +1205,19 @@ export default function DashboardPage() {
                 )
               })()}
             </h2>
+            {(() => {
+              const oldest = [...matchCalls.filter(c => !c.acknowledged && c.calledAt)].sort((a, b) => (a.calledAt ?? '').localeCompare(b.calledAt ?? ''))[0]
+              if (!oldest) return null
+              const minAgo = Math.round((Date.now() - new Date(oldest.calledAt!).getTime()) / 60000)
+              if (minAgo < 30) return null
+              return (
+                <div className="mb-2">
+                  <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+                    최대 대기 {minAgo}분 · 코트 {oldest.tableNo}번
+                  </span>
+                </div>
+              )
+            })()}
             <div className="flex gap-1.5 mb-1.5 items-center">
               <input
                 className="input flex-1 min-w-0 py-1 text-xs"
