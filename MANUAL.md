@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.11 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.12 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,22 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-19. v4.12 — 점수입력 자동 다음 종목·홈 미확인 기록 뱃지
+
+자동 루프 세션. §2 항목 2개 연속 구현·배포.
+
+### 점수 입력 자동 다음 종목 이동 (Score.tsx)
+- 기존: 동일 종목(event) 내 다음 미완료 경기로만 자동 이동.
+- 개선: 종목 내 경기 소진 시 → 다음 대기 경기 있는 종목 자동 선택 + 첫 경기 자동 포커스.
+- `selTournament.events.find(ev => ev.id !== selEvent.id && ev.matches.some(pending))` 로 검색.
+
+### 홈 화면 미확인 기록 뱃지 (Home.tsx)
+- 경기 현황 바에 미확인 점수 기록 N건 뱃지(amber) 추가.
+- `scoreRecords.filter(r => !r.verified).length > 0` 시 표시.
+- 검증: 테스트 미확인 기록 주입 → "미확인 기록 1" 뱃지 확인.
 
 ---
 
