@@ -280,10 +280,11 @@ export default function Rankings() {
   }
 
   function exportCSV() {
-    const header = '이름,학교,부문,성별,포인트,승,패,Elo등급,등록번호,연락처,사진URL\n'
-    const rows = filteredPlayers.map(p =>
-      `${p.name},${p.school},${p.division},${p.gender},${p.points},${p.wins},${p.losses},${p.rating ?? 1000},${p.registrationNo ?? ''},${p.phone ?? ''},${p.photoUrl ?? ''}`
-    ).join('\n')
+    const header = '이름,학교,부문,성별,체크인,포인트,승,패,승률,Elo등급,등록번호,연락처,사진URL\n'
+    const rows = filteredPlayers.map(p => {
+      const winRate = p.wins + p.losses > 0 ? Math.round(p.wins / (p.wins + p.losses) * 100) : 0
+      return `${p.name},${p.school},${p.division},${p.gender},${p.checkedIn ? 'O' : 'X'},${p.points},${p.wins},${p.losses},${winRate}%,${p.rating ?? 1000},${p.registrationNo ?? ''},${p.phone ?? ''},${p.photoUrl ?? ''}`
+    }).join('\n')
     const blob = new Blob(['﻿' + header + rows], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url
