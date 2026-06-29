@@ -930,6 +930,13 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
 
   const filteredSlots = dayFilteredSlots.filter(s => courtFilter === null || s.courtNo === courtFilter)
 
+  // 참가자별 오늘(현재 뷰) 경기 수 집계
+  const participantMatchCount = new Map<string, number>()
+  filteredSlots.forEach(s => {
+    if (s.participant1) participantMatchCount.set(s.participant1, (participantMatchCount.get(s.participant1) ?? 0) + 1)
+    if (s.participant2) participantMatchCount.set(s.participant2, (participantMatchCount.get(s.participant2) ?? 0) + 1)
+  })
+
   const filteredCourts = [...new Set(filteredSlots.map(s => s.courtNo))].sort()
   const filteredTimes = [...new Set(filteredSlots.map(s => s.startTime))].sort()
   const byTime = filteredTimes.map(t => ({ time: t, slots: filteredSlots.filter(s => s.startTime === t) }))
@@ -1320,9 +1327,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                                     </div>
                                     {slot.participant1 && slot.participant2 ? (
                                       <div className="mt-0.5 space-y-0.5">
-                                        <div className="text-[12px] font-bold text-gray-800 truncate">{slot.participant1}</div>
+                                        <div className="text-[12px] font-bold text-gray-800 truncate flex items-baseline gap-0.5">{slot.participant1}{(participantMatchCount.get(slot.participant1) ?? 0) > 1 && <span className="text-[9px] text-orange-500 font-normal flex-shrink-0">{participantMatchCount.get(slot.participant1)}경기</span>}</div>
                                         <div className="text-[10px] text-gray-400 text-center leading-none">vs</div>
-                                        <div className="text-[12px] font-bold text-gray-800 truncate">{slot.participant2}</div>
+                                        <div className="text-[12px] font-bold text-gray-800 truncate flex items-baseline gap-0.5">{slot.participant2}{(participantMatchCount.get(slot.participant2) ?? 0) > 1 && <span className="text-[9px] text-orange-500 font-normal flex-shrink-0">{participantMatchCount.get(slot.participant2)}경기</span>}</div>
                                       </div>
                                     ) : (
                                       <div className="text-[10px] text-gray-400 mt-0.5">{slot.gender} · 미배정</div>
@@ -1369,9 +1376,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             </div>
                             {slot.participant1 && slot.participant2 ? (
                               <div className="mt-0.5 space-y-0.5">
-                                <div className="text-[12px] font-bold text-gray-800 truncate">{slot.participant1}</div>
+                                <div className="text-[12px] font-bold text-gray-800 truncate flex items-baseline gap-0.5">{slot.participant1}{(participantMatchCount.get(slot.participant1) ?? 0) > 1 && <span className="text-[9px] text-orange-500 font-normal flex-shrink-0">{participantMatchCount.get(slot.participant1)}경기</span>}</div>
                                 <div className="text-[10px] text-gray-400 text-center leading-none">vs</div>
-                                <div className="text-[12px] font-bold text-gray-800 truncate">{slot.participant2}</div>
+                                <div className="text-[12px] font-bold text-gray-800 truncate flex items-baseline gap-0.5">{slot.participant2}{(participantMatchCount.get(slot.participant2) ?? 0) > 1 && <span className="text-[9px] text-orange-500 font-normal flex-shrink-0">{participantMatchCount.get(slot.participant2)}경기</span>}</div>
                               </div>
                             ) : (
                               <div className="text-[10px] text-gray-400 mt-0.5">{slot.gender} · 미배정</div>
