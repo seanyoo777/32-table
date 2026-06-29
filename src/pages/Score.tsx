@@ -841,6 +841,32 @@ function ManualEntry() {
                 )
               })()}
               {(() => {
+                const withSets2 = filteredRecords.filter(r => r.sets && r.sets.length > 0)
+                if (withSets2.length < 5) return null
+                const evMap = new Map<string, { label: string; totalSets: number; count: number }>()
+                withSets2.forEach(r => {
+                  const evLabel = tournaments.find(t => t.id === r.tournamentId)?.events.find(e => e.id === r.eventId)?.label ?? '기타'
+                  const cur = evMap.get(evLabel) ?? { label: evLabel, totalSets: 0, count: 0 }
+                  evMap.set(evLabel, { ...cur, totalSets: cur.totalSets + r.sets!.length, count: cur.count + 1 })
+                })
+                const evRows = [...evMap.values()].filter(e => e.count >= 1).sort((a, b) => b.count - a.count)
+                if (evRows.length < 2) return null
+                return (
+                  <div className="mb-3">
+                    <span className="text-[10px] text-gray-400 block mb-1">종목별 평균 세트 수</span>
+                    <div className="space-y-0.5">
+                      {evRows.map(ev => (
+                        <div key={ev.label} className="flex items-center gap-2 text-[10px]">
+                          <span className="text-gray-600 truncate max-w-[80px]">{ev.label}</span>
+                          <span className="ml-auto text-gray-500 flex-shrink-0">{(ev.totalSets / ev.count).toFixed(1)}세트</span>
+                          <span className="text-gray-300 flex-shrink-0">({ev.count})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+              {(() => {
                 const withSets = filteredRecords.filter(r => r.sets && r.sets.length > 0)
                 if (withSets.length < 10) return null
                 const dist = [2, 3, 4, 5].map(n => ({ n, count: withSets.filter(r => r.sets!.length === n).length }))
