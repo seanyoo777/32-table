@@ -714,6 +714,35 @@ export default function Stats() {
             )
           })()}
 
+          {/* 대회별 완료 경기 수 비교 */}
+          {tournaments.length >= 2 && (() => {
+            const items = tournaments.map(t => {
+              const done = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.result).length, 0)
+              const total = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
+              return { name: t.name.length > 16 ? t.name.slice(0, 14) + '…' : t.name, done, total }
+            }).filter(x => x.total > 0)
+            if (items.length < 2) return null
+            const maxDone = Math.max(...items.map(x => x.done), 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Trophy size={14} className="text-amber-500" /> 대회별 완료 경기
+                </h2>
+                <div className="space-y-1.5">
+                  {items.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[11px] text-gray-600 w-28 flex-shrink-0 truncate">{item.name}</span>
+                      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-400 rounded-full" style={{ width: `${Math.round(item.done / maxDone * 100)}%` }} />
+                      </div>
+                      <span className="text-[11px] text-gray-500 w-12 text-right flex-shrink-0">{item.done}/{item.total}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 선수 포인트 분포 히스토그램 */}
           {(() => {
             const pts = players.filter(p => p.points > 0).map(p => p.points)
