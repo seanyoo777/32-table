@@ -991,6 +991,37 @@ export default function Stats() {
             )
           })()}
 
+          {/* 선수 Elo 레이팅 분포 히스토그램 */}
+          {(() => {
+            const elos = players.filter(p => p.rating).map(p => p.rating ?? 1000)
+            if (elos.length < 3) return null
+            const buckets = [
+              { label: '1000 이하', count: elos.filter(e => e <= 1000).length, color: 'bg-gray-400' },
+              { label: '1001–1200', count: elos.filter(e => e > 1000 && e <= 1200).length, color: 'bg-blue-400' },
+              { label: '1201–1400', count: elos.filter(e => e > 1200 && e <= 1400).length, color: 'bg-indigo-500' },
+              { label: '1401+', count: elos.filter(e => e > 1400).length, color: 'bg-violet-600' },
+            ].filter(b => b.count > 0)
+            const maxCount = Math.max(...buckets.map(b => b.count), 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <TrendingUp size={14} className="text-violet-500" /> 선수 Elo 레이팅 분포
+                </h2>
+                <div className="space-y-1.5">
+                  {buckets.map((b, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 w-20 flex-shrink-0 text-right">{b.label}</span>
+                      <div className="flex-1 h-4 bg-gray-100 rounded overflow-hidden">
+                        <div className={`h-full ${b.color} rounded transition-all`} style={{ width: `${Math.round(b.count / maxCount * 100)}%` }} />
+                      </div>
+                      <span className="text-[10px] text-gray-600 font-medium w-8 flex-shrink-0">{b.count}명</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 종목별 완료율 도넛 그리드 */}
           {(() => {
             const activeTours = tournaments.filter(t => t.status === 'ongoing')
