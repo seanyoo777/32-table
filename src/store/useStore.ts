@@ -115,6 +115,7 @@ interface StoreState {
   resetAllData: () => void
   restoreBackup: (data: Partial<StoreState>) => void
   resetSeasonStats: () => void
+  resetAllCheckIns: () => void
 }
 
 export const useStore = create<StoreState>()(
@@ -381,6 +382,9 @@ export const useStore = create<StoreState>()(
         scoreRecords: [],
         liveMatches: [],
         matchCalls: [],
+      })),
+      resetAllCheckIns: () => set((s) => ({
+        players: s.players.map(p => ({ ...p, checkedIn: false })),
       })),
     }),
     { name: 'pingpong-v3' }

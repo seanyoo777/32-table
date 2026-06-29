@@ -7,13 +7,14 @@ export default function Settings() {
   const {
     players, pairs, teams, tournaments, schedules, scoreRecords,
     liveMatches, matchCalls,
-    appSettings, updateAppSettings, resetAllData, restoreBackup, resetSeasonStats,
+    appSettings, updateAppSettings, resetAllData, restoreBackup, resetSeasonStats, resetAllCheckIns,
   } = useStore()
 
   const [form, setForm] = useState({ ...appSettings })
   const [saved, setSaved] = useState(false)
   const [resetConfirm, setResetConfirm] = useState(false)
   const [seasonConfirm, setSeasonConfirm] = useState(false)
+  const [checkInConfirm, setCheckInConfirm] = useState(false)
   const [restoreMsg, setRestoreMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -174,6 +175,45 @@ export default function Settings() {
                     네, 초기화합니다
                   </button>
                   <button onClick={() => setSeasonConfirm(false)}
+                    className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
+                    취소
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Check-in reset */}
+          <section className="card border-teal-100 space-y-2">
+            <h2 className="font-semibold text-teal-600 text-sm flex items-center gap-2">
+              <RefreshCw size={14} /> 체크인 초기화
+            </h2>
+            <p className="text-xs text-gray-600">
+              모든 선수의 체크인 상태를 초기화합니다. 포인트·승패·레이팅은 유지됩니다.
+              다음 대회 당일 아침에 사용하세요.
+            </p>
+            <div className="text-xs text-teal-600 font-medium">
+              현재 체크인: {players.filter(p => p.checkedIn).length}/{players.length}명
+            </div>
+            {!checkInConfirm ? (
+              <button
+                onClick={() => setCheckInConfirm(true)}
+                disabled={players.filter(p => p.checkedIn).length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-teal-300 text-teal-600 hover:bg-teal-50 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <RefreshCw size={13} /> 체크인 전체 초기화
+              </button>
+            ) : (
+              <div className="bg-teal-50 rounded-lg p-3 space-y-2">
+                <p className="text-sm font-semibold text-teal-700">체크인 상태를 모두 초기화하시겠습니까?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { resetAllCheckIns(); setCheckInConfirm(false); setRestoreMsg('체크인이 초기화되었습니다.') }}
+                    className="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700"
+                  >
+                    네, 초기화합니다
+                  </button>
+                  <button onClick={() => setCheckInConfirm(false)}
                     className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">
                     취소
                   </button>
