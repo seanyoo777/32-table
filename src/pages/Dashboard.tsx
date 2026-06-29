@@ -586,13 +586,15 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-3 text-center">
                         <div className="flex-1">
-                          <div className="font-bold text-xs truncate">{p1?.name ?? '?'}</div>
+                          <button className="font-bold text-xs truncate hover:text-blue-600 hover:underline w-full"
+                            onClick={e => { e.stopPropagation(); navigate(`/rankings?search=${encodeURIComponent(p1?.name ?? '')}`) }}>{p1?.name ?? '?'}</button>
                           <div className="text-2xl font-black text-blue-600">{lm.currentSetScore[0]}</div>
                           <div className="text-xs text-gray-400">세트 {sets1}</div>
                         </div>
                         <div className="text-gray-300 font-bold">:</div>
                         <div className="flex-1">
-                          <div className="font-bold text-xs truncate">{p2?.name ?? '?'}</div>
+                          <button className="font-bold text-xs truncate hover:text-red-600 hover:underline w-full"
+                            onClick={e => { e.stopPropagation(); navigate(`/rankings?search=${encodeURIComponent(p2?.name ?? '')}`) }}>{p2?.name ?? '?'}</button>
                           <div className="text-2xl font-black text-red-500">{lm.currentSetScore[1]}</div>
                           <div className="text-xs text-gray-400">세트 {sets2}</div>
                         </div>

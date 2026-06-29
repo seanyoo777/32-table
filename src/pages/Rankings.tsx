@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2, Zap, CheckCircle } from 'lucide-react'
 import type { Player, Pair, Division, Gender, Tournament, ScoreRecord } from '../types'
@@ -81,6 +82,7 @@ function parseCSV(text: string): ImportRow[] {
 
 export default function Rankings() {
   const { players, pairs, teams, tournaments, scoreRecords, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers, addTeam, deleteTeam } = useStore()
+  const location = useLocation()
   const [tab, setTab] = useState<'singles' | 'doubles' | 'teams'>('singles')
   const [rankView, setRankView] = useState<RankView>('통합')
   const [subGender, setSubGender] = useState<'all' | '남' | '여'>('all')
@@ -89,6 +91,10 @@ export default function Rankings() {
   const [filterTournamentId, setFilterTournamentId] = useState<string>('')
   const [filterCheckIn, setFilterCheckIn] = useState<'all' | 'checked' | 'unchecked'>('all')
   const [search, setSearch] = useState('')
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get('search')
+    if (q) setSearch(q)
+  }, [location.search])
 
   function highlight(text: string) {
     if (!search) return <>{text}</>
