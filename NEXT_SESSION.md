@@ -617,17 +617,26 @@ tabIndex+onKeyDown: ArrowUp/Down 포커스, Enter 모달, selectedRow 강조.
 ### 2-223. ✅ 대시보드 matchCall 클립보드 복사 버튼 (완료 v5.109)
 선수명+코트 복사, 1초 CheckCircle 피드백.
 
-### 2-224. 랭킹 부문별 TOP3 빠른 보기 패널 (v5.110)
-Rankings.tsx 하단 Division summary cards 클릭 시 옆에 mini-panel 펼쳐서
-해당 부문 TOP3 선수 이름+포인트 빠르게 표시. selectedDiv state 추가.
+### 2-224. ✅ 랭킹 부문별 TOP3 빠른 보기 패널 (완료 v5.110)
+Division card 재클릭 → 하단 TOP3 카드 패널 펼침.
 
-### 2-225. 홈 Hero 배너 경기 완료율 애니메이션 (v5.111)
-Home.tsx 상단 Hero 배너에 전체 경기 완료율 텍스트 추가.
-activeTournaments 기준 완료경기/전체경기 숫자 + 작은 바.
+### 2-225. ✅ 홈 Hero 배너 경기 완료율 바 (완료 v5.111)
+activeTournaments 완료/전체 + 흰색 progress bar.
 
-### 2-226. 점수 기록 탭 승자 빠른 필터 버튼 (v5.112)
-Score.tsx 검색 바 옆에 "승자 검색" 모드 토글 버튼 추가.
-활성화 시 검색어를 승자(winner) 이름 기준으로만 필터링.
+### 2-226. ✅ 점수 기록 탭 승자 필터 W 버튼 (완료 v5.112)
+W 토글 활성화 시 승자 이름만 검색.
+
+### 2-227. 랭킹 페이지 Top-N 스팟라이트 배너 교체 (v5.113)
+Rankings.tsx 오늘의 MVP 카드를 TOP3 슬라이드쇼로 개선.
+3명 자동 순환(2초 간격) + 수동 dot 클릭 네비게이션.
+
+### 2-228. 대시보드 코트 현황 경과 시간 표시 (v5.114)
+Dashboard.tsx LIVE 코트 셀에 경기 시작 후 경과 시간 표시.
+liveMatch.startedAt 기반. 없으면 "진행중" 텍스트.
+
+### 2-229. 체크인 탭 이름 첫 글자 아바타 개선 (v5.115)
+CheckIn.tsx 선수 행 이름 첫 글자 아바타에 부문별 배경색 적용.
+divColors 기반 badge. 포토URL 없을 때만 적용.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

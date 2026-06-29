@@ -357,10 +357,15 @@ export default function CheckInPage() {
               />
             </div>
             <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
-              {filtered.slice(0, 20).map(p => (
+              {filtered.slice(0, 20).map(p => {
+                const divAvatarBg: Record<string, string> = { 초등: 'bg-yellow-400', 중등: 'bg-green-500', 고등: 'bg-blue-500', 대학: 'bg-purple-500', 일반: 'bg-gray-500', 생활체육: 'bg-orange-500' }
+                const avatarBg = p.checkedIn ? 'bg-green-500' : (divAvatarBg[p.division] ?? 'bg-gray-400')
+                return (
                 <div key={p.id} className="flex items-center justify-between py-2 px-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${p.checkedIn ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white ${avatarBg}`}>
+                      {p.checkedIn ? '✓' : p.name[0]}
+                    </div>
                     <span className="font-medium text-sm">{hl(p.name, query)}</span>
                     <span className="text-xs text-gray-400">{hl(p.school, query)} · {p.division}</span>
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${getRatingLabel(p.rating).bg} ${getRatingLabel(p.rating).color}`}>
@@ -389,7 +394,8 @@ export default function CheckInPage() {
                     </button>
                   )}
                 </div>
-              ))}
+              )
+              })}
               {filtered.length === 0 && query.length > 0 && (
                 <div className="py-4 text-center space-y-2">
                   <p className="text-xs text-gray-400">"{query}"에 해당하는 선수가 없습니다</p>

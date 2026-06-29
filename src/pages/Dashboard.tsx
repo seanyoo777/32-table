@@ -513,8 +513,16 @@ export default function DashboardPage() {
                     <div className={`text-[10px] truncate ${c.status === 'free' ? 'text-gray-400' : 'text-gray-600 font-medium'}`}>{c.label}</div>
                     {c.status === 'live' && (() => {
                       const lm = liveMatches.find(l => l.tableNo === c.no)
-                      if (!lm || lm.completedSets.length === 0) return null
-                      return <div className="text-[9px] text-red-400 font-medium">{lm.completedSets.length}세트 완료</div>
+                      if (!lm) return null
+                      const call = matchCalls.find(mc => mc.matchId === lm.matchId)
+                      const elapsedMin = call ? Math.floor((now.getTime() - new Date(call.calledAt).getTime()) / 60000) : null
+                      return (
+                        <div className="text-[9px] text-red-400 font-medium space-y-0.5">
+                          {lm.completedSets.length > 0 && <div>{lm.completedSets.length}세트 완료</div>}
+                          {elapsedMin !== null && <div className={elapsedMin >= 20 ? 'text-red-500 font-bold' : ''}>{elapsedMin}분 경과</div>}
+                          {elapsedMin === null && <div>진행중</div>}
+                        </div>
+                      )
                     })()}
                   </div>
                   {courtPopover === c.no && (() => {
