@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.85 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.87 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,33 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-94. v4.87 — 랭킹 선수 모달 PDF 인쇄 버튼
+
+자동 루프 세션. Rankings.tsx PlayerStatsModal에 PDF 버튼 추가.
+
+### 변경 (Rankings.tsx)
+- `handlePrint()` 함수: `<style>` 태그 동적 삽입 → `window.print()` → 1초 후 태그 제거.
+- 모달 inner div에 `id="player-stats-modal-inner"` 추가.
+- `@media print`: body 전체 숨기고 `#player-stats-modal-inner`만 visible.
+- CSV 버튼 옆에 PDF 버튼 배치. 전적 있을 때만 표시. `no-print` 클래스로 인쇄 시 버튼 자체는 숨김.
+
+---
+
+## 12-93. v4.86 — 대시보드 대기경기 정렬 옵션
+
+자동 루프 세션. Dashboard.tsx 대기경기 목록 상단에 정렬 버튼 3종 추가.
+
+### 변경 (Dashboard.tsx)
+- `pendingSort` 상태 (`'round' | 'points' | 'event'`, 기본 `'round'`).
+- `sortedPendingMatches`: filteredPendingMatches를 정렬순으로 복사.
+  - 라운드순: 원래 순서 유지.
+  - 종목별: eventLabel 한글 정렬.
+  - 포인트순: 두 참가자 합산 포인트 내림차순.
+- 대기경기 2개 이상일 때 "정렬: 라운드순 | 종목별 | 포인트순" 버튼 행 표시.
+- 선택된 버튼: blue-100 배경, 나머지: gray-50.
 
 ---
 
