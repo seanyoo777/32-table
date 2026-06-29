@@ -42,6 +42,33 @@ export default function DashboardPage() {
   const [callSearch, setCallSearch] = useState('')
   const [courtPopover, setCourtPopover] = useState<number | null>(null)
   const [rowTableNos, setRowTableNos] = useState<Record<string, number>>({})
+  const [selectedMatchKeys, setSelectedMatchKeys] = useState<Set<string>>(new Set())
+
+  function toggleSelectMatch(key: string) {
+    setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
+  }
+  function toggleSelectAll(callableKeys: string[]) {
+    setSelectedMatchKeys(s => s.size === callableKeys.length ? new Set() : new Set(callableKeys))
+  }
+  function bulkCall() {
+    let nextTable = callTableNo
+    selectedMatchKeys.forEach(key => {
+      const m = pendingMatches.find(pm => `${pm.tournamentId}-${pm.eventId}-${pm.id}` === key)
+      if (!m || !m.participant1Id || !m.participant2Id) return
+      if (matchCalls.some(c => !c.acknowledged && c.matchId === m.id)) return
+      const tNo = rowTableNos[key] ?? m.tableNo ?? nextTable
+      const call: MatchCall = {
+        id: genId(), matchId: m.id, tournamentId: m.tournamentId,
+        eventId: m.eventId, tableNo: tNo,
+        participant1Name: pMap[m.participant1Id]?.name ?? '?',
+        participant2Name: pMap[m.participant2Id]?.name ?? '?',
+        eventLabel: m.eventLabel, calledAt: new Date().toISOString(), acknowledged: false,
+      }
+      addMatchCall(call)
+      if (tNo === nextTable) nextTable++
+    })
+    setSelectedMatchKeys(new Set())
+  }
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -72,6 +99,9 @@ export default function DashboardPage() {
     )
   )
   const pendingMatches = allMatches.filter(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
+  const callablePendingKeys = pendingMatches
+    .filter(m => m.participant1Id && m.participant2Id && !matchCalls.some(c => !c.acknowledged && c.matchId === m.id))
+    .map(m => `${m.tournamentId}-${m.eventId}-${m.id}`)
   const completedMatches = allMatches.filter(m => m.result)
   const pendingCalls = matchCalls.filter(c => !c.acknowledged)
   const unverifiedRecords = scoreRecords.filter(r => !r.verified)
@@ -382,9 +412,28 @@ export default function DashboardPage() {
             <Clock size={13} className="text-yellow-500" /> 대기중인 경기
             <span className="text-xs text-gray-400 font-normal">({pendingMatches.length})</span>
             {pendingMatches.length >= 20 && (
-              <span className="ml-auto text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">
+              <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">
                 ⚠ {pendingMatches.length}경기 적체
               </span>
+            )}
+            {callablePendingKeys.length > 0 && (
+              <div className="ml-auto flex items-center gap-1.5">
+                <label className="flex items-center gap-1 cursor-pointer text-[11px] text-gray-500">
+                  <input
+                    type="checkbox"
+                    checked={selectedMatchKeys.size === callablePendingKeys.length && callablePendingKeys.length > 0}
+                    onChange={() => toggleSelectAll(callablePendingKeys)}
+                    className="w-3 h-3"
+                  />
+                  전체
+                </label>
+                {selectedMatchKeys.size > 0 && (
+                  <button onClick={bulkCall}
+                    className="text-[11px] bg-orange-500 text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">
+                    {selectedMatchKeys.size}개 일괄 호출
+                  </button>
+                )}
+              </div>
             )}
           </h2>
           {pendingMatches.length === 0 ? (
@@ -392,6 +441,7 @@ export default function DashboardPage() {
           ) : (
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
               {pendingMatches.map(m => {
+                const mKey = `${m.tournamentId}-${m.eventId}-${m.id}`
                 const p1 = m.participant1Id ? pMap[m.participant1Id] : null
                 const p2 = m.participant2Id ? pMap[m.participant2Id] : null
                 const alreadyCalled = matchCalls.some(c => !c.acknowledged && c.matchId === m.id)
@@ -400,8 +450,17 @@ export default function DashboardPage() {
                   (!!m.participant2Id && calledParticipantIds.has(m.participant2Id))
                 )
                 return (
-                  <div key={`${m.tournamentId}-${m.eventId}-${m.id}`}
+                  <div key={mKey}
                     className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${hasConflict ? 'bg-red-50 border border-red-100' : 'bg-gray-50'}`}>
+                    {!alreadyCalled && m.participant1Id && m.participant2Id && (
+                      <input
+                        type="checkbox"
+                        checked={selectedMatchKeys.has(mKey)}
+                        onChange={() => toggleSelectMatch(mKey)}
+                        onClick={e => e.stopPropagation()}
+                        className="flex-shrink-0 w-3 h-3"
+                      />
+                    )}
                     <span className="text-gray-400 font-medium w-14 truncate flex-shrink-0">{m.eventLabel}</span>
                     <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
                     {hasConflict && (
@@ -420,7 +479,6 @@ export default function DashboardPage() {
                     )}
                     {alreadyCalled && <span className="text-orange-500 flex-shrink-0 text-[10px]">호출됨</span>}
                     {!alreadyCalled && (() => {
-                      const mKey = `${m.tournamentId}-${m.eventId}-${m.id}`
                       const tNo = rowTableNos[mKey] ?? m.tableNo ?? callTableNo
                       return (
                         <div className="flex items-center gap-0.5 flex-shrink-0">
