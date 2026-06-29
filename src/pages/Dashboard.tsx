@@ -999,12 +999,25 @@ export default function DashboardPage() {
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {matchCalls.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-2">호출 없음</p>
-              ) : (
-                [...matchCalls].reverse().filter(c => !callTourFilter || c.tournamentId === callTourFilter).map(c => {
+              ) : (() => {
+                const filtered = [...matchCalls].reverse().filter(c => !callTourFilter || c.tournamentId === callTourFilter)
+                const todayStr = now.toISOString().slice(0, 10)
+                const yestStr = new Date(now.getTime() - 86400000).toISOString().slice(0, 10)
+                const uniqueDates = [...new Set(filtered.map(c => c.calledAt.slice(0, 10)))]
+                const showGroups = uniqueDates.length >= 2
+                return filtered.map((c, idx) => {
+                  const cDate = c.calledAt.slice(0, 10)
+                  const prevDate = idx > 0 ? filtered[idx - 1].calledAt.slice(0, 10) : null
+                  const showHeader = showGroups && cDate !== prevDate
+                  const dateLabel = cDate === todayStr ? '오늘' : cDate === yestStr ? '어제' : cDate
                   const callElapsed = Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000)
                   const isOverdue = !c.acknowledged && callElapsed >= 5
                   return (
-                  <div key={c.id} id={`call-${c.id}`}
+                  <div key={c.id}>
+                  {showHeader && (
+                    <div className="text-[9px] text-gray-400 font-medium pt-1 pb-0.5">{dateLabel}</div>
+                  )}
+                  <div id={`call-${c.id}`}
                     className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-all ${c.acknowledged ? 'bg-gray-50 opacity-60' : isOverdue ? 'bg-red-50 border border-red-400 animate-pulse' : highlightCallId === c.id ? 'bg-yellow-50 border border-yellow-400 ring-2 ring-yellow-300' : 'bg-orange-50 border border-orange-200'}`}>
                     <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : isOverdue ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>
                       {c.tableNo}번
@@ -1045,9 +1058,10 @@ export default function DashboardPage() {
                       </button>
                     )}
                   </div>
+                  </div>
                   )
                 })
-              )}
+              })()}
             </div>
           </div>
 
