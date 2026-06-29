@@ -2005,6 +2005,23 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )}
         </div>
 
+        {/* 오늘 경기 요약 칩 */}
+        {!editing && (() => {
+          const todayISO = new Date().toISOString().split('T')[0]
+          const todayRecs = playerRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+          if (todayRecs.length === 0) return null
+          const wins = todayRecs.filter(r => (r.participant1Id === player.id && r.p1Score > r.p2Score) || (r.participant2Id === player.id && r.p2Score > r.p1Score)).length
+          const losses = todayRecs.length - wins
+          return (
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="text-xs text-gray-500">오늘</span>
+              {wins > 0 && <span className="text-[11px] bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-bold">{wins}승</span>}
+              {losses > 0 && <span className="text-[11px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full font-bold">{losses}패</span>}
+              <span className="text-[10px] text-gray-400">{todayRecs.length}경기</span>
+            </div>
+          )
+        })()}
+
         {/* 평균 세트 득점/실점 */}
         {!editing && (() => {
           const setRecs = recentRecords.filter(r => r.sets && r.sets.length > 0)
