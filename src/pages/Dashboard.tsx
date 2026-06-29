@@ -1374,6 +1374,21 @@ export default function DashboardPage() {
               </div>
             )
           })()}
+          {filteredPendingMatches.length >= 3 && (() => {
+            const calledIds = new Set(matchCalls.map(c => c.matchId))
+            const uncalled = filteredPendingMatches.filter(m => !calledIds.has(m.matchId) && m.participant1Id && m.participant2Id)
+            if (uncalled.length === 0) return null
+            const first = uncalled[0]
+            const p1 = pMap[first.participant1Id]?.name ?? '?'
+            return (
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-sky-600 font-semibold flex-shrink-0">미호출</span>
+                <span className="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-1.5 py-0.5 rounded-full font-medium">
+                  {p1} 외 {uncalled.length}경기
+                </span>
+              </div>
+            )
+          })()}
         </div>
 
         {/* ── Col 3: Match calling + progress + recent results ── */}
