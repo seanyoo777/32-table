@@ -1617,7 +1617,8 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
       const oppName = pMap[oppId] ?? '?'
       const isWin = match.result?.winnerId === player.id
       const score = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
-      rows.push(`대회,"${oppName}",${isWin ? '승' : '패'},"${score}","${tournamentName} ${eventLabel}",`)
+      const tourDate = tournaments.find(t => t.name === tournamentName)?.date ?? ''
+      rows.push(`대회,"${oppName}",${isWin ? '승' : '패'},"${score}","${tournamentName} ${eventLabel}",${tourDate}`)
     })
     recentRecords.forEach(r => {
       const isP1 = r.participant1Id === player.id
