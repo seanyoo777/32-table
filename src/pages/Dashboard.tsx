@@ -227,6 +227,24 @@ export default function DashboardPage() {
         )
       })()}
 
+      {/* 체크인 현황 칩 */}
+      {players.length > 0 && (() => {
+        const checkedIn = players.filter(p => p.checkedIn).length
+        if (checkedIn === 0) return null
+        const pct = Math.round(checkedIn / players.length * 100)
+        return (
+          <div className="flex-shrink-0 px-4 py-1.5 bg-teal-50 border-b border-teal-100 flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-teal-600 flex-shrink-0">체크인</span>
+            <div className="flex-1 h-1.5 bg-teal-100 rounded-full overflow-hidden max-w-[100px]">
+              <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-[11px] font-bold text-teal-700">{checkedIn}/{players.length}</span>
+            <span className="text-[10px] text-teal-500">{pct}%</span>
+            {players.length - checkedIn > 0 && <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium ml-auto">미체크인 {players.length - checkedIn}명</span>}
+          </div>
+        )
+      })()}
+
       {/* 대회별 진행률 요약 */}
       {activeTournaments.length > 0 && (
         <div className="flex-shrink-0 px-4 py-2 bg-gray-50 border-b border-gray-100">
