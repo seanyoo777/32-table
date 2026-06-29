@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.46 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.49 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,39 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-56. v4.49 — 홈 미체크인 선수 빠른 접근 카드
+
+자동 루프 세션. Home.tsx Col 1에 미체크인 선수 빠른 이동 카드 추가.
+
+### 변경 (Home.tsx)
+- Quick links와 Active tournaments 사이에 조건부 카드 삽입.
+- 조건: `activeTournaments.length > 0 && players.some(p => !p.checkedIn)`.
+- 미체크인 수 + 체크인율(%) 표시, 클릭 시 `/checkin` 이동.
+
+---
+
+## 12-55. v4.48 — 통계 승률 TOP 5 선수 섹션
+
+자동 루프 세션. Stats.tsx 하단에 점수기록 기반 승률 TOP 5 섹션 추가.
+
+### 변경 (Stats.tsx)
+- `winRateTop5` useMemo: scoreRecords에서 선수별 승/패 집계, 승률 계산 후 상위 5명 정렬.
+- 1경기 이상 전적 보유 선수만 포함. 동률 시 승수 우선.
+- 순위 배지(금/은/동) + 이름 + 승패 + 가로 바 + % 표시.
+
+---
+
+## 12-54. v4.47 — 점수 기록 필터 전체 초기화 버튼
+
+자동 루프 세션. Score.tsx ManualEntry 기록 탭 필터 초기화 버튼 추가.
+
+### 변경 (Score.tsx)
+- 검색 input 행에 "초기화 ✕" 버튼 추가.
+- `recSearch || recTournamentId || recUnverifiedOnly` 중 하나라도 활성이면 표시.
+- 클릭 시 세 필터 + 페이지 번호 일괄 초기화.
 
 ---
 
