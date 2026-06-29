@@ -1184,6 +1184,12 @@ export default function DashboardPage() {
                 const yestStr = new Date(now.getTime() - 86400000).toISOString().slice(0, 10)
                 const uniqueDates = [...new Set(filtered.map(c => c.calledAt.slice(0, 10)))]
                 const showGroups = uniqueDates.length >= 2
+                const nameCount = new Map<string, number>()
+                filtered.filter(c => !c.acknowledged).forEach(c => {
+                  if (c.participant1Name) nameCount.set(c.participant1Name, (nameCount.get(c.participant1Name) ?? 0) + 1)
+                  if (c.participant2Name) nameCount.set(c.participant2Name, (nameCount.get(c.participant2Name) ?? 0) + 1)
+                })
+                const dupNames = new Set([...nameCount.entries()].filter(([, n]) => n >= 2).map(([k]) => k))
                 return filtered.map((c, idx) => {
                   const cDate = c.calledAt.slice(0, 10)
                   const prevDate = idx > 0 ? filtered[idx - 1].calledAt.slice(0, 10) : null
@@ -1207,6 +1213,9 @@ export default function DashboardPage() {
                       <button onClick={e => { e.stopPropagation(); navigate('/checkin') }} className="truncate hover:underline hover:text-teal-600 text-left" title={`${c.participant2Name} 체크인 확인`}>{c.participant2Name}</button>
                     </span>
                     {isOverdue && <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold flex-shrink-0">⚠ 미응답</span>}
+                    {!c.acknowledged && (dupNames.has(c.participant1Name) || dupNames.has(c.participant2Name)) && (
+                      <span className="text-[9px] bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded font-bold flex-shrink-0">중복</span>
+                    )}
                     <span className="text-gray-400 flex-shrink-0 flex items-center gap-1">
                       {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       {!c.acknowledged && (
