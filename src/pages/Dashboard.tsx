@@ -229,13 +229,22 @@ export default function DashboardPage() {
                   const p2 = pMap[lm.participant2Id]
                   const sets1 = lm.completedSets.filter(([a, b]) => a > b).length
                   const sets2 = lm.completedSets.filter(([a, b]) => b > a).length
+                  const relatedCall = matchCalls.find(c => c.matchId === lm.matchId)
+                  const liveElapsed = relatedCall ? Math.floor((now.getTime() - new Date(relatedCall.calledAt).getTime()) / 60000) : null
                   return (
                     <div key={lm.matchId}
                       className="border-2 border-red-200 rounded-xl p-3 bg-red-50 cursor-pointer hover:shadow-md"
                       onClick={() => navigate('/score')}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-red-500">탁구대 {lm.tableNo}번</span>
-                        <span className="text-xs text-gray-400">{lm.completedSets.length + 1}세트</span>
+                        <div className="flex items-center gap-1.5">
+                          {liveElapsed !== null && (
+                            <span className={`text-[10px] font-mono px-1 rounded ${liveElapsed >= 15 ? 'bg-red-200 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+                              {liveElapsed}분
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400">{lm.completedSets.length + 1}세트</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 text-center">
                         <div className="flex-1">
@@ -373,15 +382,22 @@ export default function DashboardPage() {
               {matchCalls.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-2">호출 없음</p>
               ) : (
-                [...matchCalls].reverse().map(c => (
+                [...matchCalls].reverse().map(c => {
+                  const callElapsed = Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000)
+                  return (
                   <div key={c.id}
                     className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${c.acknowledged ? 'bg-gray-50 opacity-60' : 'bg-orange-50 border border-orange-200'}`}>
                     <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'}`}>
                       {c.tableNo}번
                     </span>
                     <span className="flex-1 truncate font-medium">{c.participant1Name} vs {c.participant2Name}</span>
-                    <span className="text-gray-400 flex-shrink-0">
+                    <span className="text-gray-400 flex-shrink-0 flex items-center gap-1">
                       {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      {!c.acknowledged && (
+                        <span className={`font-mono text-[10px] px-1 rounded ${callElapsed >= 10 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                          {callElapsed}분
+                        </span>
+                      )}
                     </span>
                     {!c.acknowledged ? (
                       <button onClick={() => acknowledgeMatchCall(c.id)}
@@ -394,7 +410,7 @@ export default function DashboardPage() {
                       </button>
                     )}
                   </div>
-                ))
+                )})
               )}
             </div>
           </div>
