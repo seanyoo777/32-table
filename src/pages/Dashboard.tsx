@@ -514,6 +514,11 @@ export default function DashboardPage() {
               {calledCourts > 0 && <span className="text-orange-500 font-semibold">호출 {calledCourts}</span>}
               <span>빈 {freeCourts}/{courts.length}</span>
             </span>
+            {courts.length >= 2 && (
+              <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                {liveCourts + calledCourts}활성 · {freeCourts}빈
+              </span>
+            )}
             {freeCourts > 0 && freeCourts <= 6 && !courtExpanded && (
               <div className="flex items-center gap-1">
                 {courts.filter(c => c.status === 'free').map(c => (
