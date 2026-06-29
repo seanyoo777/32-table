@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.49 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.52 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,38 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-59. v4.52 — 대회 종목 경기 선수명 검색 필터
+
+자동 루프 세션. Tournament.tsx EventBracket 컴포넌트에 선수명 검색 input 추가.
+
+### 변경 (Tournament.tsx)
+- `matchSearch` state 추가, `displayMatches` 계산변수로 roundMatches 필터링.
+- 리그/조별/대형(isLarge|isLeague|isGrouped) 경기 목록 상단에 검색 input 표시.
+- 검색 시 해당 선수 이름이 포함된 경기만 표시, ✕ 버튼으로 초기화.
+
+---
+
+## 12-58. v4.51 — 랭킹 정렬 기준 "승수" 추가
+
+자동 루프 세션. Rankings.tsx 정렬 버튼 그룹에 "승수" 정렬 추가.
+
+### 변경 (Rankings.tsx)
+- `SortBy` 타입에 `'wins'` 추가.
+- 정렬 버튼 그룹에 "승수" 버튼 (active 시 초록색).
+- `sortBy === 'wins'` 시 `b.wins - a.wins` 내림차순 정렬.
+
+---
+
+## 12-57. v4.50 — 체크인 부문 필터 드롭다운
+
+자동 루프 세션. CheckIn.tsx 리스트 탭에 부문(Division) 필터 드롭다운 추가.
+
+### 변경 (CheckIn.tsx)
+- `divFilter` state + `<select>` 드롭다운 (전체/초등/중등/고등/대학/일반/생활체육).
+- "부문별" 섹션: 선택된 부문만 표시.
 
 ---
 
