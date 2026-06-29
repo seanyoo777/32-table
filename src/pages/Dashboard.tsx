@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const [rowTableNos, setRowTableNos] = useState<Record<string, number>>({})
   const [selectedMatchKeys, setSelectedMatchKeys] = useState<Set<string>>(new Set())
   const [pendingTourFilter, setPendingTourFilter] = useState('')
+  const [pendingSearch, setPendingSearch] = useState('')
   const [callTourFilter, setCallTourFilter] = useState('')
   const [bulkTableNo, setBulkTableNo] = useState(1)
   const [pendingSort, setPendingSort] = useState<'round' | 'points' | 'event'>('round')
@@ -138,9 +139,19 @@ export default function DashboardPage() {
     )
   )
   const pendingMatches = allMatches.filter(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
-  const filteredPendingMatches = pendingTourFilter
-    ? pendingMatches.filter(m => m.tournamentId === pendingTourFilter)
-    : pendingMatches
+  const filteredPendingMatches = (() => {
+    let list = pendingTourFilter ? pendingMatches.filter(m => m.tournamentId === pendingTourFilter) : pendingMatches
+    if (pendingSearch.trim()) {
+      const q = pendingSearch.trim().toLowerCase()
+      const nameOf = (id: string) => {
+        const pl = players.find(p => p.id === id); if (pl) return pl.name
+        const pr = pairs.find(p => p.id === id); if (pr) { const p1 = players.find(p => p.id === pr.player1Id); const p2 = players.find(p => p.id === pr.player2Id); return `${p1?.name ?? ''} ${p2?.name ?? ''}` }
+        return id
+      }
+      list = list.filter(m => nameOf(m.participant1Id ?? '').toLowerCase().includes(q) || nameOf(m.participant2Id ?? '').toLowerCase().includes(q))
+    }
+    return list
+  })()
   const pointMap = Object.fromEntries([
     ...players.map(p => [p.id, p.points]),
     ...pairs.map(p => [p.id, Math.max(...[p.player1Id, p.player2Id].map(id => players.find(pl => pl.id === id)?.points ?? 0))]),
@@ -644,6 +655,20 @@ export default function DashboardPage() {
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
+          )}
+          {pendingMatches.length > 0 && (
+            <div className="relative mb-1.5 flex-shrink-0">
+              <input
+                type="text"
+                value={pendingSearch}
+                onChange={e => setPendingSearch(e.target.value)}
+                placeholder="선수명 검색..."
+                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1 pr-6 bg-white"
+              />
+              {pendingSearch && (
+                <button onClick={() => setPendingSearch('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-[10px]">✕</button>
+              )}
+            </div>
           )}
           {pendingMatches.length > 1 && (
             <div className="flex items-center gap-1 mb-1.5 flex-shrink-0">
