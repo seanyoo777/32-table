@@ -281,6 +281,23 @@ export default function Rankings() {
     return m
   }, [pairs, scoreRecords])
 
+  const pairTodayWins = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const m = new Map<string, number>()
+    pairs.forEach(p => {
+      const wins = scoreRecords.filter(r => {
+        if (!r.recordedAt?.startsWith(todayISO)) return false
+        const isP1 = r.participant1Id === p.id || (r.participant1Id === p.player1Id || r.participant1Id === p.player2Id)
+        const isP2 = r.participant2Id === p.id || (r.participant2Id === p.player1Id || r.participant2Id === p.player2Id)
+        if (!isP1 && !isP2) return false
+        if (isP1) return r.p1Score > r.p2Score
+        return r.p2Score > r.p1Score
+      }).length
+      if (wins > 0) m.set(p.id, wins)
+    })
+    return m
+  }, [pairs, scoreRecords])
+
   const playerWinStreak = useMemo(() => {
     const m = new Map<string, number>()
     players.forEach(p => {
@@ -1196,6 +1213,9 @@ export default function Rankings() {
                       )}
                       {pairTodayMatches.has(p.id) && (
                         <div className="mt-0.5"><span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">오늘 {pairTodayMatches.get(p.id)}경기</span></div>
+                      )}
+                      {pairTodayWins.has(p.id) && (
+                        <div className="mt-0.5"><span className="text-[9px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-bold">오늘 {pairTodayWins.get(p.id)}승</span></div>
                       )}
                     </td>
                     <td className="py-3 px-4 text-center flex items-center justify-center gap-1">
