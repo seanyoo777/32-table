@@ -1439,7 +1439,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
   eventId?: string
   eventLabel?: string
 }) {
-  const { addMatchCall, matchCalls } = useStore()
+  const { addMatchCall, matchCalls, scoreRecords } = useStore()
   if (matches.length === 0) {
     return <div className="text-center py-8 text-gray-400 text-sm">이 라운드에 경기가 없습니다</div>
   }
@@ -1506,11 +1506,24 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
                   {/* Score */}
                   <div className="text-center w-20 flex-shrink-0">
                     {m.result ? (
-                      <span className="font-bold text-gray-700">
-                        {m.result.winnerId === m.participant1Id ? m.result.winnerScore : m.result.loserScore}
-                        <span className="text-gray-300 mx-1">-</span>
-                        {m.result.winnerId === m.participant2Id ? m.result.winnerScore : m.result.loserScore}
-                      </span>
+                      <>
+                        <span className="font-bold text-gray-700">
+                          {m.result.winnerId === m.participant1Id ? m.result.winnerScore : m.result.loserScore}
+                          <span className="text-gray-300 mx-1">-</span>
+                          {m.result.winnerId === m.participant2Id ? m.result.winnerScore : m.result.loserScore}
+                        </span>
+                        {(() => {
+                          const rec = scoreRecords.find(r => r.tournamentId === tournamentId && r.eventId === eventId && r.matchId === m.id)
+                          if (!rec || rec.sets.length === 0) return null
+                          return (
+                            <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
+                              {rec.sets.map(([s1, s2], si) => (
+                                <span key={si} className={`text-[9px] px-1 rounded font-mono ${s1 > s2 ? 'bg-blue-100 text-blue-600' : 'bg-red-50 text-red-500'}`}>{s1}-{s2}</span>
+                              ))}
+                            </div>
+                          )
+                        })()}
+                      </>
                     ) : (
                       <span className="text-gray-300 text-sm">vs</span>
                     )}
