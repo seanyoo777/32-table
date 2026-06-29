@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.05 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.08 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,32 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-114. v5.08 — 통계 포인트 TOP3 선수 카드
+
+자동 루프 세션. Stats.tsx 하단에 포인트 상위 3명 가로 카드 섹션 추가.
+
+### 변경 (Stats.tsx)
+- players 3명 이상일 때만 렌더링.
+- 🥇🥈🥉 메달, 이름, 소속, 포인트, 승/패/승률 표시.
+- 1위=yellow-50, 2위=gray-50, 3위=orange-50 배경.
+
+## 12-113. v5.07 — 대시보드 호출 경기 인라인 코트 변경
+
+자동 루프 세션. Dashboard.tsx matchCall 카드에 코트 변경 인라인 UI 추가.
+
+### 변경 (Dashboard.tsx, useStore.ts)
+- 미확인 카드에 "코트↕" 버튼 → 숫자 input + 저장/취소 버튼 인라인 표시.
+- useStore에 updateMatchCallTable(id, tableNo) 액션 추가.
+
+## 12-112. v5.06 — 홈 점수 기록 피드 W/L 색상
+
+자동 루프 세션. Home.tsx 최근 점수 기록 3건 승자/패자 색상 강화.
+
+### 변경 (Home.tsx)
+- 승자: text-green-700 + 초록 W 배지.
+- 패자: text-red-500 + 빨강 L 배지.
+- 스코어: bg-gray-100 pill 형태.
 
 ## 12-111. v5.05 — 랭킹 선수 모달 종목별 승률 레이더 차트
 
