@@ -30,6 +30,7 @@ export default function CheckInPage() {
   const [walkinSchool, setWalkinSchool] = useState('')
   const [walkinDiv, setWalkinDiv] = useState<Division>('일반')
   const [walkinGender, setWalkinGender] = useState<'남' | '여'>('남')
+  const [divFilter, setDivFilter] = useState<string>('')
 
   const checkedIn = players.filter(p => p.checkedIn)
   const notCheckedIn = players.filter(p => !p.checkedIn)
@@ -418,7 +419,17 @@ export default function CheckInPage() {
       {/* ── 체크인 현황 ── */}
       {tab === 'list' && (
         <div className="space-y-3">
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 flex-wrap">
+            <select
+              className="select text-sm py-1.5 flex-shrink-0"
+              value={divFilter}
+              onChange={e => setDivFilter(e.target.value)}
+            >
+              <option value="">전체 부문</option>
+              {(['초등','중등','고등','대학','일반','생활체육'] as const).map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
             {notCheckedIn.length > 0 && (
               <button onClick={exportNotCheckedInCSV} className="btn-secondary text-sm flex items-center gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50">
                 <Download size={14} /> 미체크인 CSV
@@ -474,7 +485,7 @@ export default function CheckInPage() {
           })()}
 
           {/* By Division */}
-          {(['초등','중등','고등','대학','일반','생활체육'] as const).map(div => {
+          {(['초등','중등','고등','대학','일반','생활체육'] as const).filter(d => !divFilter || d === divFilter).map(div => {
             const divPlayers = players.filter(p => p.division === div)
             const divIn = divPlayers.filter(p => p.checkedIn)
             return (
