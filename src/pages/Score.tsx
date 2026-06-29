@@ -901,6 +901,26 @@ function ManualEntry() {
                 </div>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayAll = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+              if (todayAll.length < 5) return null
+              const verN = todayAll.filter(r => r.verified).length
+              const unverN = todayAll.length - verN
+              if (verN === 0 && unverN === 0) return null
+              const R = 9, circ = +(2 * Math.PI * R).toFixed(2)
+              const arc = +(circ * verN / todayAll.length).toFixed(2)
+              return (
+                <span className="flex items-center gap-1 flex-shrink-0 bg-white border border-gray-200 px-1.5 py-0.5 rounded-full">
+                  <svg width={20} height={20} viewBox="0 0 20 20">
+                    <circle cx={10} cy={10} r={R} fill="none" stroke="#fde68a" strokeWidth={3} />
+                    <circle cx={10} cy={10} r={R} fill="none" stroke="#22c55e" strokeWidth={3}
+                      strokeDasharray={`${arc} ${circ}`} strokeLinecap="round" transform="rotate(-90 10 10)" />
+                  </svg>
+                  <span className="text-[10px] text-gray-600">{Math.round(verN / todayAll.length * 100)}%확인</span>
+                </span>
+              )
+            })()}
             {recUnverifiedCount > 0 && (
               <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
                 className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
