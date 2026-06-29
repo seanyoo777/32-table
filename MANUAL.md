@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.28 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.31 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,40 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-38. v4.31 — 홈 다음 대기경기 미리보기
+
+자동 루프 세션. 홈 Col 3 하단에 "다음 호출 예정" 카드 추가.
+
+### 다음 호출 예정 (Home.tsx)
+- activeTournaments 전체 대기경기 중 상위 3개 추출(`nextPending`).
+- 종목명·선수명 오렌지 칩 + "대시보드에서 호출 →" 버튼.
+- 대기 경기 없으면 카드 숨김. pMap에 pairs 포함 확장.
+
+---
+
+## 12-37. v4.30 — 라이브보드 공지사항 배너
+
+자동 루프 세션. 라이브보드에 운영자 한 줄 공지 입력·표시 기능 추가.
+
+### 공지사항 배너 (useStore.ts + Liveboard.tsx)
+- store에 `announcement: string` + `setAnnouncement()` 추가 (persist).
+- 컨트롤 바에 W-64 텍스트 입력란 + X 지우기 버튼.
+- 입력 시 메인 영역에 노란 배너(📢) 즉시 표시, 빈 문자열이면 숨김.
+
+---
+
+## 12-36. v4.29 — 대시보드 대기경기 대회별 필터
+
+자동 루프 세션. 대기중 경기 컬럼에 대회 필터 드롭다운 추가.
+
+### 대회 필터 (Dashboard.tsx)
+- `pendingTourFilter` state + `filteredPendingMatches` 파생.
+- 활성 대회 2개 이상일 때만 드롭다운 표시.
+- 카운트 "N/전체" 형식, 필터 변경 시 체크박스 초기화.
+- callablePendingKeys·일괄 호출도 필터된 경기 기준.
 
 ---
 
