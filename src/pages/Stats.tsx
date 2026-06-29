@@ -646,6 +646,34 @@ export default function Stats() {
             )
           })()}
 
+          {/* 포인트 TOP 3 선수 */}
+          {players.length >= 3 && (() => {
+            const medals = ['🥇', '🥈', '🥉']
+            const top3 = [...players].sort((a, b) => b.points - a.points).slice(0, 3)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Trophy size={14} className="text-yellow-500" /> 포인트 TOP 3
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {top3.map((p, i) => {
+                    const total = p.wins + p.losses
+                    const wr = total > 0 ? Math.round(p.wins / total * 100) : 0
+                    return (
+                      <div key={p.id} className={`rounded-xl border p-3 text-center ${i === 0 ? 'border-yellow-300 bg-yellow-50' : i === 1 ? 'border-gray-300 bg-gray-50' : 'border-orange-200 bg-orange-50'}`}>
+                        <div className="text-2xl mb-1">{medals[i]}</div>
+                        <div className="font-bold text-sm text-gray-800 truncate">{p.name}</div>
+                        <div className="text-xs text-gray-500 truncate mb-1.5">{p.school}</div>
+                        <div className="font-black text-blue-600 text-base">{p.points.toLocaleString()}P</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">{p.wins}승 {p.losses}패 · {wr}%</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
