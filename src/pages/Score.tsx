@@ -859,6 +859,25 @@ function ManualEntry() {
             })()}
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
+              const todaySorted2 = scoreRecords
+                .filter(r => r.recordedAt?.startsWith(todayISO) && r.recordedAt)
+                .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))
+              if (todaySorted2.length < 3) return null
+              const firstT = new Date(todaySorted2[0].recordedAt!)
+              const lastT = new Date(todaySorted2[todaySorted2.length - 1].recordedAt!)
+              const fmt = (d: Date) => d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+              const diffMs = lastT.getTime() - firstT.getTime()
+              const diffH = Math.floor(diffMs / 3600000)
+              const diffM = Math.floor((diffMs % 3600000) / 60000)
+              const durStr = diffH > 0 ? `${diffH}h ${diffM}m` : `${diffM}m`
+              return (
+                <span className="text-[10px] bg-gray-50 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  {fmt(firstT)} ~ {fmt(lastT)} ({durStr})
+                </span>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
               if (todayRecs.length < 5) return null
               const pairCount = new Map<string, number>()
