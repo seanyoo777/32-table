@@ -121,6 +121,7 @@ export default function Rankings() {
   const [mockGenCount, setMockGenCount] = useState(500)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedRow, setSelectedRow] = useState<string | null>(null)
+  const [selectedDiv, setSelectedDiv] = useState<Division | null>(null)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 50
   const [pairPage, setPairPage] = useState(1)
@@ -1051,9 +1052,11 @@ export default function Rankings() {
           const topM = [...males].sort((a, b) => b.points - a.points)[0]
           const topF = [...females].sort((a, b) => b.points - a.points)[0]
           const isActive = rankView === div
+          const isSelected = selectedDiv === div
           return (
-            <div key={div} onClick={() => { setTab('singles'); setRankView(div); setSubGender('all'); setPage(1) }}
-              className={`card text-center py-3 cursor-pointer transition-all hover:shadow-md border-2 ${isActive ? divBorder[div] : 'border-transparent'}`}>
+            <div key={div}
+              onClick={() => { setTab('singles'); setRankView(div); setSubGender('all'); setPage(1); setSelectedDiv(isSelected ? null : div) }}
+              className={`card text-center py-3 cursor-pointer transition-all hover:shadow-md border-2 ${isSelected ? divBorder[div] + ' ring-2 ring-offset-1 ring-blue-300' : isActive ? divBorder[div] : 'border-transparent'}`}>
               <span className={`badge ${divColors[div]} mb-2`}>{div}</span>
               <div className="text-xl font-bold text-gray-700">{dp.length}</div>
               <div className="flex justify-center gap-2 text-[10px] text-gray-500 mb-2">
@@ -1067,6 +1070,39 @@ export default function Rankings() {
           )
         })}
       </div>
+
+      {/* Division TOP3 mini-panel */}
+      {selectedDiv && (() => {
+        const dp = players.filter(p => p.division === selectedDiv).sort((a, b) => b.points - a.points)
+        if (dp.length === 0) return null
+        const top3 = dp.slice(0, 3)
+        const medals = ['🥇', '🥈', '🥉']
+        return (
+          <div className={`card border-2 ${divBorder[selectedDiv]} py-3`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`badge ${divColors[selectedDiv]}`}>{selectedDiv} TOP {Math.min(3, dp.length)}</span>
+              <span className="text-[10px] text-gray-400">포인트 기준 · {dp.length}명 중</span>
+              <button onClick={() => setSelectedDiv(null)} className="ml-auto text-gray-300 hover:text-gray-500 text-xs">✕</button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {top3.map((p, i) => (
+                <div key={p.id}
+                  onClick={e => { e.stopPropagation(); setStatsModal(p) }}
+                  className="rounded-xl bg-white border border-gray-100 p-2 text-center cursor-pointer hover:shadow-sm transition-shadow">
+                  <div className="text-lg">{medals[i]}</div>
+                  <div className="font-bold text-sm text-gray-800 truncate">{p.name}</div>
+                  <div className="text-[10px] text-gray-400 truncate">{p.school}</div>
+                  <div className="text-xs font-black text-blue-600 mt-0.5">{p.points.toLocaleString()}P</div>
+                  <div className="text-[10px] text-gray-400">{p.wins}승 {p.losses}패</div>
+                </div>
+              ))}
+              {dp.length < 3 && Array.from({ length: 3 - dp.length }, (_, i) => (
+                <div key={i} className="rounded-xl bg-gray-50 border border-dashed border-gray-200 p-2 flex items-center justify-center text-[10px] text-gray-300">비어있음</div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
       </div>{/* /scrollable-content */}
 
       {/* Add Player Modal */}

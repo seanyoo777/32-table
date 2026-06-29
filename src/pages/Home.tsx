@@ -86,6 +86,19 @@ export default function Home() {
           <p className="text-blue-100 text-xs mt-0.5">
             {appSettings.organizerName ? `${appSettings.organizerName} · ` : ''}{today}
           </p>
+          {activeTournaments.length > 0 && (() => {
+            const totalM = allActiveMatches.length
+            const pct = totalM > 0 ? Math.round(doneTotal / totalM * 100) : 0
+            if (totalM === 0) return null
+            return (
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="w-24 h-1 bg-blue-400/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-white rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-[11px] text-blue-100">{doneTotal}/{totalM} 완료 ({pct}%)</span>
+              </div>
+            )
+          })()}
         </div>
         <div className="flex gap-6 flex-shrink-0">
           <Stat label="등록 선수" value={players.length} />

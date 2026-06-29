@@ -382,6 +382,7 @@ function ManualEntry() {
   const [matchSearch, setMatchSearch] = useState('')
   const [recSearch, setRecSearch] = useState('')
   const [recUnverifiedOnly, setRecUnverifiedOnly] = useState(false)
+  const [winnerOnly, setWinnerOnly] = useState(false)
   const [recTournamentId, setRecTournamentId] = useState('')
   const [recPage, setRecPage] = useState(0)
   const REC_PAGE_SIZE = 12
@@ -441,6 +442,10 @@ function ManualEntry() {
     const q = recSearch.toLowerCase()
     const n1 = (pMap[r.participant1Id]?.name ?? '').toLowerCase()
     const n2 = (pMap[r.participant2Id]?.name ?? '').toLowerCase()
+    if (winnerOnly) {
+      const winnerName = r.p1Score > r.p2Score ? n1 : n2
+      return winnerName.includes(q)
+    }
     return n1.includes(q) || n2.includes(q)
   })
   const recTotalPages = Math.max(1, Math.ceil(filteredRecords.length / REC_PAGE_SIZE))
@@ -712,12 +717,20 @@ function ManualEntry() {
           ) : (
             <>
               <div className="flex gap-2 mb-2">
-                <input
-                  className="input flex-1 text-sm"
-                  placeholder="선수명으로 검색..."
-                  value={recSearch}
-                  onChange={e => { setRecSearch(e.target.value); setRecPage(0) }}
-                />
+                <div className="flex flex-1 rounded-lg overflow-hidden border border-gray-200 focus-within:border-blue-400">
+                  <input
+                    className="flex-1 text-sm px-3 py-2 bg-white focus:outline-none"
+                    placeholder={winnerOnly ? '승자 이름 검색...' : '선수명으로 검색...'}
+                    value={recSearch}
+                    onChange={e => { setRecSearch(e.target.value); setRecPage(0) }}
+                  />
+                  <button
+                    onClick={() => { setWinnerOnly(v => !v); setRecPage(0) }}
+                    title="승자만 필터"
+                    className={`px-2 text-xs font-bold flex-shrink-0 border-l border-gray-200 transition-colors ${winnerOnly ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}>
+                    W
+                  </button>
+                </div>
                 {tournaments.length > 0 && (
                   <select
                     className="select text-sm min-w-[120px]"
@@ -728,9 +741,9 @@ function ManualEntry() {
                     {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 )}
-                {(recSearch || recTournamentId || recUnverifiedOnly) && (
+                {(recSearch || recTournamentId || recUnverifiedOnly || winnerOnly) && (
                   <button
-                    onClick={() => { setRecSearch(''); setRecTournamentId(''); setRecUnverifiedOnly(false); setRecPage(0) }}
+                    onClick={() => { setRecSearch(''); setRecTournamentId(''); setRecUnverifiedOnly(false); setWinnerOnly(false); setRecPage(0) }}
                     className="flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium whitespace-nowrap"
                   >초기화 ✕</button>
                 )}
