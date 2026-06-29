@@ -354,6 +354,30 @@ export default function Stats() {
             </div>
           </section>
 
+          {/* 체크인 vs 미체크인 스택 바 */}
+          {players.length >= 5 && players.some(p => p.checkedIn) && (() => {
+            const checkedIn = players.filter(p => p.checkedIn).length
+            const notChecked = players.length - checkedIn
+            const ciPct = Math.round(checkedIn / players.length * 100)
+            return (
+              <section className="card py-2">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <CheckCircle size={13} className="text-green-500" />
+                  <span className="text-xs font-semibold text-gray-700">체크인 현황</span>
+                  <span className="ml-auto text-[11px] text-gray-500">{checkedIn}/{players.length}명 ({ciPct}%)</span>
+                </div>
+                <div className="flex h-3 rounded-full overflow-hidden gap-px">
+                  <div className="bg-green-400 transition-all" style={{ width: `${ciPct}%` }} title={`체크인 ${checkedIn}명`} />
+                  <div className="bg-gray-200 flex-1" title={`미체크인 ${notChecked}명`} />
+                </div>
+                <div className="flex gap-3 mt-1">
+                  <span className="text-[10px] text-green-700">체크인 {checkedIn}</span>
+                  <span className="text-[10px] text-gray-400">미체크인 {notChecked}</span>
+                </div>
+              </section>
+            )
+          })()}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* 부문별 참가 분포 */}
             <section className="card">
