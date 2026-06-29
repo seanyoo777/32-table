@@ -413,6 +413,32 @@ export default function CheckInPage() {
               )}
             </div>
           </div>
+          {/* 부문별 체크인율 요약 */}
+          {(() => {
+            const divSummary = (['초등','중등','고등','대학','일반','생활체육'] as const)
+              .map(d => ({ d, total: players.filter(p => p.division === d).length, done: players.filter(p => p.division === d && p.checkedIn).length }))
+              .filter(x => x.total > 0)
+            if (divSummary.length < 2) return null
+            return (
+              <div className="card">
+                <h3 className="text-xs font-semibold text-gray-500 mb-2">부문별 체크인율</h3>
+                <div className="space-y-1.5">
+                  {divSummary.map(({ d, total, done }) => {
+                    const pct = Math.round(done / total * 100)
+                    return (
+                      <div key={d} className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-14 flex-shrink-0">{d}</span>
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[10px] text-gray-400 w-14 text-right flex-shrink-0">{done}/{total} {pct}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
         </div>
       )}
 
