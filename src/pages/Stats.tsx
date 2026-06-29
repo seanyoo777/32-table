@@ -600,6 +600,52 @@ export default function Stats() {
             </section>
           )}
 
+          {/* 최근 30일 경기 히트맵 */}
+          {scoreRecords.length > 0 && (() => {
+            const today = new Date(); today.setHours(0,0,0,0)
+            const days = Array.from({ length: 30 }, (_, i) => {
+              const d = new Date(today); d.setDate(today.getDate() - 29 + i)
+              const key = d.toISOString().split('T')[0]
+              const count = scoreRecords.filter(r => r.recordedAt?.startsWith(key)).length
+              const dayOfWeek = d.getDay()
+              return { key, count, dayOfWeek, isToday: i === 29, label: `${d.getMonth()+1}/${d.getDate()}` }
+            })
+            const maxCount = Math.max(...days.map(d => d.count), 1)
+            // Group into weeks (columns)
+            const firstDow = days[0].dayOfWeek
+            const padded = [...Array(firstDow).fill(null), ...days]
+            const weeks: (typeof days[0] | null)[][] = []
+            for (let i = 0; i < padded.length; i += 7) weeks.push(padded.slice(i, i + 7))
+            if (weeks[weeks.length-1].length < 7) { while (weeks[weeks.length-1].length < 7) weeks[weeks.length-1].push(null) }
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <BarChart3 size={14} className="text-indigo-500" /> 최근 30일 경기 현황
+                </h2>
+                <div className="flex gap-0.5">
+                  {weeks.map((week, wi) => (
+                    <div key={wi} className="flex flex-col gap-0.5 flex-1">
+                      {week.map((day, di) => (
+                        <div key={di}
+                          className={`rounded-sm h-5 flex items-center justify-center ${day === null ? 'bg-transparent' : day.count === 0 ? 'bg-gray-100' : day.isToday ? 'bg-indigo-500' : `bg-indigo-${Math.max(1, Math.round(day.count / maxCount * 4)) * 100 + 100}`}`}
+                          title={day ? `${day.label}: ${day.count}경기` : ''}>
+                          {day?.isToday && <span className="text-[8px] text-white font-bold">{day.count}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-end gap-1.5 mt-2">
+                  <span className="text-[10px] text-gray-400">적음</span>
+                  {[100,200,300,400,500].map(shade => (
+                    <div key={shade} className={`w-3 h-3 rounded-sm bg-indigo-${shade}`} />
+                  ))}
+                  <span className="text-[10px] text-gray-400">많음</span>
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
