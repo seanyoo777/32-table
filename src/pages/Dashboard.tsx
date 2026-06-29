@@ -76,6 +76,14 @@ export default function DashboardPage() {
   const pendingCalls = matchCalls.filter(c => !c.acknowledged)
   const unverifiedRecords = scoreRecords.filter(r => !r.verified)
 
+  // 진행중 대회에서 모든 경기가 완료된 종목
+  const completedEvents = activeTournaments.flatMap(t =>
+    t.events.filter(ev => {
+      const real = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+      return real.length > 0 && real.every(m => m.result)
+    }).map(ev => ({ tourName: t.name, label: ev.label, division: ev.division, gender: ev.gender }))
+  )
+
   // 이미 호출된 경기의 참가자 ID 세트 — 대기중 경기 충돌 감지용
   const calledMatchIds = new Set(pendingCalls.map(c => c.matchId))
   const calledParticipantIds = new Set<string>(
@@ -178,6 +186,20 @@ export default function DashboardPage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* 종목 완료 알림 배너 */}
+      {completedEvents.length > 0 && (
+        <div className="flex-shrink-0 px-4 py-2 bg-green-50 border-b border-green-100">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-green-700 flex-shrink-0">✅ 종목 완료</span>
+            {completedEvents.map((ev, i) => (
+              <span key={i} className="text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                {ev.label}
+              </span>
+            ))}
           </div>
         </div>
       )}
