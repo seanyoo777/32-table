@@ -904,6 +904,20 @@ export default function DashboardPage() {
               </div>
             )
           })()}
+          {avgMatchMin && filteredPendingMatches.length >= 2 && (() => {
+            const totalMin = filteredPendingMatches.length * avgMatchMin
+            const etaMs = now.getTime() + totalMin * 60000
+            const eta = new Date(etaMs)
+            const hh = String(eta.getHours()).padStart(2, '0')
+            const mm = String(eta.getMinutes()).padStart(2, '0')
+            return (
+              <div className="mt-1 px-2.5 py-1.5 bg-teal-50 rounded-lg text-[11px] text-teal-700 flex items-center gap-2 flex-shrink-0">
+                <span className="text-teal-400">🕐</span>
+                <span>예상 완료 <span className="font-bold">{hh}:{mm}</span></span>
+                <span className="text-teal-400 ml-auto">약 {totalMin}분</span>
+              </div>
+            )
+          })()}
         </div>
 
         {/* ── Col 3: Match calling + progress + recent results ── */}
