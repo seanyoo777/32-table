@@ -996,6 +996,11 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     URL.revokeObjectURL(url)
   }
 
+  const courtBadgeColor = (c: number) => {
+    const map: Record<number, string> = { 1: 'bg-blue-500', 2: 'bg-green-500', 3: 'bg-orange-500', 4: 'bg-purple-500' }
+    return map[c] ?? 'bg-gray-500'
+  }
+
   const slotEventColors = (slot: ScheduleSlot) => {
     if (slot.type && slot.type !== 'match') return eventColors[slot.type] ?? 'bg-gray-400'
     return eventColors[slot.eventType] ?? 'bg-gray-400'
@@ -1306,7 +1311,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                         <tr>
                           <th className="py-2 px-3 text-left font-semibold text-gray-600 w-24 border border-gray-200 bg-gray-100 whitespace-nowrap">시간</th>
                           {courts.map(c => (
-                            <th key={c} className="py-2 px-2 text-center font-semibold text-gray-600 min-w-[120px] border border-gray-200 bg-gray-100 whitespace-nowrap">코트 {c}</th>
+                            <th key={c} className="py-2 px-2 text-center font-semibold text-gray-600 min-w-[120px] border border-gray-200 bg-gray-100 whitespace-nowrap">
+                              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold mr-1 ${courtBadgeColor(c)}`}>{c}</span>코트
+                            </th>
                           ))}
                         </tr>
                       </thead>
@@ -1355,7 +1362,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                 <tr>
                   <th className="py-2 px-3 text-left font-semibold text-gray-600 w-24 border border-gray-200 bg-gray-100 whitespace-nowrap">시간</th>
                   {filteredCourts.map(c => (
-                    <th key={c} className="py-2 px-2 text-center font-semibold text-gray-600 min-w-[120px] border border-gray-200 bg-gray-100 whitespace-nowrap">코트 {c}</th>
+                    <th key={c} className="py-2 px-2 text-center font-semibold text-gray-600 min-w-[120px] border border-gray-200 bg-gray-100 whitespace-nowrap">
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold mr-1 ${courtBadgeColor(c)}`}>{c}</span>코트
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -1410,7 +1419,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                     onDrop={e => { e.preventDefault(); const sid = draggingSlotId || e.dataTransfer.getData('slotId'); if (sid) { handleMoveSlot(sid, { courtNo: c }); setDraggingSlotId(null); setDragOverCourt(null) } }}
                   >
                     <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm">
-                      <Building2 size={14} /> 코트 {c}
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold ${courtBadgeColor(c)}`}>{c}</span>
+                      코트
                       <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
                     </h3>
                     <div className="space-y-1.5">
