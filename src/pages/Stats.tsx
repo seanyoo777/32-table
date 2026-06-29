@@ -327,6 +327,36 @@ export default function Stats() {
             )
           })()}
 
+          {/* 선수별 평균 득점 TOP3 칩 */}
+          {scoreRecords.length >= 10 && (() => {
+            const scoreSum = new Map<string, { sum: number; cnt: number }>()
+            scoreRecords.filter(r => r.participant1Id && r.participant2Id).forEach(r => {
+              const upd = (id: string, score: number) => {
+                const cur = scoreSum.get(id) ?? { sum: 0, cnt: 0 }
+                scoreSum.set(id, { sum: cur.sum + score, cnt: cur.cnt + 1 })
+              }
+              upd(r.participant1Id, r.p1Score)
+              upd(r.participant2Id, r.p2Score)
+            })
+            const top3 = [...scoreSum.entries()]
+              .filter(([, v]) => v.cnt >= 3)
+              .map(([id, v]) => ({ id, avg: Math.round((v.sum / v.cnt) * 10) / 10 }))
+              .sort((a, b) => b.avg - a.avg)
+              .slice(0, 3)
+            if (top3.length < 3) return null
+            const getName = (id: string) => players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? '?'
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-amber-600 font-semibold flex-shrink-0">평균 득점</span>
+                {top3.map(({ id, avg }) => (
+                  <span key={id} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-medium">
+                    {getName(id)} {avg}점
+                  </span>
+                ))}
+              </div>
+            )
+          })()}
+
           {/* 오늘/어제/그제 경기 수 비교 */}
           {(() => {
             const dates = [0, 1, 2].map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0] })
