@@ -736,7 +736,15 @@ function ManualEntry() {
                 )}
               </div>
               {filteredRecords.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">검색 결과가 없습니다</p>
+                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                  <span className="text-3xl">🔍</span>
+                  <p className="text-sm text-gray-500 font-medium">검색 결과가 없습니다</p>
+                  <p className="text-xs text-gray-400">필터 조건을 변경해 보세요</p>
+                  <button
+                    onClick={() => { setRecSearch(''); setRecTournamentId(''); setRecUnverifiedOnly(false); setRecPage(0) }}
+                    className="mt-1 text-xs px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium"
+                  >필터 초기화</button>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {pagedRecords.map(r => {
