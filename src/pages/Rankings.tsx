@@ -1291,6 +1291,12 @@ export default function Rankings() {
                       <span className="font-bold text-blue-600">{p.points.toLocaleString()}</span>
                       <span className="text-xs text-gray-400 ml-1">P</span>
                       {(() => { const t = pairTrend.get(p.id); return t ? <span className={`ml-1 text-xs font-bold ${t === '↑' ? 'text-green-500' : t === '↓' ? 'text-red-500' : 'text-gray-300'}`}>{t}</span> : null })()}
+                      {(() => {
+                        const pl1pts = players.find(pl => pl.id === p.player1Id)?.points ?? 0
+                        const pl2pts = players.find(pl => pl.id === p.player2Id)?.points ?? 0
+                        if (pl1pts <= 0 && pl2pts <= 0) return null
+                        return <div className="text-[9px] mt-0.5 text-rose-600 font-medium">{(pl1pts + pl2pts).toLocaleString()}합</div>
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="text-green-600 font-medium">{p.wins}승</span>
