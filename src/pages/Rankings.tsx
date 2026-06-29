@@ -1057,6 +1057,25 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 오늘 경기 미진행 선수 수 칩 */}
+      {tab === 'singles' && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+        if (todayRecs.length < 1) return null
+        const checkedInPlayers = players.filter(p => p.checkedIn)
+        if (checkedInPlayers.length < 5) return null
+        const playedIds = new Set(todayRecs.flatMap(r => [r.participant1Id, r.participant2Id].filter(Boolean)))
+        const notPlayed = checkedInPlayers.filter(p => !playedIds.has(p.id)).length
+        if (notPlayed === 0) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium">
+              경기 미진행 {notPlayed}명
+            </span>
+          </div>
+        )
+      })()}
+
       {/* 포인트 분포 히스토그램 */}
       {tab === 'singles' && players.length >= 2 && (() => {
         const pts = players.map(p => p.points).filter(v => v > 0)
