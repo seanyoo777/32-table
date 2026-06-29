@@ -963,9 +963,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const endTime = plan.slots.reduce((latest, s) => s.endTime > latest ? s.endTime : latest, '')
 
   function exportScheduleCSV() {
-    const rows = ['날짜,시작,종료,코트,종목,선수1,선수2,라운드']
+    const rows = ['날짜,시작,종료,코트,부문,종목,선수1,선수2,라운드']
     for (const slot of filteredSlots) {
-      rows.push([plan.date, slot.startTime, slot.endTime, `${slot.courtNo}번`, slot.label, slot.participant1 ?? '', slot.participant2 ?? '', slot.round ?? ''].join(','))
+      rows.push([plan.date, slot.startTime, slot.endTime, `${slot.courtNo}번`, slot.division ?? '', slot.label, slot.participant1 ?? '', slot.participant2 ?? '', slot.round ?? ''].join(','))
     }
     const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
