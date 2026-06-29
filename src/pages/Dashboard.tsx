@@ -51,7 +51,7 @@ function exportMatchCallsCSV(calls: MatchCall[]) {
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
 export default function DashboardPage() {
-  const { tournaments, players, pairs, scoreRecords, liveMatches, matchCalls, addMatchCall, acknowledgeMatchCall, removeMatchCall, verifyScoreRecord } = useStore()
+  const { tournaments, players, pairs, scoreRecords, liveMatches, matchCalls, addMatchCall, acknowledgeMatchCall, removeMatchCall, updateMatchCallTable, verifyScoreRecord } = useStore()
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   const [callTableNo, setCallTableNo] = useState(1)
@@ -66,6 +66,8 @@ export default function DashboardPage() {
   const [bulkTableNo, setBulkTableNo] = useState(1)
   const [pendingSort, setPendingSort] = useState<'round' | 'points' | 'event'>('round')
   const [courtExpanded, setCourtExpanded] = useState(false)
+  const [editingCallId, setEditingCallId] = useState<string | null>(null)
+  const [editCallTable, setEditCallTable] = useState(1)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
   useEffect(() => {
@@ -799,10 +801,25 @@ export default function DashboardPage() {
                       )}
                     </span>
                     {!c.acknowledged ? (
-                      <button onClick={() => acknowledgeMatchCall(c.id)}
-                        className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200 flex items-center gap-0.5">
-                        <BellOff size={10} /> 확인
-                      </button>
+                      <>
+                        {editingCallId === c.id ? (
+                          <span className="flex items-center gap-0.5">
+                            <input type="number" min={1} max={99} value={editCallTable}
+                              onChange={e => setEditCallTable(Number(e.target.value))}
+                              className="w-10 text-center text-xs border border-gray-300 rounded px-1 py-0.5" />
+                            <button onClick={() => { updateMatchCallTable(c.id, editCallTable); setEditingCallId(null) }}
+                              className="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded hover:bg-blue-600">저장</button>
+                            <button onClick={() => setEditingCallId(null)} className="text-gray-300 hover:text-gray-500"><X size={10} /></button>
+                          </span>
+                        ) : (
+                          <button onClick={() => { setEditingCallId(c.id); setEditCallTable(c.tableNo) }}
+                            className="text-[10px] text-blue-500 hover:text-blue-700 px-1 flex-shrink-0">코트↕</button>
+                        )}
+                        <button onClick={() => acknowledgeMatchCall(c.id)}
+                          className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200 flex items-center gap-0.5">
+                          <BellOff size={10} /> 확인
+                        </button>
+                      </>
                     ) : (
                       <button onClick={() => removeMatchCall(c.id)} className="text-gray-300 hover:text-red-400 p-0.5">
                         <X size={12} />

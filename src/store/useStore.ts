@@ -95,6 +95,7 @@ interface StoreState {
   addMatchCall: (c: MatchCall) => void
   acknowledgeMatchCall: (id: string) => void
   removeMatchCall: (id: string) => void
+  updateMatchCallTable: (id: string, tableNo: number) => void
 
   // Rating & Check-in & Fee
   updatePlayerRating: (id: string, newRating: number, gamesPlayed: number) => void
@@ -329,6 +330,9 @@ export const useStore = create<StoreState>()(
       })),
       removeMatchCall: (id) => set((s) => ({
         matchCalls: s.matchCalls.filter(c => c.id !== id)
+      })),
+      updateMatchCallTable: (id, tableNo) => set((s) => ({
+        matchCalls: s.matchCalls.map(c => c.id === id ? { ...c, tableNo } : c)
       })),
 
       // Rating & Check-in & Fee
