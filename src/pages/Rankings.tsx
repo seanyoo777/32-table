@@ -498,6 +498,36 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 포인트 분포 히스토그램 */}
+      {tab === 'singles' && players.length >= 2 && (() => {
+        const pts = players.map(p => p.points).filter(v => v > 0)
+        if (pts.length < 2) return null
+        const mn = Math.min(...pts), mx = Math.max(...pts)
+        if (mn === mx) return null
+        const step = Math.ceil((mx - mn + 1) / 5)
+        const bins = Array.from({ length: 5 }, (_, i) => {
+          const lo = mn + i * step, hi = lo + step - 1
+          return { lo, hi, count: pts.filter(v => v >= lo && v <= hi).length }
+        })
+        const maxCount = Math.max(...bins.map(b => b.count), 1)
+        return (
+          <div className="card py-3">
+            <div className="text-xs text-gray-500 font-medium mb-2">포인트 분포</div>
+            <div className="flex items-end gap-1.5 h-10">
+              {bins.map((b, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                  <div className="w-full bg-blue-400 rounded-sm" style={{ height: `${Math.max(4, Math.round(b.count / maxCount * 36))}px` }} />
+                  <span className="text-[9px] text-gray-400 truncate w-full text-center">{b.lo}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between text-[9px] text-gray-400 mt-0.5">
+              <span>{mn}P</span><span>{mx}P</span>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Singles Table */}
       {tab === 'singles' && (
         <div className="card p-0 overflow-hidden">
