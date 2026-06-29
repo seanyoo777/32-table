@@ -1754,11 +1754,29 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
                       </span>
                       <span className="flex-1 truncate text-gray-700">vs {oppName}</span>
                       <span className={`font-semibold flex-shrink-0 ${isWin ? 'text-green-600' : 'text-red-500'}`}>{myScore} – {oppScore}</span>
+                      <span className={`text-[10px] font-bold flex-shrink-0 ${isWin ? 'text-green-600' : 'text-red-500'}`}>{isWin ? '+10' : '-10'}</span>
                       <span className="text-gray-400 flex-shrink-0 text-[10px]">{dateStr}</span>
                     </div>
                   )
                 })}
               </div>
+              {(() => {
+                const recent5 = recentRecords.slice(0, 5)
+                if (recent5.length < 2) return null
+                const delta = recent5.reduce((sum, r) => {
+                  const isP1 = r.participant1Id === player.id
+                  const myScore = isP1 ? r.p1Score : r.p2Score
+                  const oppScore = isP1 ? r.p2Score : r.p1Score
+                  return sum + (myScore > oppScore ? 10 : -10)
+                }, 0)
+                return (
+                  <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+                    <span>5경기 Elo 합산:</span>
+                    <span className={`font-bold ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-gray-500'}`}>{delta > 0 ? `+${delta}` : `${delta}`}</span>
+                    <span className="ml-1 text-gray-300">(현재 {player.rating ?? 1000} · K=20)</span>
+                  </div>
+                )
+              })()}
             </div>
           )
         })()}
