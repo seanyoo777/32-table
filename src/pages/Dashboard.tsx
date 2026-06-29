@@ -715,6 +715,19 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+            {liveMatches.length >= 1 && (() => {
+              const maxElapsed = liveMatches.map(lm => {
+                const call = matchCalls.find(c => c.matchId === lm.matchId)
+                if (!call?.calledAt) return null
+                return Math.floor((now.getTime() - new Date(call.calledAt).getTime()) / 60000)
+              }).filter((x): x is number => x !== null).sort((a, b) => b - a)[0] ?? null
+              if (maxElapsed === null || maxElapsed < 10) return null
+              return (
+                <span className="text-[10px] bg-blue-100 text-blue-700 border border-blue-300 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  ⏱ {maxElapsed}분 진행 중
+                </span>
+              )
+            })()}
             <button onClick={() => setCourtExpanded(v => !v)}
               className="ml-1 text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 bg-gray-50 flex-shrink-0">
               {courtExpanded ? '접기 ▲' : '전체 ▼'}
