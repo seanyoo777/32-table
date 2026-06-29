@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const [pendingTourFilter, setPendingTourFilter] = useState('')
   const [callTourFilter, setCallTourFilter] = useState('')
   const [bulkTableNo, setBulkTableNo] = useState(1)
+  const [pendingSort, setPendingSort] = useState<'round' | 'points' | 'event'>('round')
 
   function toggleSelectMatch(key: string) {
     setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
@@ -129,6 +130,19 @@ export default function DashboardPage() {
   const filteredPendingMatches = pendingTourFilter
     ? pendingMatches.filter(m => m.tournamentId === pendingTourFilter)
     : pendingMatches
+  const pointMap = Object.fromEntries([
+    ...players.map(p => [p.id, p.points]),
+    ...pairs.map(p => [p.id, Math.max(...[p.player1Id, p.player2Id].map(id => players.find(pl => pl.id === id)?.points ?? 0))]),
+  ])
+  const sortedPendingMatches = [...filteredPendingMatches].sort((a, b) => {
+    if (pendingSort === 'points') {
+      const aP = (pointMap[a.participant1Id ?? ''] ?? 0) + (pointMap[a.participant2Id ?? ''] ?? 0)
+      const bP = (pointMap[b.participant1Id ?? ''] ?? 0) + (pointMap[b.participant2Id ?? ''] ?? 0)
+      return bP - aP
+    }
+    if (pendingSort === 'event') return (a.eventLabel ?? '').localeCompare(b.eventLabel ?? '', 'ko')
+    return 0
+  })
   const callablePendingKeys = filteredPendingMatches
     .filter(m => m.participant1Id && m.participant2Id && !matchCalls.some(c => !c.acknowledged && c.matchId === m.id))
     .map(m => `${m.tournamentId}-${m.eventId}-${m.id}`)
@@ -566,11 +580,22 @@ export default function DashboardPage() {
               ))}
             </select>
           )}
-          {filteredPendingMatches.length === 0 ? (
+          {pendingMatches.length > 1 && (
+            <div className="flex items-center gap-1 mb-1.5 flex-shrink-0">
+              <span className="text-[10px] text-gray-400">정렬:</span>
+              {(['round', 'event', 'points'] as const).map(opt => (
+                <button key={opt} onClick={() => setPendingSort(opt)}
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${pendingSort === opt ? 'bg-blue-100 text-blue-600 border-blue-300 font-semibold' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
+                  {opt === 'round' ? '라운드순' : opt === 'event' ? '종목별' : '포인트순'}
+                </button>
+              ))}
+            </div>
+          )}
+          {sortedPendingMatches.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-300">대기중 없음</div>
           ) : (
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
-              {filteredPendingMatches.map(m => {
+              {sortedPendingMatches.map(m => {
                 const mKey = `${m.tournamentId}-${m.eventId}-${m.id}`
                 const p1 = m.participant1Id ? pMap[m.participant1Id] : null
                 const p2 = m.participant2Id ? pMap[m.participant2Id] : null
