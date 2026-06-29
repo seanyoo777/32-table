@@ -788,6 +788,31 @@ function ManualEntry() {
                 </div>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+              if (todayRecs.length < 5) return null
+              const pairCount = new Map<string, number>()
+              todayRecs.forEach(r => {
+                const key = [r.participant1Id, r.participant2Id].sort().join('|')
+                pairCount.set(key, (pairCount.get(key) ?? 0) + 1)
+              })
+              const rematch = [...pairCount.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 3)
+              if (rematch.length === 0) return null
+              return (
+                <div className="flex items-center gap-1 flex-wrap">
+                  {rematch.map(([key, n]) => {
+                    const [id1, id2] = key.split('|')
+                    const name = (id: string) => players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? id.slice(0, 6)
+                    return (
+                      <span key={key} className="text-[10px] bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                        {name(id1)} vs {name(id2)} {n}회
+                      </span>
+                    )
+                  })}
+                </div>
+              )
+            })()}
             {recUnverifiedCount > 0 && (
               <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
                 className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
