@@ -16,6 +16,12 @@ export default function Home() {
 
   const topPlayers = [...players].sort((a, b) => b.points - a.points).slice(0, 8)
 
+  const pMap = Object.fromEntries(players.map(p => [p.id, p.name]))
+  const completedTournaments = [...tournaments]
+    .filter(t => t.status === 'completed')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 3)
+
   const quickLinks = [
     { label: '랭킹 관리', desc: '선수·페어 포인트', icon: Trophy, color: 'border-yellow-200 bg-yellow-50 text-yellow-700', to: '/rankings' },
     { label: '대회·대진표', desc: '토너먼트·리그', icon: TableProperties, color: 'border-blue-200 bg-blue-50 text-blue-700', to: '/tournament' },
@@ -250,48 +256,84 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Col 3: Top players ── */}
-        <div className="card flex flex-col overflow-hidden">
-          <h2 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2 flex-shrink-0">
-            <Award size={14} /> 단식 TOP 랭킹
-          </h2>
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            {topPlayers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-300">
-                <Trophy size={28} className="mb-2" />
-                <p className="text-sm">선수가 없습니다</p>
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {topPlayers.map((p, i) => (
-                  <div key={p.id} className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-0">
-                    <RankBadge rank={i + 1} />
-                    {p.photoUrl
-                      ? <img src={p.photoUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                      : <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 flex-shrink-0 font-bold">{p.name[0]}</div>
-                    }
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm flex items-center gap-1.5 truncate">
-                        {p.name}
-                        <span className={`badge text-xs ${p.gender === '남' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
-                          {p.gender}
-                        </span>
+        {/* ── Col 3: Top players + Hall of Fame ── */}
+        <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+          <div className="card flex-1 flex flex-col overflow-hidden min-h-0">
+            <h2 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2 flex-shrink-0">
+              <Award size={14} /> 단식 TOP 랭킹
+            </h2>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {topPlayers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-300">
+                  <Trophy size={28} className="mb-2" />
+                  <p className="text-sm">선수가 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {topPlayers.map((p, i) => (
+                    <div key={p.id} className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-0">
+                      <RankBadge rank={i + 1} />
+                      {p.photoUrl
+                        ? <img src={p.photoUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        : <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 flex-shrink-0 font-bold">{p.name[0]}</div>
+                      }
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm flex items-center gap-1.5 truncate">
+                          {p.name}
+                          <span className={`badge text-xs ${p.gender === '남' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-500'}`}>
+                            {p.gender}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-400 truncate">{p.school} · {p.division}</div>
                       </div>
-                      <div className="text-xs text-gray-400 truncate">{p.school} · {p.division}</div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-bold text-blue-600 text-sm">{p.points.toLocaleString()}P</div>
+                        <div className="text-xs text-gray-500 font-mono">Elo {p.rating}</div>
+                      </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="font-bold text-blue-600 text-sm">{p.points.toLocaleString()}P</div>
-                      <div className="text-xs text-gray-500 font-mono">Elo {p.rating}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={() => navigate('/rankings')}
+              className="flex-shrink-0 mt-2 pt-2 border-t text-sm text-blue-600 hover:underline text-center">
+              전체 랭킹 보기 →
+            </button>
           </div>
-          <button onClick={() => navigate('/rankings')}
-            className="flex-shrink-0 mt-2 pt-2 border-t text-sm text-blue-600 hover:underline text-center">
-            전체 랭킹 보기 →
-          </button>
+
+          {completedTournaments.length > 0 && (
+            <div className="card flex-shrink-0">
+              <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+                <Star size={14} className="text-yellow-500" /> 명예의 전당
+              </h2>
+              <div className="space-y-2">
+                {completedTournaments.map(t => {
+                  const completedEvents = t.events.filter(ev => ev.status === 'completed' && ev.awards)
+                  if (completedEvents.length === 0) return null
+                  return (
+                    <div key={t.id} className="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                      <div className="font-medium text-xs text-gray-600 truncate mb-1">{t.name}</div>
+                      <div className="space-y-0.5">
+                        {completedEvents.slice(0, 3).map(ev => {
+                          const sorted = Object.entries(ev.awards!.points).sort(([, a], [, b]) => b - a)
+                          const gold = sorted[0] ? pMap[sorted[0][0]] : null
+                          const silver = sorted[1] ? pMap[sorted[1][0]] : null
+                          return gold ? (
+                            <div key={ev.id} className="flex items-center gap-1.5 text-[11px]">
+                              <span className="text-gray-400 truncate flex-shrink-0 w-16">{ev.label}</span>
+                              <span className="text-yellow-600">🥇</span>
+                              <span className="font-semibold truncate">{gold}</span>
+                              {silver && <span className="text-gray-400 truncate">· 🥈{silver}</span>}
+                            </div>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
