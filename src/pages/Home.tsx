@@ -128,6 +128,15 @@ export default function Home() {
             {upcomingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-blue-200 transition-colors">예정 {upcomingN}</button>}
             {dLabel && <span className="text-[11px] bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full font-bold">{dLabel}</span>}
             {completedN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium hover:bg-gray-200 transition-colors">완료 {completedN}</button>}
+            {(() => {
+              const liveN = matchCalls.filter(c => !c.acknowledged).length
+              if (liveN === 0) return null
+              return (
+                <button onClick={() => navigate('/dashboard')} className="text-[11px] bg-red-500 text-white px-2.5 py-0.5 rounded-full font-bold animate-pulse hover:bg-red-600 transition-colors flex items-center gap-1">
+                  🔴 LIVE {liveN}
+                </button>
+              )
+            })()}
             {totalM > 0 && (
               <span className="flex items-center gap-1 ml-1" title={`전체 경기 완료율 ${donePct}% (${doneM}/${totalM})`}>
                 <svg width={28} height={28} viewBox="0 0 28 28">
