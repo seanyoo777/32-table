@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.41 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.44 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,36 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-151. v5.44 — 랭킹 선수 포인트 트렌드 화살표
+
+자동 루프. Rankings.tsx 선수 포인트 옆 ↑/↓/— 화살표.
+
+### 변경 (Rankings.tsx)
+- `playerTrend` useMemo: 최근 3경기 2승+=↑, 2패+=↓, 기타=—.
+- 포인트 셀에 `playerTrend.get(p.id)` IIFE 인라인 표시.
+
+---
+
+## 12-150. v5.43 — 대시보드 호출 경과시간 3단계 색상
+
+자동 루프. Dashboard.tsx matchCall 경과시간 color tier.
+
+### 변경 (Dashboard.tsx)
+- 0-4분=gray, 5-14분=amber, 15분+=red.
+- "N분 경과" 텍스트로 변경. LIVE 팝오버도 동일 적용.
+
+---
+
+## 12-149. v5.42 — 홈 활성 대회 미완료 종목 칩
+
+자동 루프. Home.tsx 대회 카드 종목 진행 칩.
+
+### 변경 (Home.tsx)
+- `pendingEvents` 계산: evTotal > 0 && evDone < evTotal인 종목 수.
+- N종목 남음 amber 칩, 0이면 전체 완료 emerald 칩.
 
 ---
 
