@@ -693,6 +693,40 @@ export default function Rankings() {
         )
       })()}
 
+      {/* Elo 레이팅 분포 히스토그램 */}
+      {tab === 'singles' && (() => {
+        const withElo = players.filter(p => p.rating && p.rating !== 1000)
+        if (withElo.length < 5) return null
+        const BINS = [
+          { label: '~999', min: 0, max: 1000, color: '#94a3b8' },
+          { label: '1000-1099', min: 1000, max: 1100, color: '#22d3ee' },
+          { label: '1100-1199', min: 1100, max: 1200, color: '#6366f1' },
+          { label: '1200-1299', min: 1200, max: 1300, color: '#f59e0b' },
+          { label: '1300+', min: 1300, max: Infinity, color: '#f87171' },
+        ]
+        const counts = BINS.map(b => ({ ...b, n: players.filter(p => { const r = p.rating ?? 1000; return r >= b.min && r < b.max }).length }))
+        const maxN = Math.max(...counts.map(b => b.n), 1)
+        if (counts.every(b => b.n === 0)) return null
+        return (
+          <div className="card py-2">
+            <div className="text-[10px] text-gray-400 mb-2 font-medium">Elo 레이팅 분포</div>
+            <div className="flex items-end gap-1 h-10">
+              {counts.map(b => (
+                <div key={b.label} className="flex-1 flex flex-col items-center gap-0.5">
+                  <div className="w-full rounded-t transition-all" style={{ height: `${Math.max(b.n / maxN * 32, b.n > 0 ? 4 : 0)}px`, background: b.color }} title={`${b.label}: ${b.n}명`} />
+                  {b.n > 0 && <span className="text-[9px] text-gray-500 font-semibold">{b.n}</span>}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-1 mt-0.5">
+              {counts.map(b => (
+                <div key={b.label} className="flex-1 text-center text-[8px] text-gray-400 truncate">{b.label}</div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Rank view selector — singles only */}
       {tab === 'singles' && (
         <div className="card space-y-3 py-3">
