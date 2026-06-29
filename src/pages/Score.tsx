@@ -813,6 +813,22 @@ function ManualEntry() {
                 </div>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+              if (todayRecs.length < 3) return null
+              const withDiff = todayRecs.map(r => ({ r, diff: Math.abs(r.p1Score - r.p2Score) })).sort((a, b) => b.diff - a.diff)
+              const top = withDiff[0]
+              if (top.diff < 2) return null
+              const winnerId = top.r.p1Score > top.r.p2Score ? top.r.participant1Id : top.r.participant2Id
+              const loserId = top.r.p1Score > top.r.p2Score ? top.r.participant2Id : top.r.participant1Id
+              const getName = (id: string) => players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? '?'
+              return (
+                <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  최대 점수차 {top.diff} · {getName(winnerId)} {top.r.p1Score > top.r.p2Score ? top.r.p1Score : top.r.p2Score}:{top.r.p1Score > top.r.p2Score ? top.r.p2Score : top.r.p1Score} {getName(loserId)}
+                </span>
+              )
+            })()}
             {recUnverifiedCount > 0 && (
               <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
                 className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
