@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.44 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.47 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,36 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-154. v5.47 — 경기일정 팝오버 이전/다음 슬롯 이동
+
+자동 루프. Schedule.tsx 팝오버 코트 내 네비게이션.
+
+### 변경 (Schedule.tsx)
+- `filteredSlots`에서 같은 courtNo 슬롯 startTime 정렬.
+- idx 기준 prev/next 슬롯 추출. 버튼 클릭 시 `setPopoverSlot(prev/next)`.
+
+---
+
+## 12-153. v5.46 — Dashboard 대기경기 종목별 건수 바
+
+자동 루프. Dashboard.tsx 대기경기 목록 위 미니 바.
+
+### 변경 (Dashboard.tsx)
+- `filteredPendingMatches` eventLabel별 건수 Map.
+- 상위 4개 가로 바, 최대 건수 기준 정규화 width.
+
+---
+
+## 12-152. v5.45 — 통계 종목별 완료율 도넛 그리드
+
+자동 루프. Stats.tsx 활성 대회 종목 도넛 그리드.
+
+### 변경 (Stats.tsx)
+- 활성 대회 종목 evItems 수집, 3개 이상 시 flex-wrap 그리드.
+- 36px SVG 도넛, pct 색상: 100%=green, 50%+=indigo, 미만=amber.
 
 ---
 
