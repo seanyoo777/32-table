@@ -405,6 +405,41 @@ export default function CheckInPage() {
             {checkedIn.length}명 체크인 / {notCheckedIn.length}명 미체크인
           </div>
 
+          {/* ── 현장등록 선수 ── */}
+          {(() => {
+            const walkins = players.filter(p => p.school === '현장등록')
+            if (walkins.length === 0) return null
+            return (
+              <div className="card py-3 border-orange-200 bg-orange-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm text-orange-700 flex items-center gap-1">
+                    <UserPlus size={13} className="flex-shrink-0" /> 현장등록 선수
+                  </span>
+                  <span className="text-xs text-orange-500">{walkins.filter(p => p.checkedIn).length}/{walkins.length}명 체크인</span>
+                </div>
+                <div className="space-y-1">
+                  {walkins.map(p => (
+                    <div key={p.id} className="flex items-center gap-2 text-xs">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.checkedIn ? 'bg-green-500' : 'bg-orange-400'}`} />
+                      <span className="flex-1 font-medium">{p.name}</span>
+                      <span className="text-gray-400">{p.division} · {p.gender}</span>
+                      {p.checkedIn ? (
+                        <span className="text-green-600 font-medium">체크인</span>
+                      ) : (
+                        <button
+                          onClick={() => manualCheckIn(p.id)}
+                          className="text-[11px] bg-blue-600 text-white px-1.5 py-0.5 rounded hover:bg-blue-700"
+                        >
+                          체크인
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* By Division */}
           {(['초등','중등','고등','대학','일반','생활체육'] as const).map(div => {
             const divPlayers = players.filter(p => p.division === div)
