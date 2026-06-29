@@ -1031,12 +1031,24 @@ export default function Rankings() {
       })()}
 
       {/* Doubles / Pairs Table */}
-      {tab === 'doubles' && (
-        <div className="card p-0 overflow-hidden">
-          <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between">
-            <span className="font-semibold text-gray-700 text-sm">복식 페어 랭킹</span>
-            <span className="text-xs text-gray-400">{filteredPairs.length}페어 · 포인트 순</span>
-          </div>
+      {tab === 'doubles' && (() => {
+        const nanBok = filteredPairs.filter(p => p.gender === '남').length
+        const yeoBok = filteredPairs.filter(p => p.gender === '여').length
+        const honBok = filteredPairs.filter(p => p.gender !== '남' && p.gender !== '여').length
+        const typeCount = (nanBok > 0 ? 1 : 0) + (yeoBok > 0 ? 1 : 0) + (honBok > 0 ? 1 : 0)
+        return (
+          <div className="card p-0 overflow-hidden">
+            <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-gray-700 text-sm">복식 페어 랭킹</span>
+              {typeCount >= 2 && (
+                <>
+                  {nanBok > 0 && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">♂ 남복 {nanBok}</span>}
+                  {yeoBok > 0 && <span className="text-[10px] bg-pink-50 text-pink-600 border border-pink-200 px-1.5 py-0.5 rounded-full font-medium">♀ 여복 {yeoBok}</span>}
+                  {honBok > 0 && <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded-full font-medium">⚤ 혼복 {honBok}</span>}
+                </>
+              )}
+              <span className="text-xs text-gray-400 ml-auto">{filteredPairs.length}페어 · 포인트 순</span>
+            </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b">
@@ -1147,8 +1159,9 @@ export default function Rankings() {
               </div>
             </div>
           )}
-        </div>
-      )}
+          </div>
+        )
+      })()}
 
       {/* Teams Table */}
       {tab === 'teams' && (
