@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.9 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.10 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,23 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-17. v4.10 — 대시보드 LIVE/호출 카운터·점수입력 자동 대회 선택
+
+자동 루프 세션. §2 항목 2개 연속 구현·배포.
+
+### 대시보드 코트 현황 LIVE/호출 카운터 (Dashboard.tsx)
+- 코트 현황 헤더 "빈 N/M" 앞에 LIVE N·호출 N 카운터 추가.
+- 해당 상태의 코트가 없으면 카운터를 숨겨 깔끔하게 유지.
+- `liveCourts`, `calledCourts` 파생 상수 추가.
+- 검증: 가상 LIVE 경기 2건 주입 → "LIVE 2 · 빈 6/8" 표시 확인.
+
+### 점수 입력 직접입력 진행중 대회 자동 선택 (Score.tsx)
+- ManualEntry 마운트 시 `tournaments.find(t => t.status === 'ongoing')` 첫 결과를 자동 선택.
+- 이미 선택된 경우(`sel.tournamentId`) 건너뜀.
+- 검증: 직접입력 탭 → 첫 번째 진행중 대회 자동 선택 확인.
 
 ---
 
