@@ -47,6 +47,7 @@ export default function CheckInPage() {
   const [walkinDiv, setWalkinDiv] = useState<Division>('일반')
   const [walkinGender, setWalkinGender] = useState<'남' | '여'>('남')
   const [divFilter, setDivFilter] = useState<string>('')
+  const [playerPopover, setPlayerPopover] = useState<string | null>(null)
 
   const checkedIn = players.filter(p => p.checkedIn)
   const notCheckedIn = players.filter(p => !p.checkedIn)
@@ -415,6 +416,70 @@ export default function CheckInPage() {
         </div>
       )}
 
+      {/* ── 선수 상세 팝오버 ── */}
+      {playerPopover && (() => {
+        const p = players.find(x => x.id === playerPopover)
+        if (!p) return null
+        const ratingInfo = getRatingLabel(p.rating)
+        return (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center p-4 sm:items-center" onClick={() => setPlayerPopover(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-800">{p.name}</h3>
+                  <p className="text-sm text-gray-500">{p.school}</p>
+                </div>
+                <button onClick={() => setPlayerPopover(null)} className="text-gray-400 hover:text-gray-600 mt-0.5"><X size={18} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-gray-400 mb-0.5">부문</div>
+                  <div className="font-medium text-gray-700">{p.division}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-gray-400 mb-0.5">성별</div>
+                  <div className={`font-medium ${p.gender === '남' ? 'text-blue-600' : 'text-pink-500'}`}>{p.gender}자부</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-gray-400 mb-0.5">포인트</div>
+                  <div className="font-medium text-gray-700">{p.points}P</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-gray-400 mb-0.5">레이팅</div>
+                  <div className={`font-medium text-xs ${ratingInfo.color}`}>{ratingInfo.label} ({p.rating ?? 1000})</div>
+                </div>
+              </div>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${p.checkedIn ? 'bg-green-50' : 'bg-orange-50'}`}>
+                <CheckCircle size={14} className={p.checkedIn ? 'text-green-500' : 'text-orange-400'} />
+                <span className={`text-sm font-medium ${p.checkedIn ? 'text-green-700' : 'text-orange-600'}`}>
+                  {p.checkedIn ? '체크인 완료' : '미체크인'}
+                </span>
+              </div>
+              <div className="flex gap-2 pt-1">
+                {p.checkedIn ? (
+                  <button
+                    onClick={() => { uncheckIn(p.id); setPlayerPopover(null) }}
+                    className="flex-1 text-sm px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium"
+                  >
+                    체크인 취소
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { manualCheckIn(p.id); setPlayerPopover(null) }}
+                    className="flex-1 text-sm px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  >
+                    체크인
+                  </button>
+                )}
+                <button onClick={() => setPlayerPopover(null)} className="text-sm px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── 현장등록 모달 ── */}
       {showWalkin && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -564,14 +629,15 @@ export default function CheckInPage() {
                   />
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {divPlayers.filter(p => !p.checkedIn).slice(0, 10).map(p => (
-                    <span key={p.id} className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded">
+                  {divPlayers.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPlayerPopover(p.id)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${p.checkedIn ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-600'}`}
+                    >
                       {p.name}
-                    </span>
+                    </button>
                   ))}
-                  {divPlayers.filter(p => !p.checkedIn).length > 10 && (
-                    <span className="text-[10px] text-gray-400">+{divPlayers.filter(p => !p.checkedIn).length - 10}명</span>
-                  )}
                 </div>
               </div>
             )
