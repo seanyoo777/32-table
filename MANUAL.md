@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.22 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.25 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,35 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-32. v4.25 — 점수기록 대회별 통계 섹션
+
+자동 루프 세션. 직접입력 탭 하단 대회별 기록 수·평균 세트·최다 득점 표시.
+
+### 대회별 통계 (Score.tsx ManualEntry)
+- `tourStats` useMemo: scoreRecords를 tournamentId로 집계 → count, setTotal, recWithSets, maxSet.
+- count ≥ 2인 대회만 표시. 대회명·기록 N경기·평균 N.N세트·최다 득점 N점.
+
+---
+
+## 12-31. v4.24 — 홈 체크인 현황 미니 바
+
+자동 루프 세션. 홈 경기 현황 바 아래 teal 색상 체크인 진행 바 추가.
+
+### 체크인 미니 바 (Home.tsx)
+- 체크인 선수가 1명 이상일 때 표시. teal 진행 바 + N/M명 + 미체크인 N 카운터.
+
+---
+
+## 12-30. v4.23 — 대시보드 일정 배정 코트 배지
+
+자동 루프 세션. 대기 경기 행에 일정표 배정 코트 번호 파란 배지로 표시.
+
+### 배정 코트 배지 (Dashboard.tsx)
+- `m.tableNo` 있으면 "배정 N번" 파란 배지 표시.
+- 코트 입력 기본값도 `m.tableNo ?? callTableNo` 우선 사용.
 
 ---
 
