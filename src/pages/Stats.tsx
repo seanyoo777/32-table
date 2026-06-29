@@ -1730,6 +1730,39 @@ export default function Stats() {
             )
           })()}
 
+          {/* 승률·포인트 버블 차트 */}
+          {(() => {
+            const pts = players.filter(p => p.points > 0 && (p.wins + p.losses) >= 2)
+            if (pts.length < 5) return null
+            const maxPts = Math.max(...pts.map(p => p.points), 1)
+            const maxGames = Math.max(...pts.map(p => p.wins + p.losses), 1)
+            const W = 240, H = 130, PAD = 16
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-2">
+                  <Activity size={14} className="text-pink-500" /> 포인트·승률 버블
+                </h2>
+                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="w-full">
+                  <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="#e5e7eb" strokeWidth={1} />
+                  <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="#e5e7eb" strokeWidth={1} />
+                  {pts.map((p, i) => {
+                    const wr = (p.wins + p.losses) > 0 ? p.wins / (p.wins + p.losses) : 0
+                    const x = PAD + (p.points / maxPts) * (W - PAD * 2)
+                    const y = (H - PAD) - wr * (H - PAD * 2)
+                    const r = 3 + Math.round((p.wins + p.losses) / maxGames * 7)
+                    return (
+                      <circle key={i} cx={x} cy={y} r={r} fill="#6366f1" opacity={0.6} title={`${p.name} ${p.points}pt ${Math.round(wr * 100)}%`}>
+                        <title>{p.name} {p.points}pt {Math.round(wr * 100)}%</title>
+                      </circle>
+                    )
+                  })}
+                  <text x={W / 2} y={H - 2} textAnchor="middle" fontSize="8" fill="#9ca3af">포인트</text>
+                  <text x={4} y={H / 2} textAnchor="middle" fontSize="8" fill="#9ca3af" transform={`rotate(-90 4 ${H / 2})`}>승률</text>
+                </svg>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
