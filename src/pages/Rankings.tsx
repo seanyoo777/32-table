@@ -22,7 +22,7 @@ const divBorder: Record<Division, string> = {
 }
 
 type RankView = '통합' | '남자' | '여자' | Division
-type SortBy = 'points' | 'elo'
+type SortBy = 'points' | 'elo' | 'wins'
 
 function genId() { return Math.random().toString(36).slice(2, 10) }
 
@@ -147,7 +147,11 @@ export default function Rankings() {
     if (search) list = list.filter(p => p.name.includes(search) || p.school.includes(search))
     if (filterCheckIn === 'checked') list = list.filter(p => p.checkedIn)
     else if (filterCheckIn === 'unchecked') list = list.filter(p => !p.checkedIn)
-    return list.sort((a, b) => sortBy === 'elo' ? (b.rating ?? 1000) - (a.rating ?? 1000) : b.points - a.points)
+    return list.sort((a, b) =>
+      sortBy === 'elo' ? (b.rating ?? 1000) - (a.rating ?? 1000)
+      : sortBy === 'wins' ? b.wins - a.wins
+      : b.points - a.points
+    )
   }, [players, rankView, subGender, sortBy, search, filterCheckIn, isDivView, tournamentParticipantIds])
 
   const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
@@ -413,6 +417,10 @@ export default function Rankings() {
               <button onClick={() => setSortBy('elo')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${sortBy === 'elo' ? 'bg-white shadow-sm text-purple-700' : 'text-gray-500'}`}>
                 Elo
+              </button>
+              <button onClick={() => setSortBy('wins')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${sortBy === 'wins' ? 'bg-white shadow-sm text-green-700' : 'text-gray-500'}`}>
+                승수
               </button>
             </div>
           </div>
