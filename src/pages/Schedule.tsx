@@ -1285,6 +1285,15 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             </span>
           )
         })()}
+        {(() => {
+          const uniq = new Set(filteredSlots.flatMap(s => [s.participant1, s.participant2].filter(Boolean))).size
+          if (uniq < 1) return null
+          return (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 flex-shrink-0">
+              선수 {uniq}명
+            </span>
+          )
+        })()}
         {conflicts.length === 0 ? (
           <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 충돌 없음
