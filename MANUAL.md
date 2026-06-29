@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.43 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.46 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,38 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-53. v4.46 — 랭킹 선수/페어 승률 % 배지
+
+자동 루프 세션. Rankings.tsx 선수·페어 목록 승/패 셀에 승률 퍼센트 배지 추가.
+
+### 변경 (Rankings.tsx)
+- 선수 목록 행 승/패 셀: `{p.wins + p.losses > 0 && <span ...>{Math.round(p.wins/(p.wins+p.losses)*100)}%</span>}` 삽입.
+- 페어 목록 동일 패턴 적용. 0전적 선수는 배지 미표시.
+
+---
+
+## 12-52. v4.45 — 경기 호출 이력 CSV 내보내기
+
+자동 루프 세션. Dashboard.tsx "최근 호출 이력" 섹션에 CSV 버튼 추가.
+
+### 변경 (Dashboard.tsx)
+- `exportMatchCallsCSV(calls)` 함수 추가: 호출시각,코트번호,선수1,선수2,상태 컬럼.
+- "최근 호출 이력" 헤더에 CSV 버튼 삽입 (matchCalls 전체 acknowledged 포함 내보내기).
+
+---
+
+## 12-51. v4.44 — 경기일정 코트별 필터 드롭다운
+
+자동 루프 세션. Schedule.tsx ScheduleDetail 헤더에 코트 필터 드롭다운 추가.
+
+### 변경 (Schedule.tsx)
+- `courtFilter` state 추가 (`number | null`).
+- `dayFilteredSlots` 분리 후 `filteredSlots = dayFilteredSlots.filter(코트)`.
+- `allCourtsInView`: 드롭다운 옵션 소스 (day 필터 기준, court 필터 이전).
+- 코트 2개 이상일 때만 드롭다운 표시, 일차 버튼 클릭 시 courtFilter 자동 리셋.
 
 ---
 

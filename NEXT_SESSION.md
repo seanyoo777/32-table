@@ -78,8 +78,14 @@ v4.6에서 모두 완료. §14에서 추가 후보:
 ### 2-48. ✅ 홈 선수 0명 온보딩 가이드 (완료 v4.42)
 ### 2-49. ✅ 대회 목록 이름 검색 필터 (완료 v4.43)
 
-### 다음 후보
-- 추가 후보 없음 (v4.43까지 완료) — 새 기능은 MANUAL.md §14 참고
+### 2-50. ✅ 경기일정 코트별 필터 드롭다운 (완료 v4.44)
+Schedule.tsx ScheduleDetail 헤더에 `courtFilter` state + 드롭다운 추가. filteredSlots에 코트 필터 적용. "전체" 선택 시 필터 해제.
+
+### 2-51. ✅ 경기 호출 이력 CSV 내보내기 (완료 v4.45)
+Dashboard.tsx matchCalls 전체(acknowledged 포함) → CSV 내보내기 버튼 추가.
+
+### 2-52. ✅ 랭킹 선수 승률 % 표시 (완료 v4.46)
+Rankings.tsx 선수 목록 행에 승률(wins/(wins+losses)%) 배지 추가.
 
 ---
 
