@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [callTableNo, setCallTableNo] = useState(1)
   const [callMatchKey, setCallMatchKey] = useState('')
   const [callSearch, setCallSearch] = useState('')
+  const [courtPopover, setCourtPopover] = useState<number | null>(null)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -169,13 +170,60 @@ export default function DashboardPage() {
                 ? 'border-orange-300 bg-orange-50'
                 : 'border-gray-200 bg-gray-50'
               const dot = c.status === 'live' ? 'bg-red-500 animate-pulse' : c.status === 'called' ? 'bg-orange-400' : 'bg-gray-300'
+              const isActive = c.status === 'live' || c.status === 'called'
               return (
-                <div key={c.no} className={`flex-shrink-0 rounded-lg border px-2 py-1 min-w-[92px] ${cls}`}>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-bold text-gray-700">{c.no}번대</span>
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+                <div key={c.no} className="relative flex-shrink-0">
+                  <div
+                    className={`rounded-lg border px-2 py-1 min-w-[92px] ${cls} ${isActive ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                    onClick={() => isActive && setCourtPopover(courtPopover === c.no ? null : c.no)}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-gray-700">{c.no}번대</span>
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+                    </div>
+                    <div className={`text-[10px] truncate ${c.status === 'free' ? 'text-gray-400' : 'text-gray-600 font-medium'}`}>{c.label}</div>
                   </div>
-                  <div className={`text-[10px] truncate ${c.status === 'free' ? 'text-gray-400' : 'text-gray-600 font-medium'}`}>{c.label}</div>
+                  {courtPopover === c.no && (() => {
+                    const call = pendingCalls.find(pc => pc.tableNo === c.no)
+                    const live = liveMatches.find(lm => lm.tableNo === c.no)
+                    const elapsedMin = call ? Math.floor((now.getTime() - new Date(call.calledAt).getTime()) / 60000) : null
+                    return (
+                      <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 min-w-[180px]"
+                        onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-gray-700">{c.no}번 코트</span>
+                          <button onClick={() => setCourtPopover(null)} className="text-gray-300 hover:text-gray-500"><X size={13} /></button>
+                        </div>
+                        {call && (
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-semibold text-orange-700 bg-orange-50 px-2 py-1 rounded">{call.eventLabel}</div>
+                            <div className="text-xs font-bold text-gray-800">{call.participant1Name}</div>
+                            <div className="text-[10px] text-gray-400 text-center">vs</div>
+                            <div className="text-xs font-bold text-gray-800">{call.participant2Name}</div>
+                            <div className="flex items-center justify-between mt-1 pt-1 border-t border-gray-100">
+                              <span className="text-[10px] text-gray-400">{new Date(call.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 호출</span>
+                              {elapsedMin !== null && <span className={`text-[10px] font-mono px-1 rounded ${elapsedMin >= 10 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>{elapsedMin}분</span>}
+                            </div>
+                            <button onClick={() => { acknowledgeMatchCall(call.id); setCourtPopover(null) }}
+                              className="w-full mt-1 bg-green-100 text-green-700 text-xs py-1 rounded hover:bg-green-200 flex items-center justify-center gap-1">
+                              <BellOff size={10} /> 호출 확인
+                            </button>
+                          </div>
+                        )}
+                        {live && !call && (
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-1 rounded flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" /> LIVE
+                            </div>
+                            <div className="text-xs font-bold text-gray-800">{pMap[live.participant1Id]?.name ?? '?'}</div>
+                            <div className="text-center font-black text-lg text-blue-600">{live.currentSetScore[0]}<span className="text-gray-300 mx-1">:</span><span className="text-red-500">{live.currentSetScore[1]}</span></div>
+                            <div className="text-xs font-bold text-gray-800 text-right">{pMap[live.participant2Id]?.name ?? '?'}</div>
+                            <div className="text-[10px] text-gray-400 text-center">{live.completedSets.length + 1}세트 진행중</div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )
             })}
