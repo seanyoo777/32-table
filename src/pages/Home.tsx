@@ -905,14 +905,20 @@ export default function Home() {
           {/* 오늘 등록 선수 칩 */}
           {(() => {
             const todayISO = new Date().toISOString().split('T')[0]
-            const todayPlayers = players.filter(p => p.createdAt?.startsWith(todayISO)).slice(0, 3)
+            const allTodayPlayers = players.filter(p => p.createdAt?.startsWith(todayISO))
+            const todayPlayers = allTodayPlayers.slice(0, 3)
             if (todayPlayers.length === 0) return null
+            const withRating = allTodayPlayers.filter(p => p.rating && p.rating > 0)
+            const avgElo = withRating.length >= 2 ? Math.round(withRating.reduce((s, p) => s + (p.rating ?? 1000), 0) / withRating.length) : null
             return (
               <div className="flex-shrink-0 flex flex-wrap gap-1 px-1">
                 <span className="text-[10px] text-gray-400">오늘 등록:</span>
                 {todayPlayers.map(p => (
                   <span key={p.id} className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-medium">{p.name}</span>
                 ))}
+                {avgElo !== null && (
+                  <span className="text-[10px] bg-violet-50 text-violet-600 border border-violet-200 px-1.5 py-0.5 rounded-full font-medium">평균 Elo {avgElo}</span>
+                )}
               </div>
             )
           })()}
