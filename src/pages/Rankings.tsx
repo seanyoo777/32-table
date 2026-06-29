@@ -1036,7 +1036,15 @@ export default function Rankings() {
                   <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : ''}`}>
                     <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4 font-medium">
-                      <div>{p.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span>{p.name}</span>
+                        {(() => {
+                          const pt = p.gender === '남' ? '남복' : p.gender === '여' ? '여복' : '혼복'
+                          const cls = pt === '남복' ? 'bg-blue-50 text-blue-600 border-blue-200' : pt === '여복' ? 'bg-pink-50 text-pink-600 border-pink-200' : 'bg-purple-50 text-purple-600 border-purple-200'
+                          const icon = pt === '남복' ? '♂' : pt === '여복' ? '♀' : '⚤'
+                          return <span className={`text-[9px] px-1 py-0.5 rounded border font-bold flex-shrink-0 ${cls}`}>{icon} {pt}</span>
+                        })()}
+                      </div>
                       {(() => {
                         const pl1 = players.find(pl => pl.id === p.player1Id)
                         const pl2 = players.find(pl => pl.id === p.player2Id)
