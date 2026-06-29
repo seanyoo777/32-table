@@ -1327,6 +1327,11 @@ export default function Home() {
                           if (!name) return null
                           return <span className="ml-auto text-[10px] bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">🏆 {name} {topPts}pt</span>
                         })()}
+                        {t.date && (() => {
+                          const diff = Math.round((new Date().setHours(0,0,0,0) - new Date(t.date).setHours(0,0,0,0)) / 86400000)
+                          if (diff < 0) return null
+                          return <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full flex-shrink-0">D+{diff}</span>
+                        })()}
                       </div>
                       {(() => {
                         const totalM = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.result).length, 0)
