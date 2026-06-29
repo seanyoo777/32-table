@@ -375,6 +375,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 function ManualEntry() {
   const { players, pairs, tournaments, scoreRecords, addScoreRecord, updateScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
   const [submitted, setSubmitted] = useState(false)
+  const [lastResult, setLastResult] = useState<{ winner: string; loser: string; score: string } | null>(null)
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
   const [recorder, setRecorder] = useState(() => localStorage.getItem('pp-recorder') ?? '')
   const [sets, setSets] = useState<Array<[string, string]>>([['', '']])
@@ -489,9 +490,14 @@ function ManualEntry() {
       recordedBy: recorder || '입력자', recordedAt: new Date().toISOString(), verified: false,
     }
     addScoreRecord(record)
+    setLastResult({
+      winner: pMap[winnerId]?.name ?? '?',
+      loser: pMap[loserId]?.name ?? '?',
+      score: `${Math.max(w1, w2)}-${Math.min(w1, w2)}`,
+    })
     setSets([['', '']])
     setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
+    setTimeout(() => { setSubmitted(false); setLastResult(null) }, 3000)
     // 저장 후 다음 미완료 경기로 자동 이동 (없으면 다음 종목으로)
     const remaining = pendingMatches.filter(m => m.id !== selMatch.id)
     if (remaining[0]) {
@@ -672,6 +678,20 @@ function ManualEntry() {
             <button className="btn-primary w-full text-base" onClick={handleSubmit}>
               ✓ 결과 저장 & 포인트 반영
             </button>
+          </div>
+        )}
+
+        {lastResult && (
+          <div className="card bg-green-50 border border-green-200 flex items-center gap-3 py-3 animate-pulse-once">
+            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 text-base">✓</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-green-600 font-semibold mb-0.5">방금 입력한 경기</div>
+              <div className="text-sm font-bold text-green-800 truncate">
+                🏆 {lastResult.winner} <span className="font-normal text-green-600">vs</span> {lastResult.loser}
+              </div>
+              <div className="text-xs text-green-600">세트 {lastResult.score}</div>
+            </div>
+            <div className="text-[10px] text-green-400 flex-shrink-0">3초 후 닫힘</div>
           </div>
         )}
 
