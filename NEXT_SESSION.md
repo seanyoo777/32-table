@@ -1354,9 +1354,23 @@ rose chip으로 표시. 오늘 5건+ && 점수차 1 이상 조건.
 Dashboard.tsx matchCalls 중 오늘 가장 자주 등장한 선수 이름+횟수를
 indigo chip으로 표시. 오늘 3건+ 조건.
 
-### 2-425. 랭킹 복식 탭 오늘 승리 페어 수 칩 (v5.309)
+### 2-425. ✅ 랭킹 복식 탭 오늘 승리 페어 수 칩 (완료 v5.309)
 Rankings.tsx 복식 헤더에 오늘 scoreRecords에서 승리가 있는
 고유 페어 수를 emerald chip으로 표시. 오늘 2건+ 조건.
+
+### 2-426. 일정 탭 오늘 경기 시작까지 남은 시간 실시간 칩 (v5.310)
+Schedule.tsx 헤더 Stats 바에 오늘 첫 미완료 슬롯 startTime까지 남은 분을
+실시간 cyan 칩으로 표시. 15분 이내=red pulse. 오늘 슬롯 1개+ && 미완료 있는 경우.
+
+### 2-427. 대시보드 활성 LIVE 경기 코트별 경과시간 테이블 (v5.311)
+Dashboard.tsx LIVE 경기 2개+ 시 코트번호-선수명-경과분 순으로
+compact 테이블(3열)을 LIVE 섹션 하단에 추가.
+matchCalls calledAt 기준. LIVE 2개+ && 모두 calledAt 있을 때 조건.
+
+### 2-428. 점수 탭 오늘 선수별 득실 스프레드 칩 (v5.312)
+Score.tsx ManualEntry 기록 탭 상단에 오늘 경기한 선수 중
+득점(p1Score)과 실점(p2Score)의 차(스프레드)가 가장 큰 선수를 teal 칩으로 표시.
+"선수명 +N" 형식. 오늘 3건+ && 스프레드 2+ 조건.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

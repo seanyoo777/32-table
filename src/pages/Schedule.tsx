@@ -1309,6 +1309,30 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           )
         })()}
         {(() => {
+          const todayISO2 = new Date().toISOString().split('T')[0]
+          const todayDayNo2 = plan.days?.find(d => d.date === todayISO2)?.day ?? null
+          if (todayDayNo2 === null) return null
+          const todaySlots2 = plan.slots.filter(s => (s.day ?? 1) === todayDayNo2 && s.participant1 && s.participant2)
+          if (todaySlots2.length < 1) return null
+          const nowH = new Date().getHours()
+          const nowM = new Date().getMinutes()
+          const nowHM2 = `${String(nowH).padStart(2,'0')}:${String(nowM).padStart(2,'0')}`
+          const nowMins = nowH * 60 + nowM
+          const nextSlot2 = todaySlots2
+            .filter(s => s.startTime && s.startTime > nowHM2 && !completedMatchSet.has(`${s.eventId}-${s.matchNo}`))
+            .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))[0]
+          if (!nextSlot2?.startTime) return null
+          const [sh, sm] = nextSlot2.startTime.split(':').map(Number)
+          const diffMins = sh * 60 + sm - nowMins
+          if (diffMins <= 0 || diffMins > 120) return null
+          const urgent = diffMins <= 15
+          return (
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${urgent ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'}`}>
+              {urgent ? `⚡ ${diffMins}분 후` : `${diffMins}분 후 시작`}
+            </span>
+          )
+        })()}
+        {(() => {
           const uniq = new Set(filteredSlots.flatMap(s => [s.participant1, s.participant2].filter(Boolean))).size
           if (uniq < 1) return null
           return (
