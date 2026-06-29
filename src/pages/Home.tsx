@@ -241,14 +241,29 @@ export default function Home() {
           <span className="text-xs">오늘 배정된 경기 일정이 없습니다</span>
         </div>
       )}
-      {todaySlotCount > 0 && (
-        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-xl border border-purple-100 text-sm">
-          <span className="text-purple-400 text-xs font-medium flex-shrink-0">📅 오늘 일정</span>
-          <span className="text-purple-700 font-semibold">{todaySlotCount}경기 슬롯</span>
-          {todayFirstStart && <span className="text-purple-500 text-xs">· 첫 경기 {todayFirstStart}</span>}
-          <span className="text-purple-400 text-xs ml-auto">{todaySchedules.map(s => s.name).join(', ')}</span>
-        </div>
-      )}
+      {todaySlotCount > 0 && (() => {
+        const doneMatchSet = new Set(
+          activeTournaments.flatMap(t => t.events.flatMap(ev =>
+            ev.matches.filter(m => m.result).map(m => `${ev.id}-${m.matchNo}`)
+          ))
+        )
+        const todayAllSlots = todaySchedules.flatMap(s => s.slots)
+        const todayDone = todayAllSlots.filter(sl => sl.eventId && sl.matchNo && doneMatchSet.has(`${sl.eventId}-${sl.matchNo}`)).length
+        const pct = todaySlotCount > 0 ? Math.round(todayDone / todaySlotCount * 100) : 0
+        return (
+          <div className="flex-shrink-0 flex flex-col gap-1.5 px-4 py-2 bg-purple-50 rounded-xl border border-purple-100 text-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-purple-400 text-xs font-medium flex-shrink-0">📅 오늘 일정</span>
+              <span className="text-purple-700 font-semibold">{todayDone}/{todaySlotCount}경기</span>
+              {todayFirstStart && <span className="text-purple-500 text-xs">· 첫 경기 {todayFirstStart}</span>}
+              <span className="text-purple-400 text-xs ml-auto">{pct}%</span>
+            </div>
+            <div className="h-1.5 bg-purple-200 rounded-full overflow-hidden">
+              <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── 다가오는 경기 슬롯 미리보기 (상위 3개) ── */}
       {todaySlotCount > 0 && (() => {
