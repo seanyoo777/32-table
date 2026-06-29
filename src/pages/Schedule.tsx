@@ -1293,6 +1293,22 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           )
         })()}
         {(() => {
+          const todayISO = new Date().toISOString().split('T')[0]
+          const todayDayNo = plan.days?.find(d => d.date === todayISO)?.day ?? null
+          if (todayDayNo === null) return null
+          const todaySlots = plan.slots.filter(s => (s.day ?? 1) === todayDayNo && s.participant1 && s.participant2)
+          if (todaySlots.length < 1) return null
+          const remaining = todaySlots.filter(s => !completedMatchSet.has(`${s.eventId}-${s.matchNo}`))
+          if (remaining.length === 0) return null
+          const nowHM = `${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')}`
+          const nextSlot = remaining.filter(s => s.startTime && s.startTime >= nowHM).sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))[0]
+          return (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex-shrink-0">
+              오늘 잔여 {remaining.length}{nextSlot ? ` · 다음 ${nextSlot.startTime}` : ''}
+            </span>
+          )
+        })()}
+        {(() => {
           const uniq = new Set(filteredSlots.flatMap(s => [s.participant1, s.participant2].filter(Boolean))).size
           if (uniq < 1) return null
           return (

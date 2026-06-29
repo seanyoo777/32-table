@@ -1262,7 +1262,7 @@ Dashboard.tsx pendingCalls 중 가장 오래된 calledAt 기준 경과 분을
 Home.tsx 활성 대회 카드에 종목 중 완료율 가장 높은 종목 label + %를
 초록 chip으로 표시. 종목 2개+ && 해당 종목 완료율 50%+ 조건.
 
-### 2-402. 통계 탭 오늘 종목별 기록 수 TOP3 바 (v5.286)
+### 2-402. ✅ 통계 탭 오늘 종목별 기록 수 TOP3 바 (완료 v5.286)
 Stats.tsx 오늘 scoreRecords 기준 tournamentId+eventId별 기록 건수를
 가로 막대로 표시. 오늘 5건+ && 종목 2개+ 조건.
 
