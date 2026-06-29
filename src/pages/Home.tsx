@@ -499,6 +499,10 @@ export default function Home() {
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      {(() => {
+                        const participantIds = new Set(t.events.flatMap(ev => ev.matches.flatMap(m => [m.participant1Id, m.participant2Id].filter(Boolean) as string[])))
+                        return participantIds.size > 0 ? <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">{participantIds.size}명</span> : null
+                      })()}
                       <span className="text-xs text-green-600">{t.events.length}종목 · {doneM}/{totalM}경기 ({pct}%)</span>
                       {pendingM > 0
                         ? <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">{pendingM}경기 남음</span>
