@@ -9,10 +9,19 @@ export default function Home() {
   const [now, setNow] = useState(new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t) }, [])
   const [showUnchecked, setShowUnchecked] = useState(false)
-  const [memos, setMemos] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('pingpong-memos') || '[]') } catch { return [] } })
+  type Memo = { text: string; color: string }
+  const memoColors: Record<string, { dot: string; bg: string; border: string }> = {
+    gray: { dot: 'bg-gray-400', bg: 'bg-gray-50', border: 'border-gray-200' },
+    red: { dot: 'bg-red-400', bg: 'bg-red-50', border: 'border-red-200' },
+    yellow: { dot: 'bg-yellow-400', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+    green: { dot: 'bg-green-400', bg: 'bg-green-50', border: 'border-green-200' },
+    blue: { dot: 'bg-blue-400', bg: 'bg-blue-50', border: 'border-blue-200' },
+  }
+  const [memos, setMemos] = useState<Memo[]>(() => { try { const raw = JSON.parse(localStorage.getItem('pingpong-memos') || '[]'); if (Array.isArray(raw)) return raw.map((m: string | Memo) => typeof m === 'string' ? { text: m, color: 'gray' } : m); return [] } catch { return [] } })
   const [memoInput, setMemoInput] = useState('')
+  const [memoColor, setMemoColor] = useState('gray')
   useEffect(() => { localStorage.setItem('pingpong-memos', JSON.stringify(memos)) }, [memos])
-  function addMemo() { if (!memoInput.trim()) return; setMemos(m => [memoInput.trim(), ...m]); setMemoInput('') }
+  function addMemo() { if (!memoInput.trim()) return; setMemos(m => [{ text: memoInput.trim(), color: memoColor }, ...m]); setMemoInput('') }
   function deleteMemo(i: number) { setMemos(m => m.filter((_, idx) => idx !== i)) }
 
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
@@ -653,6 +662,12 @@ export default function Home() {
               <ClipboardList size={14} className="text-gray-400" /> 메모
               {memos.length > 0 && <span className="text-[10px] text-gray-400 font-normal ml-auto">{memos.length}개</span>}
             </h2>
+            <div className="flex gap-1.5 mb-1.5">
+              {Object.entries(memoColors).map(([key, val]) => (
+                <button key={key} onClick={() => setMemoColor(key)}
+                  className={`w-4 h-4 rounded-full flex-shrink-0 transition-all ${val.dot} ${memoColor === key ? 'ring-2 ring-offset-1 ring-gray-400 scale-110' : 'opacity-60 hover:opacity-100'}`} />
+              ))}
+            </div>
             <div className="flex gap-1.5 mb-2">
               <input
                 value={memoInput}
@@ -669,12 +684,16 @@ export default function Home() {
             </div>
             {memos.length > 0 ? (
               <div className="space-y-1 max-h-[120px] overflow-y-auto">
-                {memos.map((m, i) => (
-                  <div key={i} className="flex items-start gap-1.5 text-xs bg-yellow-50 border border-yellow-100 rounded-lg px-2.5 py-1.5">
-                    <span className="flex-1 text-gray-700 break-all">{m}</span>
+                {memos.map((m, i) => {
+                  const c = memoColors[m.color] ?? memoColors.gray
+                  return (
+                  <div key={i} className={`flex items-start gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 ${c.bg} ${c.border}`}>
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${c.dot}`} />
+                    <span className="flex-1 text-gray-700 break-all">{m.text}</span>
                     <button onClick={() => deleteMemo(i)} className="text-gray-300 hover:text-red-400 flex-shrink-0 mt-0.5">✕</button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div className="text-[11px] text-gray-300 text-center py-2">메모가 없습니다</div>
