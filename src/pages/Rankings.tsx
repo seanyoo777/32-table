@@ -1978,6 +1978,43 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
+        {/* 상대별 전적 요약 (최다 상대 amber 강조) */}
+        {recentRecords.length >= 2 && (() => {
+          const oppMap = new Map<string, { name: string; wins: number; losses: number }>()
+          recentRecords.forEach(r => {
+            const isP1 = r.participant1Id === player.id
+            const oppId = isP1 ? r.participant2Id : r.participant1Id
+            if (!oppId) return
+            const oppName = pMap[oppId] ?? '?'
+            const won = isP1 ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+            const cur = oppMap.get(oppId) ?? { name: oppName, wins: 0, losses: 0 }
+            oppMap.set(oppId, { ...cur, wins: cur.wins + (won ? 1 : 0), losses: cur.losses + (won ? 0 : 1) })
+          })
+          const rows = [...oppMap.values()].sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses)).slice(0, 3)
+          if (rows.length < 2) return null
+          const maxTotal = rows[0].wins + rows[0].losses
+          return (
+            <div className="mb-3">
+              <h4 className="text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">상대별 전적</h4>
+              <div className="space-y-1">
+                {rows.map((row, i) => {
+                  const total = row.wins + row.losses
+                  const isTop = total === maxTotal && i === 0
+                  return (
+                    <div key={row.name} className={`flex items-center gap-2 text-xs py-1 px-2 rounded-lg border ${isTop ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
+                      <span className="flex-1 truncate font-medium text-gray-700">{row.name}</span>
+                      <span className="text-green-600 font-bold">{row.wins}승</span>
+                      <span className="text-gray-300">/</span>
+                      <span className="text-red-500">{row.losses}패</span>
+                      <span className="text-gray-400 text-[10px]">({total}경기)</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* 역대 최고 연승 */}
         {recentRecords.length >= 2 && (() => {
           const wins = recentRecords.map(r => r.participant1Id === player.id ? r.p1Score > r.p2Score : r.p2Score > r.p1Score)
