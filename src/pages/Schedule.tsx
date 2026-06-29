@@ -900,6 +900,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [undoSlots, setUndoSlots] = useState<typeof plan.slots | null>(null)
   const [undoTimer, setUndoTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [courtFilter, setCourtFilter] = useState<number | null>(null)       // 코트 필터
+  const [bulkShiftMin, setBulkShiftMin] = useState(10)
   const [popoverSlot, setPopoverSlot] = useState<typeof plan.slots[0] | null>(null)
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 })
 
@@ -1120,6 +1121,19 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     if (undoTimer) clearTimeout(undoTimer)
     setUndoTimer(null)
   }
+  function handleBulkShift(deltaMin: number) {
+    const t2m = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const m2t = (mm: number) => `${String(Math.floor(Math.abs(mm) / 60) % 24).padStart(2, '0')}:${String(Math.abs(mm) % 60).padStart(2, '0')}`
+    setUndoSlots(plan.slots)
+    const shifted = plan.slots.map(s => ({
+      ...s,
+      startTime: m2t(Math.max(0, t2m(s.startTime) + deltaMin)),
+      endTime: m2t(Math.max(0, t2m(s.endTime) + deltaMin)),
+    }))
+    updateSchedule(plan.id, { slots: shifted })
+    if (undoTimer) clearTimeout(undoTimer)
+    setUndoTimer(setTimeout(() => { setUndoSlots(null); setUndoTimer(null) }, 8000))
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-gray-50">
@@ -1159,6 +1173,16 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               ↩ 실행취소
             </button>
           )}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button onClick={() => handleBulkShift(-bulkShiftMin)}
+              className="text-xs px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 font-mono">-{bulkShiftMin}분</button>
+            <input type="number" min={1} max={120} value={bulkShiftMin}
+              onChange={e => setBulkShiftMin(Math.max(1, Number(e.target.value)))}
+              className="w-10 text-center text-xs border border-gray-200 rounded px-1 py-0.5 bg-white"
+              title="일괄 이동 분" />
+            <button onClick={() => handleBulkShift(bulkShiftMin)}
+              className="text-xs px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 font-mono">+{bulkShiftMin}분</button>
+          </div>
           <button onClick={() => setViewMode('time')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'time' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>시간순</button>
           <button onClick={() => setViewMode('court')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
           <button onClick={exportScheduleCSV} className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1"><Download size={12} /> CSV</button>
