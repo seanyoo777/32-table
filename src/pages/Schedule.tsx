@@ -1509,11 +1509,15 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                         const gapMin = si > 0 && courtSlots[si - 1].endTime ? toMins(slot.startTime) - toMins(courtSlots[si - 1].endTime) : 0
                         return (
                         <div key={slot.id}>
-                        {gapMin >= 30 && (
+                        {gapMin >= 60 ? (
+                          <div className="text-center py-0.5 mb-1">
+                            <span className="text-[9px] text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full font-semibold">⚠ 빈 시간대 {gapMin}분</span>
+                          </div>
+                        ) : gapMin >= 30 ? (
                           <div className="text-center py-0.5 mb-1">
                             <span className="text-[9px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">휴식 {gapMin}분</span>
                           </div>
-                        )}
+                        ) : null}
                         <div
                           className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                           draggable={!slot.type || slot.type === 'match'}
