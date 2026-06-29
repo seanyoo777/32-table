@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.02 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.05 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,33 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-111. v5.05 — 랭킹 선수 모달 종목별 승률 레이더 차트
+
+자동 루프 세션. Rankings.tsx PlayerStatsModal에 레이더 차트 추가.
+
+### 변경 (Rankings.tsx)
+- tourMatches를 eventLabel 별로 그룹화, 승/전체로 승률 계산.
+- 종목 3개 이상일 때만 SVG 레이더 차트 렌더링.
+- viewBox 260×200, 4단계 격자 폴리곤 + 축선 + 데이터 폴리곤(indigo).
+- 각 꼭짓점에 종목명 + 승률 % 라벨 표시.
+
+## 12-110. v5.04 — 홈 진행중 슬롯 경과율 프로그레스 바
+
+자동 루프 세션. Home.tsx 다가오는 경기 섹션에 진행중 슬롯 카드 추가.
+
+### 변경 (Home.tsx)
+- `inProgress`: startTime < now && elapsed < 30분인 슬롯.
+- 파란(blue-50) 카드, 경과분 텍스트, 하단 h-1 프로그레스 바.
+- 바 색상: <50%=green, <80%=yellow, 이상=red.
+
+## 12-109. v5.03 — 대시보드 경기 선택 시 빈 코트 자동 제안
+
+자동 루프 세션. Dashboard.tsx 경기 선택 드롭다운에 useEffect 추가.
+
+### 변경 (Dashboard.tsx)
+- callMatchKey 변경(비어있지 않을 때) 시 courts에서 첫 빈 코트 번호를 callTableNo에 자동 설정.
+- 빈 코트 없으면 기존 값 유지.
 
 ## 12-108. v5.02 — 홈 TOP3 선수 미니 시상대
 
