@@ -565,6 +565,28 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 전체 통계 요약 */}
+      {tab === 'singles' && players.length >= 5 && (() => {
+        const avgPts = Math.round(players.reduce((s, p) => s + p.points, 0) / players.length)
+        const avgElo = Math.round(players.reduce((s, p) => s + (p.rating ?? 1000), 0) / players.length)
+        const totalGames = scoreRecords.length
+        return (
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: '선수 수', value: players.length, color: 'bg-blue-50 text-blue-700' },
+              { label: '평균 포인트', value: avgPts.toLocaleString(), color: 'bg-green-50 text-green-700' },
+              { label: '평균 Elo', value: avgElo, color: 'bg-purple-50 text-purple-700' },
+              { label: '총 경기', value: totalGames, color: 'bg-amber-50 text-amber-700' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className={`rounded-xl px-3 py-2 text-center ${color}`}>
+                <div className="text-[10px] font-medium opacity-70">{label}</div>
+                <div className="text-sm font-bold">{value}</div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+
       {/* 포인트 분포 히스토그램 */}
       {tab === 'singles' && players.length >= 2 && (() => {
         const pts = players.map(p => p.points).filter(v => v > 0)
