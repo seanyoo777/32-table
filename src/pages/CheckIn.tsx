@@ -6,6 +6,13 @@ import { getRatingLabel } from '../utils/ratingUtils'
 import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi, Download, DollarSign } from 'lucide-react'
 import type { Player } from '../types'
 
+function hl(text: string, q: string) {
+  if (!q) return <>{text}</>
+  const i = text.indexOf(q)
+  if (i < 0) return <>{text}</>
+  return <>{text.slice(0, i)}<mark className="bg-yellow-200 text-yellow-900 not-italic rounded-sm">{text.slice(i, i + q.length)}</mark>{text.slice(i + q.length)}</>
+}
+
 export default function CheckInPage() {
   const { players, updatePlayer, toggleFeePaid, resetFeePaid } = useStore()
   const [tab, setTab] = useState<'station' | 'list' | 'fee' | 'card'>('station')
@@ -238,8 +245,8 @@ export default function CheckInPage() {
                 <div key={p.id} className="flex items-center justify-between py-2 px-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${p.checkedIn ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <span className="font-medium text-sm">{p.name}</span>
-                    <span className="text-xs text-gray-400">{p.school} · {p.division}</span>
+                    <span className="font-medium text-sm">{hl(p.name, query)}</span>
+                    <span className="text-xs text-gray-400">{hl(p.school, query)} · {p.division}</span>
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${getRatingLabel(p.rating).bg} ${getRatingLabel(p.rating).color}`}>
                       {p.rating}
                     </span>
