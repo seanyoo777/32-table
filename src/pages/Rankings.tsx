@@ -946,6 +946,7 @@ export default function Rankings() {
           scoreRecords={scoreRecords}
           pMap={Object.fromEntries(players.map(p => [p.id, p.name]))}
           onClose={() => setStatsModal(null)}
+          onSave={updates => { updatePlayer(statsModal.id, updates); setStatsModal(p => p ? { ...p, ...updates } : p) }}
         />
       )}
 
@@ -1182,13 +1183,26 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: {
+function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, onSave }: {
   player: Player
   tournaments: Tournament[]
   scoreRecords: ScoreRecord[]
   pMap: Record<string, string>
   onClose: () => void
+  onSave?: (updates: Partial<Player>) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState(player.name)
+  const [editSchool, setEditSchool] = useState(player.school)
+  const [editDiv, setEditDiv] = useState<Division>(player.division)
+  const [editGender, setEditGender] = useState<'남' | '여'>(player.gender as '남' | '여')
+
+  function saveEdit() {
+    if (!editName.trim()) return
+    onSave?.({ name: editName.trim(), school: editSchool.trim(), division: editDiv, gender: editGender })
+    setEditing(false)
+  }
+
   const playerRecords = scoreRecords.filter(r => r.participant1Id === player.id || r.participant2Id === player.id)
   const recentRecords = [...playerRecords].reverse().slice(0, 20)
 
@@ -1233,7 +1247,12 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: 
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800 flex items-center gap-2"><BarChart2 size={16} /> {player.name} 전적</h3>
           <div className="flex items-center gap-2">
-            {(tourMatches.length > 0 || recentRecords.length > 0) && (
+            {onSave && !editing && (
+              <button onClick={() => setEditing(true)} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
+                <Edit2 size={12} /> 편집
+              </button>
+            )}
+            {(tourMatches.length > 0 || recentRecords.length > 0) && !editing && (
               <button onClick={handleExportCSV} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
                 <Download size={12} /> CSV
               </button>
@@ -1242,8 +1261,39 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: 
           </div>
         </div>
 
-        {/* Player info */}
+        {/* Player info / edit form */}
         <div className="bg-gray-50 rounded-xl p-4 mb-4">
+          {editing ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">이름 *</label>
+                  <input className="input w-full text-sm" value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">소속</label>
+                  <input className="input w-full text-sm" value={editSchool} onChange={e => setEditSchool(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">부문</label>
+                  <select className="input w-full text-sm" value={editDiv} onChange={e => setEditDiv(e.target.value as Division)}>
+                    {(['초등','중등','고등','대학','일반','생활체육'] as Division[]).map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">성별</label>
+                  <select className="input w-full text-sm" value={editGender} onChange={e => setEditGender(e.target.value as '남'|'여')}>
+                    <option value="남">남</option>
+                    <option value="여">여</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setEditing(false)} className="btn-secondary flex-1 text-sm">취소</button>
+                <button onClick={saveEdit} disabled={!editName.trim()} className="btn-primary flex-1 text-sm disabled:opacity-40">저장</button>
+              </div>
+            </div>
+          ) : (
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold">
               {player.name[0]}
@@ -1257,6 +1307,8 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: 
               <div className={`text-xs px-2 py-0.5 rounded-full ${rLabel.bg} ${rLabel.color}`}>{player.rating ?? 1000} ({rLabel.label})</div>
             </div>
           </div>
+          )}
+          {!editing && (
           <div className="grid grid-cols-3 gap-3 mt-4 text-center">
             <div className="bg-white rounded-lg p-2">
               <div className="font-bold text-green-600 text-lg">{player.wins}</div>
@@ -1271,6 +1323,7 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: 
               <div className="text-xs text-gray-400">승률</div>
             </div>
           </div>
+          )}
         </div>
 
         {/* Tournament match history */}
