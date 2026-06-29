@@ -580,10 +580,28 @@ function ManualEntry() {
               <div key={i} className={`flex items-center gap-2 p-2 rounded-lg ${invalidSetIdx.includes(i) ? 'bg-amber-50 ring-1 ring-amber-300' : a && b && Number(a) !== Number(b) ? (Number(a) > Number(b) ? 'bg-blue-50' : 'bg-red-50') : 'bg-gray-50'}`}>
                 <span className="text-xs text-gray-400 w-8 text-center">SET {i + 1}</span>
                 <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
-                  value={a} onChange={e => setSets(s => s.map((set, si) => si === i ? [e.target.value, set[1]] : set))} />
+                  value={a} onChange={e => {
+                    const newA = e.target.value
+                    setSets(s => {
+                      const updated = s.map((set, si) => si === i ? [newA, set[1]] : set)
+                      const [ca, cb] = updated[i]
+                      if (i === updated.length - 1 && ca !== '' && cb !== '' && isValidSetScore(Number(ca), Number(cb), neededPts))
+                        return [...updated, ['', '']]
+                      return updated
+                    })
+                  }} />
                 <span className="text-gray-300 font-bold">-</span>
                 <input className="input text-center font-bold text-lg flex-1" type="number" min="0" placeholder="0"
-                  value={b} onChange={e => setSets(s => s.map((set, si) => si === i ? [set[0], e.target.value] : set))}
+                  value={b} onChange={e => {
+                    const newB = e.target.value
+                    setSets(s => {
+                      const updated = s.map((set, si) => si === i ? [set[0], newB] : set)
+                      const [ca, cb] = updated[i]
+                      if (i === updated.length - 1 && ca !== '' && cb !== '' && isValidSetScore(Number(ca), Number(cb), neededPts))
+                        return [...updated, ['', '']]
+                      return updated
+                    })
+                  }}
                   onKeyDown={e => e.key === 'Enter' && setSets(s => [...s, ['', '']])} />
                 {sets.length > 1 && (
                   <button onClick={() => setSets(s => s.filter((_, si) => si !== i))} className="text-gray-300 hover:text-red-400 p-1"><X size={14} /></button>
