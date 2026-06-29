@@ -777,6 +777,25 @@ export default function DashboardPage() {
               })}
             </div>
           )}
+          {filteredPendingMatches.length >= 2 && (() => {
+            const pts = filteredPendingMatches.map(m => ({
+              m,
+              total: (pointMap[m.participant1Id ?? ''] ?? 0) + (pointMap[m.participant2Id ?? ''] ?? 0),
+            }))
+            const withPts = pts.filter(x => x.total > 0)
+            if (withPts.length === 0) return null
+            const avg = Math.round(pts.reduce((s, x) => s + x.total, 0) / pts.length)
+            const top = pts.reduce((a, b) => a.total >= b.total ? a : b)
+            const topP1 = top.m.participant1Id ? pMap[top.m.participant1Id]?.name ?? '?' : '?'
+            const topP2 = top.m.participant2Id ? pMap[top.m.participant2Id]?.name ?? '?' : '?'
+            return (
+              <div className="mt-1 px-2.5 py-1.5 bg-indigo-50 rounded-lg text-[11px] text-indigo-700 flex items-center gap-2 flex-shrink-0">
+                <span className="font-semibold whitespace-nowrap">평균 {avg}pt</span>
+                <span className="text-indigo-300">|</span>
+                <span className="truncate">최고 {topP1} vs {topP2} <span className="font-bold">{top.total}pt</span></span>
+              </div>
+            )
+          })()}
         </div>
 
         {/* ── Col 3: Match calling + progress + recent results ── */}
