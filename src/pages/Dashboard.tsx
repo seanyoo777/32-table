@@ -509,8 +509,12 @@ export default function DashboardPage() {
               return (
                 <div key={c.no} className="relative flex-shrink-0">
                   <div
-                    className={`rounded-lg border px-2 py-1 min-w-[92px] ${cls} ${isActive ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                    className={`rounded-lg border px-2 py-1 min-w-[92px] ${cls} ${isActive ? 'cursor-pointer hover:shadow-md transition-shadow' : c.status === 'free' ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors' : ''} ${c.status === 'free' && callTableNo === c.no ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
                     onClick={() => {
+                      if (c.status === 'free') {
+                        setCallTableNo(c.no)
+                        return
+                      }
                       if (c.status === 'called') {
                         const call = pendingCalls.find(pc => pc.tableNo === c.no)
                         if (call) {
