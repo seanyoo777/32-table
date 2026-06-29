@@ -380,6 +380,26 @@ export default function Rankings() {
     return m
   }, [players, scoreRecords])
 
+  const todayPlayerWinStreak = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const todayRecs = scoreRecords
+      .filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+      .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))
+    const m = new Map<string, number>()
+    players.forEach(p => {
+      const mine = todayRecs.filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+      if (mine.length < 3) return
+      let streak = 0
+      for (let i = mine.length - 1; i >= 0; i--) {
+        const r = mine[i]
+        const won = r.participant1Id === p.id ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+        if (won) streak++; else break
+      }
+      if (streak >= 3) m.set(p.id, streak)
+    })
+    return m
+  }, [players, scoreRecords])
+
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
     .filter(p => !search || p.name.includes(search) || p.school.includes(search))
@@ -658,6 +678,23 @@ export default function Rankings() {
             <span className="text-[10px] bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full font-medium">
               {name} {top[1]}연패 중
             </span>
+          </div>
+        )
+      })()}
+
+      {/* 오늘 연승 선수 초록 칩 */}
+      {tab === 'singles' && todayPlayerWinStreak.size > 0 && (() => {
+        const streakers = [...todayPlayerWinStreak.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([id, streak]) => ({ name: players.find(p => p.id === id)?.name ?? '?', streak }))
+        return (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] text-green-600 font-semibold flex-shrink-0">연승</span>
+            {streakers.map(({ name, streak }) => (
+              <span key={name} className="text-[10px] bg-green-50 text-green-700 border border-green-300 px-2 py-0.5 rounded-full font-medium">
+                {name} {streak}연승 🔥
+              </span>
+            ))}
           </div>
         )
       })()}
