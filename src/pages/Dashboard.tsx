@@ -53,6 +53,8 @@ export default function DashboardPage() {
     ...pairs.map(p => [p.id, { name: p.name, school: p.school }]),
   ])
 
+  const walkinIds = new Set(players.filter(p => p.school === '현장등록').map(p => p.id))
+
   // 체크인 검증: 선수 ID가 체크인 안 됐으면 경고(페어/팀은 구성선수 확인)
   const checkedInIds = new Set(players.filter(p => p.checkedIn).map(p => p.id))
   const playerIds = new Set(players.map(p => p.id))
@@ -385,6 +387,9 @@ export default function DashboardPage() {
                     )}
                     {(isUnchecked(m.participant1Id) || isUnchecked(m.participant2Id)) && (
                       <span className="text-amber-600 bg-amber-50 border border-amber-200 px-1 rounded flex-shrink-0 text-[10px]" title="체크인하지 않은 선수가 있습니다">미체크인</span>
+                    )}
+                    {(walkinIds.has(m.participant1Id ?? '') || walkinIds.has(m.participant2Id ?? '')) && (
+                      <span className="text-orange-600 bg-orange-50 border border-orange-200 px-1 rounded flex-shrink-0 text-[10px]" title="현장 신규등록 선수">현장</span>
                     )}
                     {alreadyCalled && <span className="text-orange-500 flex-shrink-0 text-[10px]">호출됨</span>}
                     {!alreadyCalled && (() => {
