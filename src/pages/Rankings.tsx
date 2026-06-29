@@ -1731,6 +1731,37 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )}
         </div>
 
+        {/* 최근 5경기 상세 목록 */}
+        {recentRecords.length > 0 && (() => {
+          const recent5 = recentRecords.slice(0, 5)
+          return (
+            <div className="mb-3">
+              <h4 className="text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">최근 5경기</h4>
+              <div className="space-y-1">
+                {recent5.map(r => {
+                  const isP1 = r.participant1Id === player.id
+                  const oppId = isP1 ? r.participant2Id : r.participant1Id
+                  const oppName = pMap[oppId] ?? '?'
+                  const myScore = isP1 ? r.p1Score : r.p2Score
+                  const oppScore = isP1 ? r.p2Score : r.p1Score
+                  const isWin = myScore > oppScore
+                  const dateStr = new Date(r.recordedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+                  return (
+                    <div key={r.id} className="flex items-center gap-2 text-xs py-1 px-2 rounded-lg bg-gray-50 border border-gray-100">
+                      <span className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] text-white flex-shrink-0 ${isWin ? 'bg-green-500' : 'bg-red-400'}`}>
+                        {isWin ? 'W' : 'L'}
+                      </span>
+                      <span className="flex-1 truncate text-gray-700">vs {oppName}</span>
+                      <span className={`font-semibold flex-shrink-0 ${isWin ? 'text-green-600' : 'text-red-500'}`}>{myScore} – {oppScore}</span>
+                      <span className="text-gray-400 flex-shrink-0 text-[10px]">{dateStr}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* 최근 5경기 W/L 미니 스트릭 */}
         {(() => {
           const combined = [
