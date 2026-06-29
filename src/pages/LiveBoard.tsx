@@ -130,6 +130,31 @@ export default function LiveBoardPage() {
           </div>
         )}
 
+        {/* 미확인 호출 선수 이름 배너 */}
+        {matchCalls.filter(c => !c.acknowledged).length > 0 && (
+          <div className="overflow-hidden bg-orange-500/20 border border-orange-500/40 rounded-xl px-4 py-2.5 flex items-center gap-3">
+            <Bell size={16} className="text-orange-400 animate-pulse flex-shrink-0" />
+            <div className="overflow-hidden flex-1">
+              <div className="flex gap-6 animate-marquee whitespace-nowrap"
+                style={{ animation: 'marquee 18s linear infinite' }}>
+                {matchCalls.filter(c => !c.acknowledged).map(c => (
+                  <span key={c.id} className="text-sm font-bold text-orange-200 flex-shrink-0">
+                    📍 {c.tableNo}번대 — {c.participant1Name} vs {c.participant2Name}
+                    <span className="text-orange-400 font-normal ml-2 text-xs">[{c.eventLabel}]</span>
+                  </span>
+                ))}
+                {matchCalls.filter(c => !c.acknowledged).map(c => (
+                  <span key={c.id + '-dup'} className="text-sm font-bold text-orange-200 flex-shrink-0">
+                    📍 {c.tableNo}번대 — {c.participant1Name} vs {c.participant2Name}
+                    <span className="text-orange-400 font-normal ml-2 text-xs">[{c.eventLabel}]</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+
         {/* Live Matches (from liveMatches store) */}
         {liveMatches.length > 0 && (
           <div>
