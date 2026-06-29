@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [courtPopover, setCourtPopover] = useState<number | null>(null)
   const [rowTableNos, setRowTableNos] = useState<Record<string, number>>({})
   const [selectedMatchKeys, setSelectedMatchKeys] = useState<Set<string>>(new Set())
+  const [pendingTourFilter, setPendingTourFilter] = useState('')
 
   function toggleSelectMatch(key: string) {
     setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
@@ -99,7 +100,10 @@ export default function DashboardPage() {
     )
   )
   const pendingMatches = allMatches.filter(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
-  const callablePendingKeys = pendingMatches
+  const filteredPendingMatches = pendingTourFilter
+    ? pendingMatches.filter(m => m.tournamentId === pendingTourFilter)
+    : pendingMatches
+  const callablePendingKeys = filteredPendingMatches
     .filter(m => m.participant1Id && m.participant2Id && !matchCalls.some(c => !c.acknowledged && c.matchId === m.id))
     .map(m => `${m.tournamentId}-${m.eventId}-${m.id}`)
   const completedMatches = allMatches.filter(m => m.result)
@@ -410,10 +414,12 @@ export default function DashboardPage() {
         <div className="card flex flex-col min-h-0 overflow-hidden">
           <h2 className="font-semibold text-sm text-gray-700 mb-2 flex-shrink-0 flex items-center gap-2">
             <Clock size={13} className="text-yellow-500" /> 대기중인 경기
-            <span className="text-xs text-gray-400 font-normal">({pendingMatches.length})</span>
+            <span className="text-xs text-gray-400 font-normal">
+              ({pendingTourFilter ? `${filteredPendingMatches.length}/` : ''}{pendingMatches.length})
+            </span>
             {pendingMatches.length >= 20 && (
               <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">
-                ⚠ {pendingMatches.length}경기 적체
+                ⚠ {pendingMatches.length}적체
               </span>
             )}
             {callablePendingKeys.length > 0 && (
@@ -436,11 +442,23 @@ export default function DashboardPage() {
               </div>
             )}
           </h2>
-          {pendingMatches.length === 0 ? (
+          {activeTournaments.length > 1 && (
+            <select
+              value={pendingTourFilter}
+              onChange={e => { setPendingTourFilter(e.target.value); setSelectedMatchKeys(new Set()) }}
+              className="mb-1.5 w-full text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white flex-shrink-0"
+            >
+              <option value="">전체 대회</option>
+              {activeTournaments.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+          {filteredPendingMatches.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-300">대기중 없음</div>
           ) : (
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
-              {pendingMatches.map(m => {
+              {filteredPendingMatches.map(m => {
                 const mKey = `${m.tournamentId}-${m.eventId}-${m.id}`
                 const p1 = m.participant1Id ? pMap[m.participant1Id] : null
                 const p2 = m.participant2Id ? pMap[m.participant2Id] : null
