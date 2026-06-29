@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.55 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.58 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,36 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-65. v4.58 — 홈 다가오는 경기 슬롯 미리보기
+
+자동 루프 세션. Home.tsx 오늘 일정 요약 바 아래 예정 슬롯 카드 추가.
+
+### 변경 (Home.tsx)
+- 오늘 날짜 schedules에서 현재 시각 이후 슬롯(participant1·2 있음) 상위 3개 추출.
+- 시작시간·코트번호·참가자·부문 표시, 클릭 시 /schedule 이동.
+
+---
+
+## 12-64. v4.57 — 대회 CSV 세트별 개별 컬럼 추가
+
+자동 루프 세션. Tournament.tsx exportTournamentCSV 개선.
+
+### 변경 (Tournament.tsx)
+- 헤더: 세트수·총점스코어·세트1~5 컬럼 추가.
+- 완료 경기를 라운드·포지션 순으로 정렬하여 출력.
+
+---
+
+## 12-63. v4.56 — 경기일정 완료 슬롯 시각적 구분
+
+자동 루프 세션. Schedule.tsx ScheduleDetail 완료 경기 표시.
+
+### 변경 (Schedule.tsx)
+- `completedMatchSet` useMemo: linkedTournamentId → 대회 이벤트 순회 → 완료 경기 키(`eventId-matchNo`) 세트 생성.
+- 3개 뷰(byDayTime, byTime 테이블, court 카드) 모두 opacity-60 + 취소선 + "✓완료" 배지 적용.
 
 ---
 
