@@ -46,6 +46,7 @@ function Kpi({ icon, label, value, sub, color }: {
 export default function Stats() {
   const { tournaments, players, pairs, teams, scoreRecords, appSettings } = useStore()
   const [tourFilter, setTourFilter] = useState('all')
+  const [winRateDetailId, setWinRateDetailId] = useState<string | null>(null)
   const selectedTour = tourFilter === 'all' ? null : tournaments.find(t => t.id === tourFilter)
 
   // 엔티티 ID → 이름 (선수/페어/팀)
@@ -526,18 +527,35 @@ export default function Stats() {
               <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
                 <TrendingUp size={14} className="text-rose-500" /> 승률 TOP {winRateTop5.length} (점수 기록 기준)
               </h2>
-              <div className="space-y-2">
-                {winRateTop5.map((p, i) => (
-                  <div key={p.id} className="flex items-center gap-3">
-                    <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-300 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span>
-                    <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
-                    <span className="text-xs text-gray-400">{p.wins}승 {p.losses}패</span>
-                    <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-rose-400 rounded-full" style={{ width: `${p.rate}%` }} />
+              <div className="space-y-1.5">
+                {winRateTop5.map((p, i) => {
+                  const full = players.find(pl => pl.id === p.id)
+                  const isOpen = winRateDetailId === p.id
+                  return (
+                    <div key={p.id}>
+                      <div className={`flex items-center gap-3 cursor-pointer rounded-lg px-1 py-0.5 hover:bg-gray-50 ${isOpen ? 'bg-rose-50' : ''}`}
+                        onClick={() => setWinRateDetailId(isOpen ? null : p.id)}>
+                        <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-300 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span>
+                        <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
+                        <span className="text-xs text-gray-400">{p.wins}승 {p.losses}패</span>
+                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-rose-400 rounded-full" style={{ width: `${p.rate}%` }} />
+                        </div>
+                        <span className="text-sm font-bold text-rose-600 w-10 text-right">{p.rate}%</span>
+                        <span className="text-gray-400 text-xs">{isOpen ? '▲' : '▼'}</span>
+                      </div>
+                      {isOpen && full && (
+                        <div className="mt-1 ml-8 px-3 py-2 bg-rose-50 rounded-lg border border-rose-100 text-xs flex flex-wrap gap-x-4 gap-y-1">
+                          <span className="text-gray-600">학교: <strong>{full.school || '-'}</strong></span>
+                          <span className="text-gray-600">부서: <strong>{full.division}</strong></span>
+                          <span className="text-gray-600">포인트: <strong className="text-blue-600">{full.points}</strong></span>
+                          <span className="text-gray-600">Elo: <strong className="text-purple-600">{full.rating ?? 1000}</strong></span>
+                          <span className="text-gray-600">성별: <strong>{full.gender}</strong></span>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-sm font-bold text-rose-600 w-10 text-right">{p.rate}%</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )}
