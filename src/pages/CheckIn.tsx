@@ -3,8 +3,9 @@ import { useStore } from '../store/useStore'
 import { parseQR, playerQRValue } from '../components/QRCodeDisplay'
 import QRCodeDisplay from '../components/QRCodeDisplay'
 import { getRatingLabel } from '../utils/ratingUtils'
-import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi, Download, DollarSign } from 'lucide-react'
-import type { Player } from '../types'
+import { genId } from '../utils/bracketUtils'
+import { QrCode, CheckCircle, Search, Users, Printer, RefreshCw, Wifi, Download, DollarSign, UserPlus, X } from 'lucide-react'
+import type { Player, Division } from '../types'
 
 function hl(text: string, q: string) {
   if (!q) return <>{text}</>
@@ -14,7 +15,7 @@ function hl(text: string, q: string) {
 }
 
 export default function CheckInPage() {
-  const { players, updatePlayer, toggleFeePaid, resetFeePaid } = useStore()
+  const { players, updatePlayer, addPlayer, toggleFeePaid, resetFeePaid } = useStore()
   const [tab, setTab] = useState<'station' | 'list' | 'fee' | 'card'>('station')
   const [feeAmount, setFeeAmount] = useState(5000)
   const [feeQuery, setFeeQuery] = useState('')
@@ -24,6 +25,11 @@ export default function CheckInPage() {
   const [scanStatus, setScanStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [scanInput, setScanInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const [showWalkin, setShowWalkin] = useState(false)
+  const [walkinName, setWalkinName] = useState('')
+  const [walkinSchool, setWalkinSchool] = useState('')
+  const [walkinDiv, setWalkinDiv] = useState<Division>('일반')
+  const [walkinGender, setWalkinGender] = useState<'남' | '여'>('남')
 
   const checkedIn = players.filter(p => p.checkedIn)
   const notCheckedIn = players.filter(p => !p.checkedIn)
@@ -74,6 +80,28 @@ export default function CheckInPage() {
 
   function resetAll() {
     players.forEach(p => updatePlayer(p.id, { checkedIn: false }))
+  }
+
+  function handleWalkin() {
+    if (!walkinName.trim()) return
+    const newPlayer: Player = {
+      id: genId(), name: walkinName.trim(), school: walkinSchool.trim() || '현장등록',
+      division: walkinDiv, gender: walkinGender,
+      points: 0, wins: 0, losses: 0, rating: 1000, gamesPlayed: 0,
+      checkedIn: true, createdAt: new Date().toISOString(),
+    }
+    addPlayer(newPlayer)
+    setLastScanned(newPlayer)
+    setScanStatus('success')
+    setShowWalkin(false)
+    setWalkinName(''); setWalkinSchool('')
+    setTimeout(() => setScanStatus('idle'), 3000)
+  }
+
+  function openWalkin(prefill = '') {
+    setWalkinName(prefill)
+    setWalkinSchool('')
+    setShowWalkin(true)
   }
 
   function exportAttendanceCSV() {
@@ -193,9 +221,15 @@ export default function CheckInPage() {
                 </div>
               )}
               {scanStatus === 'error' && (
-                <div>
+                <div className="space-y-2">
                   <p className="text-red-700 font-bold">등록되지 않은 선수</p>
                   <p className="text-red-500 text-sm">QR코드 또는 이름을 다시 확인해주세요</p>
+                  <button
+                    onClick={() => openWalkin(scanInput)}
+                    className="flex items-center gap-1.5 mx-auto text-xs bg-orange-500 text-white px-3 py-1.5 rounded-lg hover:bg-orange-600"
+                  >
+                    <UserPlus size={12} /> 현장등록으로 처리
+                  </button>
                 </div>
               )}
               {scanStatus === 'idle' && (
@@ -265,9 +299,69 @@ export default function CheckInPage() {
                   )}
                 </div>
               ))}
+              {filtered.length === 0 && query.length > 0 && (
+                <div className="py-4 text-center space-y-2">
+                  <p className="text-xs text-gray-400">"{query}"에 해당하는 선수가 없습니다</p>
+                  <button
+                    onClick={() => openWalkin(query)}
+                    className="flex items-center gap-1.5 mx-auto text-xs bg-orange-500 text-white px-3 py-1.5 rounded-lg hover:bg-orange-600"
+                  >
+                    <UserPlus size={12} /> 현장등록
+                  </button>
+                </div>
+              )}
               {filtered.length > 20 && (
                 <p className="text-center text-xs text-gray-400 py-2">이름을 더 입력하면 결과가 좁혀집니다...</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 현장등록 모달 ── */}
+      {showWalkin && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <UserPlus size={16} className="text-orange-500" /> 현장 신규등록
+              </h3>
+              <button onClick={() => setShowWalkin(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">이름 *</label>
+                <input className="input w-full" placeholder="선수 이름" value={walkinName} onChange={e => setWalkinName(e.target.value)} autoFocus />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">소속</label>
+                <input className="input w-full" placeholder="학교·소속 (미입력 시 현장등록)" value={walkinSchool} onChange={e => setWalkinSchool(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">부문</label>
+                  <select className="input w-full" value={walkinDiv} onChange={e => setWalkinDiv(e.target.value as Division)}>
+                    {(['초등','중등','고등','대학','일반','생활체육'] as Division[]).map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">성별</label>
+                  <select className="input w-full" value={walkinGender} onChange={e => setWalkinGender(e.target.value as '남' | '여')}>
+                    <option value="남">남</option>
+                    <option value="여">여</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setShowWalkin(false)} className="btn-secondary flex-1 text-sm">취소</button>
+              <button
+                onClick={handleWalkin}
+                disabled={!walkinName.trim()}
+                className="btn-primary flex-1 text-sm disabled:opacity-40 flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle size={14} /> 등록 + 체크인
+              </button>
             </div>
           </div>
         </div>
