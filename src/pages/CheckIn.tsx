@@ -12,6 +12,7 @@ export default function CheckInPage() {
   const [feeAmount, setFeeAmount] = useState(5000)
   const [feeQuery, setFeeQuery] = useState('')
   const [query, setQuery] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [lastScanned, setLastScanned] = useState<Player | null>(null)
   const [scanStatus, setScanStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [scanInput, setScanInput] = useState('')
@@ -444,57 +445,89 @@ export default function CheckInPage() {
       )}
 
       {/* ── QR 선수증 출력 ── */}
-      {tab === 'card' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <input
-              className="input flex-1"
-              placeholder="선수 이름 또는 소속 검색..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <button
-              onClick={() => window.print()}
-              className="btn-primary flex items-center gap-1.5"
-            >
-              <Printer size={15} /> 인쇄
-            </button>
-          </div>
-          <p className="text-xs text-gray-400">선수 QR코드를 출력하여 배포하세요. 체크인 스테이션에서 스캔하면 즉시 등록됩니다.</p>
+      {tab === 'card' && (() => {
+        const cardPlayers = (query ? filtered : players).slice(0, 80)
+        const allSelected = cardPlayers.length > 0 && cardPlayers.every(p => selectedIds.has(p.id))
+        const toggleAll = () => {
+          if (allSelected) setSelectedIds(new Set())
+          else setSelectedIds(new Set(cardPlayers.map(p => p.id)))
+        }
+        const toggleOne = (id: string) => {
+          setSelectedIds(prev => {
+            const next = new Set(prev)
+            next.has(id) ? next.delete(id) : next.add(id)
+            return next
+          })
+        }
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 no-print">
+              <input
+                className="input flex-1"
+                placeholder="선수 이름 또는 소속 검색..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+              />
+              <button onClick={toggleAll} className={`btn-secondary text-sm flex-shrink-0 ${allSelected ? 'ring-1 ring-blue-400' : ''}`}>
+                {allSelected ? '선택 해제' : '전체 선택'}
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="btn-primary flex items-center gap-1.5 flex-shrink-0"
+              >
+                <Printer size={15} /> {selectedIds.size > 0 ? `${selectedIds.size}명 인쇄` : '인쇄'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 no-print">선수 QR코드를 출력하여 배포하세요. 선택하면 해당 선수만 인쇄됩니다.</p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 print:grid-cols-4">
-            {(query ? filtered : players).slice(0, 40).map(p => {
-              const label = getRatingLabel(p.rating)
-              return (
-                <div key={p.id} className="border border-gray-200 rounded-xl p-3 bg-white shadow-sm flex flex-col items-center gap-2 print:break-inside-avoid">
-                  <div className="w-full flex items-center justify-between">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${label.bg} ${label.color}`}>
-                      {label.label}
-                    </span>
-                    <span className="text-[10px] text-gray-400">{p.division}</span>
-                  </div>
-                  {p.photoUrl ? (
-                    <img src={p.photoUrl} alt={p.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-100" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                  ) : (
-                    <QRCodeDisplay value={playerQRValue(p.id)} size={80} />
-                  )}
-                  <div className="text-center">
-                    <p className="font-bold text-sm text-gray-800">{p.name}</p>
-                    <p className="text-[10px] text-gray-500">{p.school}</p>
-                    <p className="text-[10px] text-blue-600 font-mono mt-0.5">레이팅 {p.rating}</p>
-                    {p.registrationNo && (
-                      <p className="text-[10px] text-gray-400">#{p.registrationNo}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 print:grid-cols-4">
+              {cardPlayers.map(p => {
+                const label = getRatingLabel(p.rating)
+                const isSelected = selectedIds.has(p.id)
+                const hiddenOnPrint = selectedIds.size > 0 && !isSelected
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => toggleOne(p.id)}
+                    className={`relative border-2 rounded-xl p-3 bg-white shadow-sm flex flex-col items-center gap-2 print:break-inside-avoid cursor-pointer transition-colors
+                      ${isSelected ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
+                      ${hiddenOnPrint ? 'no-print' : ''}`}
+                  >
+                    {selectedIds.size > 0 && (
+                      <span className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center no-print
+                        ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
+                        {isSelected && <span className="text-white text-[8px] font-bold">✓</span>}
+                      </span>
                     )}
+                    <div className="w-full flex items-center justify-between">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${label.bg} ${label.color}`}>
+                        {label.label}
+                      </span>
+                      <span className="text-[10px] text-gray-400">{p.division}</span>
+                    </div>
+                    {p.photoUrl ? (
+                      <img src={p.photoUrl} alt={p.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-100" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    ) : (
+                      <QRCodeDisplay value={playerQRValue(p.id)} size={80} />
+                    )}
+                    <div className="text-center">
+                      <p className="font-bold text-sm text-gray-800">{p.name}</p>
+                      <p className="text-[10px] text-gray-500">{p.school}</p>
+                      <p className="text-[10px] text-blue-600 font-mono mt-0.5">레이팅 {p.rating}</p>
+                      {p.registrationNo && (
+                        <p className="text-[10px] text-gray-400">#{p.registrationNo}</p>
+                      )}
+                    </div>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${p.gender === '남' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
+                      {p.gender}자부
+                    </span>
                   </div>
-                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${p.gender === '남' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
-                    {p.gender}자부
-                  </span>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

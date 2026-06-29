@@ -381,6 +381,7 @@ function ManualEntry() {
   const [matchSearch, setMatchSearch] = useState('')
   const [recSearch, setRecSearch] = useState('')
   const [recUnverifiedOnly, setRecUnverifiedOnly] = useState(false)
+  const [recTournamentId, setRecTournamentId] = useState('')
   const [recPage, setRecPage] = useState(0)
   const REC_PAGE_SIZE = 12
 
@@ -416,9 +417,10 @@ function ManualEntry() {
     return acc
   }, [])
 
-  // 최근 입력 기록: 검색 + 미확인 필터 + 페이지네이션
+  // 최근 입력 기록: 검색 + 미확인 필터 + 대회 필터 + 페이지네이션
   const filteredRecords = [...scoreRecords].reverse().filter(r => {
     if (recUnverifiedOnly && r.verified) return false
+    if (recTournamentId && r.tournamentId !== recTournamentId) return false
     if (!recSearch) return true
     const q = recSearch.toLowerCase()
     const n1 = (pMap[r.participant1Id]?.name ?? '').toLowerCase()
@@ -625,12 +627,24 @@ function ManualEntry() {
             <p className="text-sm text-gray-400 text-center py-4">입력된 기록이 없습니다</p>
           ) : (
             <>
-              <input
-                className="input mb-2 text-sm"
-                placeholder="선수명으로 검색..."
-                value={recSearch}
-                onChange={e => { setRecSearch(e.target.value); setRecPage(0) }}
-              />
+              <div className="flex gap-2 mb-2">
+                <input
+                  className="input flex-1 text-sm"
+                  placeholder="선수명으로 검색..."
+                  value={recSearch}
+                  onChange={e => { setRecSearch(e.target.value); setRecPage(0) }}
+                />
+                {tournaments.length > 0 && (
+                  <select
+                    className="select text-sm min-w-[120px]"
+                    value={recTournamentId}
+                    onChange={e => { setRecTournamentId(e.target.value); setRecPage(0) }}
+                  >
+                    <option value="">전체 대회</option>
+                    {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                )}
+              </div>
               {filteredRecords.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">검색 결과가 없습니다</p>
               ) : (
