@@ -1663,7 +1663,18 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
                             <span className="text-[10px] text-gray-400">~{formatTime12h(slot.endTime)}</span>
-                            {isDone ? <span className="text-[9px] text-green-600 font-bold ml-auto">✓완료</span> : <span className="text-[10px] text-gray-500 ml-auto">{slot.division} {slot.eventType} #{slot.matchNo}</span>}
+                            {isDone ? (
+                              <span className="text-[9px] text-green-600 font-bold ml-auto flex items-center gap-1">
+                                ✓완료
+                                {plan.date === new Date().toISOString().slice(0, 10) && slot.startTime && (() => {
+                                  const nowMins = new Date().getHours() * 60 + new Date().getMinutes()
+                                  const [h, m] = slot.startTime.split(':').map(Number)
+                                  const elapsed = nowMins - (h * 60 + m)
+                                  if (elapsed < 1) return null
+                                  return <span className="text-[8px] text-gray-400 font-normal">{elapsed}분 전</span>
+                                })()}
+                              </span>
+                            ) : <span className="text-[10px] text-gray-500 ml-auto">{slot.division} {slot.eventType} #{slot.matchNo}</span>}
                             {slot.note && <span className="text-[9px] text-amber-600 ml-0.5 flex-shrink-0" title={slot.note}>✎</span>}
                           </div>
                           {slot.participant1 && slot.participant2 ? (
