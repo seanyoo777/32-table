@@ -129,6 +129,29 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── 온보딩 가이드 (선수 0명) ── */}
+      {players.length === 0 && (
+        <div className="flex-shrink-0 bg-white rounded-xl border-2 border-dashed border-blue-200 p-5">
+          <h2 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <span className="text-xl">🏓</span> 처음 시작하기 — 3단계 가이드
+          </h2>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { step: '①', title: '선수 등록', desc: 'CSV 업로드 또는 개별 등록으로 선수를 추가하세요.', color: 'bg-blue-50 border-blue-200', btn: '랭킹 관리로 이동', to: '/rankings', btnColor: 'bg-blue-600 text-white hover:bg-blue-700' },
+              { step: '②', title: '대회 생성', desc: '토너먼트·리그 등 원하는 형식으로 대회를 만드세요.', color: 'bg-green-50 border-green-200', btn: '대회 만들기', to: '/tournament', btnColor: 'bg-green-600 text-white hover:bg-green-700' },
+              { step: '③', title: '당일 체크인', desc: 'QR코드 또는 이름 검색으로 참가자를 체크인하세요.', color: 'bg-purple-50 border-purple-200', btn: '체크인 열기', to: '/checkin', btnColor: 'bg-purple-600 text-white hover:bg-purple-700' },
+            ].map(({ step, title, desc, color, btn, to, btnColor }) => (
+              <div key={step} className={`rounded-xl border p-4 flex flex-col gap-2 ${color}`}>
+                <div className="text-2xl font-black text-gray-300">{step}</div>
+                <div className="font-bold text-gray-700 text-sm">{title}</div>
+                <div className="text-xs text-gray-500 flex-1">{desc}</div>
+                <button onClick={() => navigate(to)} className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${btnColor}`}>{btn}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── 3-column main grid ── */}
       <div className="flex-1 min-h-0 grid gap-4" style={{ gridTemplateColumns: '260px 1fr 260px' }}>
 
