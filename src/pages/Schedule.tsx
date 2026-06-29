@@ -1529,6 +1529,25 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               <div className="text-center text-green-600 font-bold text-[10px] pt-1">✓ 완료된 경기</div>
             )}
           </div>
+          {(() => {
+            const courtSlots = filteredSlots.filter(s => s.courtNo === popoverSlot.courtNo).sort((a, b) => a.startTime.localeCompare(b.startTime))
+            const idx = courtSlots.findIndex(s => s.id === popoverSlot.id)
+            const prev = idx > 0 ? courtSlots[idx - 1] : null
+            const next = idx < courtSlots.length - 1 ? courtSlots[idx + 1] : null
+            if (!prev && !next) return null
+            return (
+              <div className="flex items-center justify-between mt-2 gap-1">
+                <button onClick={() => prev && setPopoverSlot(prev)} disabled={!prev}
+                  className={`flex-1 text-[10px] py-0.5 rounded border transition-colors ${prev ? 'border-gray-200 text-gray-600 hover:bg-gray-50' : 'border-gray-100 text-gray-200 cursor-default'}`}>
+                  ← {prev ? formatTime12h(prev.startTime) : '처음'}
+                </button>
+                <button onClick={() => next && setPopoverSlot(next)} disabled={!next}
+                  className={`flex-1 text-[10px] py-0.5 rounded border transition-colors ${next ? 'border-gray-200 text-gray-600 hover:bg-gray-50' : 'border-gray-100 text-gray-200 cursor-default'}`}>
+                  {next ? formatTime12h(next.startTime) : '마지막'} →
+                </button>
+              </div>
+            )
+          })()}
           {popoverSlot.participant1 && popoverSlot.participant2 && (
             <button
               onClick={() => { setPopoverSlot(null); navigate('/score') }}
