@@ -441,6 +441,26 @@ export default function DashboardPage() {
               )
             })()}
             {(() => {
+              const DIVS = ['초등','중등','고등','대학','일반','생활체육'] as const
+              const rows = DIVS.map(d => ({ d, total: players.filter(p => p.division === d).length, done: players.filter(p => p.division === d && p.checkedIn).length }))
+                .filter(r => r.total > 0)
+                .sort((a, b) => b.done / b.total - a.done / a.total)
+                .slice(0, 3)
+              if (rows.length < 2) return null
+              return (
+                <div className="flex gap-1 mt-1.5 flex-wrap">
+                  {rows.map(({ d, total, done }) => {
+                    const pct = Math.round(done / total * 100)
+                    return (
+                      <span key={d} className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${pct === 100 ? 'bg-green-100 text-green-700' : 'bg-teal-50 text-teal-700'}`}>
+                        {d} {pct}%
+                      </span>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+            {(() => {
               const fiveMinsAgo = Date.now() - 5 * 60 * 1000
               const recent = players
                 .filter(p => p.checkedIn && p.createdAt && new Date(p.createdAt).getTime() >= fiveMinsAgo)
