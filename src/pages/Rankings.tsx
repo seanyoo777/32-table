@@ -855,6 +855,18 @@ export default function Rankings() {
                           {(() => { const d = playerEloDelta.get(p.id); if (!d) return null; return <span className={`text-[10px] font-semibold ${d > 0 ? 'text-green-500' : 'text-red-500'}`}>{d > 0 ? `+${d}` : d}</span> })()}
                         </div>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${rLabel.bg} ${rLabel.color}`}>{rLabel.label}</span>
+                        {(() => {
+                          const recs = scoreRecords.filter(r => r.participant1Id === p.id || r.participant2Id === p.id).sort((a, b) => (b.recordedAt ?? '').localeCompare(a.recordedAt ?? '')).slice(0, 5)
+                          if (recs.length < 1) return null
+                          return (
+                            <div className="flex items-center gap-0.5 mt-0.5">
+                              {recs.map((r, i) => {
+                                const won = r.participant1Id === p.id ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+                                return <span key={i} className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${won ? 'bg-green-400' : 'bg-red-400'}`} />
+                              })}
+                            </div>
+                          )
+                        })()}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center">
