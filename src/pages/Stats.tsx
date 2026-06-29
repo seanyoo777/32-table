@@ -376,6 +376,26 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 코트 활용률 칩 */}
+          {(() => {
+            const todayISO = new Date().toISOString().split('T')[0]
+            const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO) && c.tableNo)
+            if (todayCalls.length < 3) return null
+            const usedCourts = new Set(todayCalls.map(c => c.tableNo)).size
+            if (usedCourts < 2) return null
+            const allCourts = new Set(matchCalls.filter(c => c.tableNo).map(c => c.tableNo)).size
+            if (allCourts < 2) return null
+            const pct = Math.round((usedCourts / allCourts) * 100)
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-cyan-600 font-semibold flex-shrink-0">코트 활용</span>
+                <span className="text-[10px] bg-cyan-50 text-cyan-700 border border-cyan-200 px-2 py-0.5 rounded-full font-medium">
+                  {usedCourts}/{allCourts}코트 ({pct}%)
+                </span>
+              </div>
+            )
+          })()}
+
           {/* 오늘/어제/그제 경기 수 비교 */}
           {(() => {
             const dates = [0, 1, 2].map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0] })
