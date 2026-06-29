@@ -254,6 +254,54 @@ export default function Stats() {
               label="메달 확정 종목" value={totalMedalEvents} sub={`${matchStats.events}종목`} />
           </div>
 
+          {/* 대회 상태 분포 파이 */}
+          {tournaments.length >= 2 && (() => {
+            const ongoingN = tournaments.filter(t => t.status === 'ongoing').length
+            const upcomingN = tournaments.filter(t => t.status === 'draft' || t.status === 'upcoming').length
+            const completedN = tournaments.filter(t => t.status === 'completed').length
+            const total = tournaments.length
+            const data = [
+              { label: '진행중', count: ongoingN, color: '#22c55e' },
+              { label: '예정/준비', count: upcomingN, color: '#6366f1' },
+              { label: '완료', count: completedN, color: '#9ca3af' },
+            ].filter(d => d.count > 0)
+            if (data.length < 2) return null
+            const cx = 40, cy = 40, r = 32
+            let cumAngle = -Math.PI / 2
+            const slices = data.map(d => {
+              const angle = (d.count / total) * 2 * Math.PI
+              const startAngle = cumAngle
+              cumAngle += angle
+              const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle)
+              const x2 = cx + r * Math.cos(cumAngle), y2 = cy + r * Math.sin(cumAngle)
+              const large = angle > Math.PI ? 1 : 0
+              return { ...d, path: `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z` }
+            })
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Trophy size={14} className="text-amber-500" /> 대회 상태 분포
+                </h2>
+                <div className="flex items-center gap-6">
+                  <svg width={80} height={80} viewBox="0 0 80 80" className="flex-shrink-0">
+                    {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} />)}
+                  </svg>
+                  <div className="space-y-1.5 flex-1">
+                    {data.map(d => (
+                      <div key={d.label} className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                        <span className="text-xs text-gray-600 flex-1">{d.label}</span>
+                        <span className="text-xs font-bold text-gray-800">{d.count}개</span>
+                        <span className="text-[10px] text-gray-400 w-8 text-right">{Math.round(d.count / total * 100)}%</span>
+                      </div>
+                    ))}
+                    <div className="text-[10px] text-gray-400 pt-1 border-t border-gray-100">전체 {total}개 대회</div>
+                  </div>
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 경기 진행률 바 */}
           <section className="card">
             <div className="flex items-center justify-between mb-2">
@@ -584,36 +632,37 @@ export default function Stats() {
           )}
 
           {/* 대회별 참가자 수 차트 */}
-          {tournaments.length > 0 && (
-            <section className="card">
-              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
-                <Users size={14} className="text-blue-500" /> 대회별 참가자 수
-              </h2>
-              {(() => {
-                const rows = [...tournaments]
-                  .sort((a, b) => b.participants.length - a.participants.length)
-                  .slice(0, 5)
-                  .map(t => ({ name: t.name.length > 8 ? t.name.slice(0, 8) + '…' : t.name, count: t.participants.length, status: t.status }))
-                const maxVal = Math.max(...rows.map(r => r.count), 1)
-                return (
-                  <div className="space-y-2">
-                    {rows.map((r, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-500 w-20 flex-shrink-0 truncate">{r.name}</span>
-                        <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${r.status === 'completed' ? 'bg-gray-400' : r.status === 'ongoing' ? 'bg-blue-500' : 'bg-blue-200'}`}
-                            style={{ width: `${Math.max(r.count / maxVal * 100, r.count > 0 ? 6 : 0)}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-bold text-gray-600 w-6 text-right flex-shrink-0">{r.count}</span>
+          {tournaments.length > 0 && (() => {
+            const rows = [...tournaments]
+              .map(t => {
+                const ids = new Set(t.events.flatMap(ev => ev.matches.flatMap(m => [m.participant1Id, m.participant2Id].filter(Boolean) as string[])))
+                return { name: t.name.length > 8 ? t.name.slice(0, 8) + '…' : t.name, count: ids.size, status: t.status }
+              })
+              .sort((a, b) => b.count - a.count)
+              .slice(0, 5)
+            const maxVal = Math.max(...rows.map(r => r.count), 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Users size={14} className="text-blue-500" /> 대회별 참가자 수
+                </h2>
+                <div className="space-y-2">
+                  {rows.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 w-20 flex-shrink-0 truncate">{r.name}</span>
+                      <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${r.status === 'completed' ? 'bg-gray-400' : r.status === 'ongoing' ? 'bg-blue-500' : 'bg-blue-200'}`}
+                          style={{ width: `${Math.max(r.count / maxVal * 100, r.count > 0 ? 6 : 0)}%` }}
+                        />
                       </div>
-                    ))}
-                  </div>
-                )
-              })()}
-            </section>
-          )}
+                      <span className="text-[10px] font-bold text-gray-600 w-6 text-right flex-shrink-0">{r.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
 
           {/* 최근 7일 경기 수 차트 */}
           {scoreRecords.length > 0 && (

@@ -8,6 +8,8 @@ export default function Home() {
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t) }, [])
+  const [clock, setClock] = useState(new Date())
+  useEffect(() => { const t = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(t) }, [])
   const [showUnchecked, setShowUnchecked] = useState(false)
   type Memo = { text: string; color: string; pinned?: boolean }
   const memoColors: Record<string, { dot: string; bg: string; border: string }> = {
@@ -722,6 +724,25 @@ export default function Home() {
 
         {/* ── Col 3: Top players + Hall of Fame ── */}
         <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+          {/* 실시간 시계 */}
+          {(() => {
+            const days = ['일', '월', '화', '수', '목', '금', '토']
+            const hh = String(clock.getHours()).padStart(2, '0')
+            const mm = String(clock.getMinutes()).padStart(2, '0')
+            const ss = String(clock.getSeconds()).padStart(2, '0')
+            const day = days[clock.getDay()]
+            return (
+              <div className="card flex-shrink-0 text-center py-2">
+                <div className="text-2xl font-black text-gray-800 tabular-nums tracking-wider leading-none">
+                  {hh}:{mm}<span className="text-gray-400 font-bold">:{ss}</span>
+                </div>
+                <div className="text-[11px] text-gray-400 mt-1">
+                  {clock.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} ({day})
+                </div>
+              </div>
+            )
+          })()}
+
           <div className="card flex-1 flex flex-col overflow-hidden min-h-0">
             <h2 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2 flex-shrink-0">
               <Award size={14} /> 단식 TOP 랭킹
