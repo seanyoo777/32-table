@@ -188,7 +188,24 @@ export default function CheckInPage() {
       {players.length > 0 && (
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-gray-500">
-            <span>체크인 진행률</span>
+            <div className="flex items-center gap-2">
+              {(() => {
+                const R = 12, circ = 2 * Math.PI * R
+                const pct = Math.round(checkedIn.length / players.length * 100)
+                const dash = (checkedIn.length / players.length) * circ
+                const color = pct === 100 ? '#22c55e' : pct >= 50 ? '#14b8a6' : '#f59e0b'
+                return (
+                  <svg width={30} height={30} viewBox="0 0 30 30">
+                    <circle cx={15} cy={15} r={R} fill="none" stroke="#e5e7eb" strokeWidth={4} />
+                    <circle cx={15} cy={15} r={R} fill="none" stroke={color} strokeWidth={4}
+                      strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+                      transform="rotate(-90 15 15)" />
+                    <text x={15} y={19} textAnchor="middle" fontSize={7} fontWeight="bold" fill={color}>{pct}%</text>
+                  </svg>
+                )
+              })()}
+              <span>체크인 진행률</span>
+            </div>
             <div className="flex items-center gap-2">
               {notCheckedIn.length > 0 && (
                 <button
