@@ -138,6 +138,20 @@ export default function Home() {
               )
             })()}
             {(() => {
+              const activeCalls = matchCalls.filter(c => !c.acknowledged).slice(0, 3)
+              if (activeCalls.length === 0) return null
+              return (
+                <>
+                  {activeCalls.map(c => (
+                    <button key={c.id} onClick={() => navigate('/dashboard')}
+                      className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-medium hover:bg-teal-100 transition-colors truncate max-w-[80px]">
+                      {c.participant1Name}
+                    </button>
+                  ))}
+                </>
+              )
+            })()}
+            {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
               const todayDoneN = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).length
               if (todayDoneN === 0) return null
