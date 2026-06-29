@@ -1380,6 +1380,37 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
+        {/* 승률 추이 미니 SVG 선 그래프 (최근 10경기) */}
+        {(() => {
+          const allGames = [
+            ...tourMatches.map(({ match }) => ({ win: match.result?.winnerId === player.id })),
+            ...recentRecords.map(r => { const isP1 = r.participant1Id === player.id; return { win: isP1 ? r.p1Score > r.p2Score : r.p2Score > r.p1Score } }),
+          ].slice(0, 10).reverse()
+          if (allGames.length < 2) return null
+          const pts = allGames.map((g, i) => {
+            const wins = allGames.slice(0, i + 1).filter(x => x.win).length
+            return Math.round(wins / (i + 1) * 100)
+          })
+          const W = 260, H = 50, pad = 8
+          const xStep = (W - pad * 2) / (pts.length - 1)
+          const yOf = (v: number) => pad + (H - pad * 2) * (1 - v / 100)
+          const pathD = pts.map((v, i) => `${i === 0 ? 'M' : 'L'}${pad + i * xStep},${yOf(v)}`).join(' ')
+          return (
+            <div className="mb-3">
+              <div className="text-[11px] text-gray-400 mb-1">승률 추이 (최근 {allGames.length}경기)</div>
+              <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="overflow-visible">
+                <line x1={pad} y1={yOf(50)} x2={W - pad} y2={yOf(50)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3,3" />
+                <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="1.5" />
+                {pts.map((v, i) => (
+                  <circle key={i} cx={pad + i * xStep} cy={yOf(v)} r={3}
+                    fill={allGames[i].win ? '#22c55e' : '#f87171'} />
+                ))}
+                <text x={W - pad + 2} y={yOf(pts[pts.length - 1]) + 3} fontSize="9" fill="#6366f1">{pts[pts.length - 1]}%</text>
+              </svg>
+            </div>
+          )
+        })()}
+
         {/* Tournament match history — grouped by event */}
         {tourMatches.length > 0 && (() => {
           const grouped: { key: string; tourName: string; evLabel: string; items: typeof tourMatches }[] = []
