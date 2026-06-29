@@ -921,6 +921,20 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const filteredTimes = [...new Set(filteredSlots.map(s => s.startTime))].sort()
   const byTime = filteredTimes.map(t => ({ time: t, slots: filteredSlots.filter(s => s.startTime === t) }))
 
+  // 연결 대회의 완료 경기 키 세트 (eventId-matchNo)
+  const completedMatchSet = useMemo(() => {
+    const set = new Set<string>()
+    const tour = tournaments.find(t => t.id === plan.linkedTournamentId)
+    if (!tour) return set
+    for (const ev of tour.events) {
+      const assignable = ev.matches
+        .filter(m => m.participant1Id && m.participant2Id && !m.isBye)
+        .sort((a, b) => a.round !== b.round ? a.round - b.round : a.position - b.position)
+      assignable.forEach((m, idx) => { if (m.result) set.add(`${ev.id}-${idx + 1}`) })
+    }
+    return set
+  }, [plan.linkedTournamentId, tournaments])
+
   // 다일차 전체 보기: 일차별 섹션(인쇄 헤더용)
   const byDayTime = hasMultipleDays && activeDay === null
     ? days.map(day => {
@@ -1253,11 +1267,12 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                               if (!slot) return <td key={c} className="py-2 px-2 border border-gray-100 bg-white" />
                               return (
                                 <td key={c} className="py-1.5 px-2 border border-gray-100">
-                                  <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''}`}>
+                                  {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
+                                  <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''}`}>
                                     <div className="flex items-center gap-1 mb-0.5">
                                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
-                                      <span className="font-semibold text-[11px]">{slot.division} {slot.eventType}</span>
-                                      <span className="text-[10px] text-gray-400 ml-auto">#{slot.matchNo}</span>
+                                      <span className={`font-semibold text-[11px] ${isDone ? 'line-through text-gray-400' : ''}`}>{slot.division} {slot.eventType}</span>
+                                      {isDone ? <span className="text-[9px] text-green-600 font-bold ml-auto">✓완료</span> : <span className="text-[10px] text-gray-400 ml-auto">#{slot.matchNo}</span>}
                                     </div>
                                     {slot.participant1 && slot.participant2 ? (
                                       <div className="mt-0.5 space-y-0.5">
@@ -1270,6 +1285,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                                     )}
                                     <div className="text-[10px] text-gray-400 mt-0.5">{formatTime12h(slot.startTime)}~{formatTime12h(slot.endTime)}</div>
                                   </div>
+                                  )})()}
                                 </td>
                               )
                             })}
@@ -1299,11 +1315,12 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       if (!slot) return <td key={c} className="py-2 px-2 border border-gray-100 bg-white" />
                       return (
                         <td key={c} className="py-1.5 px-2 border border-gray-100">
-                          <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''}`}>
+                          {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
+                          <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''}`}>
                             <div className="flex items-center gap-1 mb-0.5">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
-                              <span className="font-semibold text-[11px]">{slot.division} {slot.eventType}</span>
-                              <span className="text-[10px] text-gray-400 ml-auto">#{slot.matchNo}</span>
+                              <span className={`font-semibold text-[11px] ${isDone ? 'line-through text-gray-400' : ''}`}>{slot.division} {slot.eventType}</span>
+                              {isDone ? <span className="text-[9px] text-green-600 font-bold ml-auto">✓완료</span> : <span className="text-[10px] text-gray-400 ml-auto">#{slot.matchNo}</span>}
                             </div>
                             {slot.participant1 && slot.participant2 ? (
                               <div className="mt-0.5 space-y-0.5">
@@ -1316,6 +1333,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             )}
                             <div className="text-[10px] text-gray-400 mt-0.5">{formatTime12h(slot.startTime)}~{formatTime12h(slot.endTime)}</div>
                           </div>
+                          )})()}
                         </td>
                       )
                     })}
@@ -1342,9 +1360,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
                     </h3>
                     <div className="space-y-1.5">
-                      {courtSlots.map(slot => (
+                      {courtSlots.map(slot => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
                         <div key={slot.id}
-                          className={`p-1.5 rounded border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''}`}
+                          className={`p-1.5 rounded border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''}`}
                           draggable={!slot.type || slot.type === 'match'}
                           onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('slotId', slot.id); setDraggingSlotId(slot.id); setEditingSlotId(null) }}
                           onDragEnd={() => { setDraggingSlotId(null); setDragOverCourt(null) }}
@@ -1353,7 +1371,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
                             <span className="text-[10px] text-gray-400">~{formatTime12h(slot.endTime)}</span>
-                            <span className="text-[10px] text-gray-500 ml-auto">{slot.division} {slot.eventType} #{slot.matchNo}</span>
+                            {isDone ? <span className="text-[9px] text-green-600 font-bold ml-auto">✓완료</span> : <span className="text-[10px] text-gray-500 ml-auto">{slot.division} {slot.eventType} #{slot.matchNo}</span>}
                           </div>
                           {slot.participant1 && slot.participant2 ? (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -1396,7 +1414,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             </div>
                           )}
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 )
