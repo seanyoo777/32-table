@@ -1167,7 +1167,15 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
                   <span className="text-blue-300 text-xs ml-2">({rIdx + 1}/{rounds.length})</span>
                   {(() => {
                     const pending = rMatches.length - done
-                    if (pending === 0) return null
+                    if (pending < 2) return null
+                    const pendingMatches2 = rMatches.filter(m => !m.result && !m.isBye && m.participant1Id && m.participant2Id)
+                    const scheduled = pendingMatches2.filter(m => m.scheduledTime).sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? ''))
+                    if (scheduled.length >= 2) {
+                      const first = new Date(scheduled[0].scheduledTime!)
+                      const last = new Date(scheduled[scheduled.length - 1].scheduledTime!)
+                      const rangeMin = Math.round((last.getTime() - first.getTime()) / 60000) + 5
+                      if (rangeMin > 0) return <span className="ml-2 text-[11px] bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded font-semibold">약 {rangeMin}분</span>
+                    }
                     const tourRecs = scoreRecords.filter(r => r.tournamentId === tournament.id && r.sets && r.sets.length > 0)
                     if (tourRecs.length < 3) return null
                     const avgSets = tourRecs.reduce((s, r) => s + (r.sets?.length ?? 0), 0) / tourRecs.length
