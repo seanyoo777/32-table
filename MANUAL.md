@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.52 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.55 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,37 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-62. v4.55 — 랭킹 선수 모달 최근 5경기 W/L 스트릭
+
+자동 루프 세션. Rankings.tsx PlayerStatsModal에 최근 5경기 결과 미니 뱃지 추가.
+
+### 변경 (Rankings.tsx)
+- 모달 상세 섹션 위에 최근 5경기 W(초록)/L(빨강) 원형 뱃지 행 추가.
+- tourMatches + recentRecords 합산, 최신 순 5개.
+- 연속 2회 이상 동일 결과 시 "N연승/연패" 텍스트 표시.
+
+---
+
+## 12-61. v4.54 — 대시보드 종목별 미완료 경기 수 칩
+
+자동 루프 세션. Dashboard.tsx 진행률 바 아래에 종목 잔여 칩 추가.
+
+### 변경 (Dashboard.tsx)
+- 활성 대회 × 이벤트 순회, 미완료 경기 수(> 0)인 경우만 칩 표시.
+- "종목 잔여" 레이블 + "대회명 · 종목 N" 형태 황색 칩.
+
+---
+
+## 12-60. v4.53 — 통계 최근 7일 경기 수 막대 차트
+
+자동 루프 세션. Stats.tsx 하단에 최근 7일 일자별 경기 수 인라인 CSS 차트 추가.
+
+### 변경 (Stats.tsx)
+- `dailyMatchCounts` useMemo: scoreRecords.createdAt 기준 최근 7일 집계.
+- 인라인 높이 스타일 막대 차트, 오늘 날짜 인디고 강조.
 
 ---
 
