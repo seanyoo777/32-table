@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2, Zap } from 'lucide-react'
+import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2, Zap, CheckCircle } from 'lucide-react'
 import type { Player, Pair, Division, Gender, Tournament, ScoreRecord } from '../types'
 import { getRatingLabel, pointsToRating } from '../utils/ratingUtils'
 import { generatePlayers, generatePairs } from '../data/mockData'
@@ -87,6 +87,7 @@ export default function Rankings() {
   const [sortBy, setSortBy] = useState<SortBy>('points')
   const [filterPairDiv, setFilterPairDiv] = useState<Division | 'all'>('all')
   const [filterTournamentId, setFilterTournamentId] = useState<string>('')
+  const [filterCheckIn, setFilterCheckIn] = useState<'all' | 'checked' | 'unchecked'>('all')
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [pointsModal, setPointsModal] = useState<{ id: string; name: string } | null>(null)
@@ -144,8 +145,10 @@ export default function Rankings() {
       if (subGender !== 'all') list = list.filter(p => p.gender === subGender)
     }
     if (search) list = list.filter(p => p.name.includes(search) || p.school.includes(search))
+    if (filterCheckIn === 'checked') list = list.filter(p => p.checkedIn)
+    else if (filterCheckIn === 'unchecked') list = list.filter(p => !p.checkedIn)
     return list.sort((a, b) => sortBy === 'elo' ? (b.rating ?? 1000) - (a.rating ?? 1000) : b.points - a.points)
-  }, [players, rankView, subGender, sortBy, search, isDivView, tournamentParticipantIds])
+  }, [players, rankView, subGender, sortBy, search, filterCheckIn, isDivView, tournamentParticipantIds])
 
   const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
   const pagedPlayers = filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -369,6 +372,16 @@ export default function Rankings() {
             ))}
           </select>
         )}
+        {tab === 'singles' && players.some(p => p.checkedIn) && (
+          <div className="flex gap-1 flex-shrink-0">
+            {(['all', 'checked', 'unchecked'] as const).map(v => (
+              <button key={v} onClick={() => { setFilterCheckIn(v); setPage(1) }}
+                className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border transition-colors ${filterCheckIn === v ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-200 hover:border-green-400'}`}>
+                {v === 'all' ? '전체' : v === 'checked' ? <><CheckCircle size={11} />체크인</> : '미체크인'}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Rank view selector — singles only */}
@@ -481,6 +494,7 @@ export default function Rankings() {
                           onClick={() => setStatsModal(p)}
                           className="font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors"
                         >{p.name}</button>
+                        {p.checkedIn && <CheckCircle size={11} className="text-green-500 flex-shrink-0" title="체크인 완료" />}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-gray-500">{p.school}</td>
