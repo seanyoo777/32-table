@@ -238,15 +238,33 @@ export default function DashboardPage() {
       {/* Stats row */}
       {(() => {
         const todayISO = new Date().toISOString().slice(0, 10)
-        const todayRecords = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO).length
+        const todayRecs = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO)
+        const todayRecords = todayRecs.length
+        const hourCounts = Array.from({ length: 24 }, (_, h) => todayRecs.filter(r => new Date(r.recordedAt).getHours() === h).length)
+        const maxHour = Math.max(...hourCounts, 1)
+        const currentHour = now.getHours()
         return (
-          <div className="flex-shrink-0 grid grid-cols-5 gap-3 px-4 py-3 bg-white border-b border-gray-100">
-            <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
-            <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
-            <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
-            <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
-            <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" />
-          </div>
+          <>
+            <div className="flex-shrink-0 grid grid-cols-5 gap-3 px-4 py-3 bg-white border-b border-gray-100">
+              <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
+              <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
+              <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
+              <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
+              <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" />
+            </div>
+            {todayRecords > 0 && (
+              <div className="flex-shrink-0 px-4 py-1.5 bg-white border-b border-gray-50 flex items-end gap-0.5" title="오늘 시간대별 경기 기록 수">
+                {hourCounts.map((cnt, h) => (
+                  <div key={h} className="flex-1 flex flex-col items-center gap-0.5">
+                    <div
+                      className={`w-full rounded-sm transition-all ${cnt > 0 ? (h === currentHour ? 'bg-purple-500' : 'bg-purple-200') : 'bg-gray-100'}`}
+                      style={{ height: `${Math.max(2, Math.round(cnt / maxHour * 20))}px` }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )
       })()}
 
