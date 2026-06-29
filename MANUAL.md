@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.23 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.29 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,51 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-135. v5.29 — 홈 섹션 빠른 이동 링크
+
+자동 루프 세션.
+
+### 변경 (Home.tsx)
+- 다가오는 경기 헤더에 "일정 전체 →" → `/schedule`.
+- 최근 완료 경기 헤더에 "기록 전체 →" → `/score`.
+
+## 12-134. v5.28 — 대시보드 미체크인 선수 이름 칩
+
+자동 루프 세션.
+
+### 변경 (Dashboard.tsx)
+- 체크인 teal 칩 아래에 미체크인 선수 orange 칩(최대 5명 + +N명).
+
+## 12-133. v5.27 — 점수 기록 탭 빈 상태 개선
+
+자동 루프 세션.
+
+### 변경 (Score.tsx)
+- 필터 결과 0건 시 🔍 아이콘 + "검색 결과가 없습니다" + "필터 조건을 변경해 보세요" + 필터 초기화 버튼.
+
+## 12-132. v5.26 — 홈 오늘 일정 없을 때 안내
+
+자동 루프 세션.
+
+### 변경 (Home.tsx)
+- `activeTournaments.length > 0 && todaySlotCount === 0` 시 회색 안내 메시지.
+
+## 12-131. v5.25 — 랭킹 탭 전환 시 페이지 리셋 정상화
+
+자동 루프 세션.
+
+### 변경 (Rankings.tsx)
+- `setPage(1)` anti-pattern(useMemo 내부) 제거.
+- rankView 변경 `onClick` 핸들러 3곳에 `setPage(1)` 명시적 추가.
+
+## 12-130. v5.24 — 대시보드 완료 경기 카드 오늘 건수
+
+자동 루프 세션.
+
+### 변경 (Dashboard.tsx)
+- `DashCard`에 `sub?: string` prop 추가.
+- 완료 경기 카드에 `오늘 N건` 서브텍스트 표시 (오늘 기록이 있을 때).
 
 ## 12-129. v5.23 — 경기일정 코트 번호 색상 배지
 
