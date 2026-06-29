@@ -716,6 +716,20 @@ function ManualEntry() {
             <h3 className="font-semibold text-gray-700 flex-shrink-0">
               최근 입력 기록 <span className="text-xs text-gray-400 font-normal">({filteredRecords.length})</span>
             </h3>
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayIds = new Set<string>()
+              scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).forEach(r => {
+                if (r.participant1Id) todayIds.add(r.participant1Id)
+                if (r.participant2Id) todayIds.add(r.participant2Id)
+              })
+              if (todayIds.size < 2) return null
+              return (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium flex-shrink-0">
+                  오늘 {todayIds.size}명 참여
+                </span>
+              )
+            })()}
             {recUnverifiedCount > 0 && (
               <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
                 className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
