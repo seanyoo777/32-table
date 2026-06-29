@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/useStore'
 import {
-  BarChart3, Trophy, Users, Activity, TrendingUp, Medal, Layers, Grid3x3, Printer, Download, CheckCircle, UserPlus,
+  BarChart3, Trophy, Users, Activity, TrendingUp, Medal, Layers, Grid3x3, Printer, Download, CheckCircle, UserPlus, Clock,
 } from 'lucide-react'
 import { getMedalists } from '../utils/tournamentScoring'
 import { getRatingLabel, RATING_LABELS } from '../utils/ratingUtils'
@@ -1667,6 +1667,40 @@ export default function Stats() {
                       </div>
                     )
                   })}
+                </div>
+              </section>
+            )
+          })()}
+
+          {/* 종목별 평균 경기 시간 */}
+          {(() => {
+            const eventTimes = new Map<string, number[]>()
+            scoreRecords.forEach(r => {
+              if (!r.recordedAt || !r.eventId) return
+              const call = matchCalls.find(c => c.matchId === r.matchId)
+              if (!call?.calledAt) return
+              const elapsed = Math.round((new Date(r.recordedAt).getTime() - new Date(call.calledAt).getTime()) / 60000)
+              if (elapsed < 1 || elapsed > 120) return
+              const evLabel = tournaments.find(t => t.id === r.tournamentId)?.events.find(e => e.id === r.eventId)?.label ?? r.eventId
+              if (!eventTimes.has(evLabel)) eventTimes.set(evLabel, [])
+              eventTimes.get(evLabel)!.push(elapsed)
+            })
+            const rows = [...eventTimes.entries()]
+              .filter(([, arr]) => arr.length >= 3)
+              .map(([label, arr]) => ({ label, avg: Math.round(arr.reduce((s, v) => s + v, 0) / arr.length), count: arr.length }))
+              .sort((a, b) => b.count - a.count)
+            if (rows.length < 2) return null
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Clock size={14} className="text-violet-500" /> 종목별 평균 경기 시간
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {rows.map(r => (
+                    <span key={r.label} className="text-xs bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full font-medium">
+                      {r.label} <span className="font-bold">{r.avg}분</span> <span className="opacity-60 text-[10px]">({r.count}경기)</span>
+                    </span>
+                  ))}
                 </div>
               </section>
             )
