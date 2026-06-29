@@ -92,12 +92,29 @@ export default function Home() {
         const nextTour = upcomingTours[0]
         const dDiff = nextTour ? Math.round((new Date(nextTour.date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000) : null
         const dLabel = dDiff === null ? null : dDiff === 0 ? 'D-Day' : dDiff > 0 ? `D-${dDiff}` : null
+        const totalM = tournaments.reduce((s, t) => s + t.events.reduce((es, ev) => es + ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0), 0)
+        const doneM = tournaments.reduce((s, t) => s + t.events.reduce((es, ev) => es + ev.matches.filter(m => m.result).length, 0), 0)
+        const donePct = totalM > 0 ? Math.round(doneM / totalM * 100) : 0
+        const R = 12, circ = 2 * Math.PI * R
+        const dash = (donePct / 100) * circ
         return (
           <div className="flex-shrink-0 flex items-center gap-1.5 flex-wrap">
             {ongoingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-green-200 transition-colors">진행중 {ongoingN}</button>}
             {upcomingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-blue-200 transition-colors">예정 {upcomingN}</button>}
             {dLabel && <span className="text-[11px] bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full font-bold">{dLabel}</span>}
             {completedN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium hover:bg-gray-200 transition-colors">완료 {completedN}</button>}
+            {totalM > 0 && (
+              <span className="flex items-center gap-1 ml-1" title={`전체 경기 완료율 ${donePct}% (${doneM}/${totalM})`}>
+                <svg width={28} height={28} viewBox="0 0 28 28">
+                  <circle cx={14} cy={14} r={R} fill="none" stroke="#e5e7eb" strokeWidth={4} />
+                  <circle cx={14} cy={14} r={R} fill="none"
+                    stroke={donePct >= 80 ? '#22c55e' : donePct >= 40 ? '#f59e0b' : '#6366f1'}
+                    strokeWidth={4} strokeDasharray={`${dash} ${circ}`}
+                    strokeLinecap="round" transform="rotate(-90 14 14)" />
+                  <text x={14} y={17} textAnchor="middle" fontSize="6.5" fill="#374151" fontWeight="bold">{donePct}%</text>
+                </svg>
+              </span>
+            )}
           </div>
         )
       })()}
