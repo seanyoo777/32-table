@@ -391,16 +391,27 @@ export default function Stats() {
               </h2>
               {Object.keys(formatDist).length === 0 ? (
                 <p className="text-xs text-gray-400 py-2 text-center">종목 데이터가 없습니다.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(formatDist).map(([fmt, n]) => (
-                    <div key={fmt} className="px-3 py-2 bg-teal-50 rounded-lg text-center">
-                      <div className="text-lg font-bold text-teal-600">{n}</div>
-                      <div className="text-[11px] text-teal-700">{fmt}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              ) : (() => {
+                const total = Object.values(formatDist).reduce((s, n) => s + n, 0)
+                const sorted = Object.entries(formatDist).sort(([, a], [, b]) => b - a)
+                return (
+                  <div className="space-y-2">
+                    {sorted.map(([fmt, n]) => {
+                      const pct = Math.round(n / total * 100)
+                      return (
+                        <div key={fmt} className="flex items-center gap-2">
+                          <span className="text-[11px] text-gray-600 w-16 flex-shrink-0">{fmt}</span>
+                          <div className="flex-1 h-3 bg-teal-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[11px] font-bold text-teal-700 w-8 text-right flex-shrink-0">{n}종목</span>
+                          <span className="text-[10px] text-gray-400 w-8 text-right flex-shrink-0">{pct}%</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </section>
 
             <section className="card">
