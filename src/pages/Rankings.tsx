@@ -89,6 +89,14 @@ export default function Rankings() {
   const [filterTournamentId, setFilterTournamentId] = useState<string>('')
   const [filterCheckIn, setFilterCheckIn] = useState<'all' | 'checked' | 'unchecked'>('all')
   const [search, setSearch] = useState('')
+
+  function highlight(text: string) {
+    if (!search) return <>{text}</>
+    const idx = text.toLowerCase().indexOf(search.toLowerCase())
+    if (idx === -1) return <>{text}</>
+    return <>{text.slice(0, idx)}<mark className="bg-yellow-200 rounded-sm">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>
+  }
+
   const [showAdd, setShowAdd] = useState(false)
   const [pointsModal, setPointsModal] = useState<{ id: string; name: string } | null>(null)
   const [addPts, setAddPts] = useState('')
@@ -536,11 +544,11 @@ export default function Rankings() {
                         <button
                           onClick={() => setStatsModal(p)}
                           className="font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors"
-                        >{p.name}</button>
+                        >{highlight(p.name)}</button>
                         {p.checkedIn && <CheckCircle size={11} className="text-green-500 flex-shrink-0" title="체크인 완료" />}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-500">{p.school}</td>
+                    <td className="py-3 px-4 text-gray-500">{highlight(p.school)}</td>
                     {showDiv && <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>}
                     {showGender && (
                       <td className="py-3 px-4 text-center">
