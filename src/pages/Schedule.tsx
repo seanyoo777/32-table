@@ -1599,6 +1599,24 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             )
           )}
 
+          {viewMode === 'court' && filteredCourts.length >= 2 && (() => {
+            const totalSlots = filteredCourts.reduce((s, c) => s + filteredSlots.filter(sl => sl.courtNo === c).length, 0)
+            if (totalSlots < 3) return null
+            const doneSlots = filteredCourts.reduce((s, c) => s + filteredSlots.filter(sl => sl.courtNo === c && completedMatchSet.has(`${sl.eventId}-${sl.matchNo}`)).length, 0)
+            const pct = Math.round(doneSlots / totalSlots * 100)
+            const chipCls = pct === 100 ? 'bg-green-100 text-green-700' : pct >= 50 ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-500'
+            return (
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${chipCls}`}>
+                  완료 {doneSlots}/{totalSlots} ({pct}%)
+                </span>
+                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-teal-500'}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            )
+          })()}
+
           {viewMode === 'court' && (
             <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 court-print">
               {filteredCourts.map(c => {
