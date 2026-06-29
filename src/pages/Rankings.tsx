@@ -752,6 +752,32 @@ export default function Rankings() {
         </div>
       )}
 
+      {/* 오늘 승률 75%+ 선수 수 lime 칩 */}
+      {tab === 'singles' && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+        if (todayRecs.length < 5) return null
+        const wl = new Map<string, { w: number; l: number }>()
+        todayRecs.forEach(r => {
+          const upd = (id: string | undefined, won: boolean) => {
+            if (!id) return
+            const cur = wl.get(id) ?? { w: 0, l: 0 }
+            wl.set(id, won ? { ...cur, w: cur.w + 1 } : { ...cur, l: cur.l + 1 })
+          }
+          upd(r.participant1Id, r.p1Score > r.p2Score)
+          upd(r.participant2Id, r.p2Score > r.p1Score)
+        })
+        const hotN = [...wl.entries()].filter(([, v]) => v.w + v.l >= 3 && v.w / (v.w + v.l) >= 0.75).length
+        if (hotN === 0) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] bg-lime-50 text-lime-700 border border-lime-300 px-2 py-0.5 rounded-full font-medium">
+              🏆 승률 75%+ {hotN}명
+            </span>
+          </div>
+        )
+      })()}
+
       {/* 부문 퀵 필터 — singles only */}
       {tab === 'singles' && (() => {
         const divCounts = DIVISIONS.map(d => ({ d, n: players.filter(p => p.division === d).length })).filter(x => x.n > 0)

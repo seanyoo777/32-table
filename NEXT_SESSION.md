@@ -1326,7 +1326,7 @@ Dashboard.tsx DashCard 행 아래에 오전/오후/저녁 중 오늘 기록이
 Stats.tsx scoreRecords 기준 각 선수의 평균 득점(내 점수) 상위 3명을
 amber chip 행으로 표시. 10건+ && 선수 3명+ 조건.
 
-### 2-418. 점수 탭 오늘 마지막 기록 시각 칩 (v5.302)
+### 2-418. ✅ 점수 탭 오늘 마지막 기록 시각 칩 (완료 v5.302)
 Score.tsx 오늘 가장 늦게 기록된 경기 recordedAt 시각을
 slate chip으로 표시. 오늘 3건+ 조건.
 
