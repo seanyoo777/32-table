@@ -196,12 +196,19 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div className="flex-shrink-0 grid grid-cols-4 gap-3 px-4 py-3 bg-white border-b border-gray-100">
-        <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
-        <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
-        <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
-        <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
-      </div>
+      {(() => {
+        const todayISO = new Date().toISOString().slice(0, 10)
+        const todayRecords = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO).length
+        return (
+          <div className="flex-shrink-0 grid grid-cols-5 gap-3 px-4 py-3 bg-white border-b border-gray-100">
+            <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
+            <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
+            <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" />
+            <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
+            <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" />
+          </div>
+        )
+      })()}
 
       {/* 대회별 진행률 요약 */}
       {activeTournaments.length > 0 && (
