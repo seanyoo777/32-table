@@ -895,6 +895,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null)  // 인라인 편집 중인 슬롯
   const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null)  // 드래그 중인 슬롯
   const [dragOverCourt, setDragOverCourt] = useState<number | null>(null)   // 드롭 대상 코트
+  const [courtFilter, setCourtFilter] = useState<number | null>(null)       // 코트 필터
 
   // 이 일정의 최대 코트 수(인라인 코트 이동 select 범위)
   const planMaxCourts = Math.max(1,
@@ -909,9 +910,12 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   ])].sort()
   const hasMultipleDays = days.length > 1
 
-  const filteredSlots = activeDay !== null
+  const dayFilteredSlots = activeDay !== null
     ? plan.slots.filter(s => (s.day ?? 1) === activeDay)
     : plan.slots
+  const allCourtsInView = [...new Set(dayFilteredSlots.map(s => s.courtNo))].sort()
+
+  const filteredSlots = dayFilteredSlots.filter(s => courtFilter === null || s.courtNo === courtFilter)
 
   const filteredCourts = [...new Set(filteredSlots.map(s => s.courtNo))].sort()
   const filteredTimes = [...new Set(filteredSlots.map(s => s.startTime))].sort()
@@ -1082,11 +1086,21 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {hasMultipleDays && (
             <div className="flex gap-1 mr-1">
-              <button onClick={() => setActiveDay(null)} className={`px-2 py-1 rounded text-xs font-medium ${activeDay === null ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>전체</button>
+              <button onClick={() => { setActiveDay(null); setCourtFilter(null) }} className={`px-2 py-1 rounded text-xs font-medium ${activeDay === null ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>전체</button>
               {days.map(d => (
-                <button key={d} onClick={() => setActiveDay(d)} className={`px-2 py-1 rounded text-xs font-medium ${activeDay === d ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{d}일차</button>
+                <button key={d} onClick={() => { setActiveDay(d); setCourtFilter(null) }} className={`px-2 py-1 rounded text-xs font-medium ${activeDay === d ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{d}일차</button>
               ))}
             </div>
+          )}
+          {allCourtsInView.length > 1 && (
+            <select
+              value={courtFilter ?? ''}
+              onChange={e => setCourtFilter(e.target.value === '' ? null : Number(e.target.value))}
+              className="select text-xs py-1 px-2 mr-1"
+            >
+              <option value="">전체 코트</option>
+              {allCourtsInView.map(c => <option key={c} value={c}>코트 {c}</option>)}
+            </select>
           )}
           <button onClick={() => setViewMode('time')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'time' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>시간순</button>
           <button onClick={() => setViewMode('court')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
