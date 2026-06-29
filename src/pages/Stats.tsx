@@ -44,7 +44,7 @@ function Kpi({ icon, label, value, sub, color }: {
 }
 
 export default function Stats() {
-  const { tournaments, players, pairs, teams, scoreRecords, appSettings } = useStore()
+  const { tournaments, players, pairs, teams, scoreRecords, matchCalls, appSettings } = useStore()
   const [tourFilter, setTourFilter] = useState('all')
   const [winRateDetailId, setWinRateDetailId] = useState<string | null>(null)
   const selectedTour = tourFilter === 'all' ? null : tournaments.find(t => t.id === tourFilter)
@@ -1425,6 +1425,38 @@ export default function Stats() {
                       <span className="text-[10px] text-gray-400 w-8 text-right flex-shrink-0">{Math.round(count / total * 100)}%</span>
                     </div>
                   ))}
+                </div>
+              </section>
+            )
+          })()}
+
+          {/* 경기 호출 응답률 트렌드 */}
+          {(() => {
+            const todayISO = new Date().toISOString().slice(0, 10)
+            const yest = new Date(); yest.setDate(yest.getDate() - 1)
+            const yesterdayISO = yest.toISOString().slice(0, 10)
+            const todayCalls = matchCalls.filter(c => c.calledAt.startsWith(todayISO))
+            if (todayCalls.length < 3) return null
+            const yesterdayCalls = matchCalls.filter(c => c.calledAt.startsWith(yesterdayISO))
+            const todayRate = Math.round(todayCalls.filter(c => c.acknowledged).length / todayCalls.length * 100)
+            const yesterdayRate = yesterdayCalls.length > 0
+              ? Math.round(yesterdayCalls.filter(c => c.acknowledged).length / yesterdayCalls.length * 100)
+              : null
+            const delta = yesterdayRate !== null ? todayRate - yesterdayRate : null
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Activity size={14} className="text-teal-500" /> 경기 호출 응답률
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold ${todayRate >= 80 ? 'bg-green-100 text-green-700' : todayRate >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'}`}>
+                    오늘 {todayRate}% ({todayCalls.length}건)
+                  </span>
+                  {delta !== null && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${delta > 0 ? 'bg-green-50 text-green-600' : delta < 0 ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-500'}`}>
+                      {delta > 0 ? '↑' : delta < 0 ? '↓' : '→'} 어제 대비 {delta > 0 ? '+' : ''}{delta}%
+                    </span>
+                  )}
                 </div>
               </section>
             )
