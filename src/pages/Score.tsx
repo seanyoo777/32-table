@@ -868,6 +868,39 @@ function ManualEntry() {
                 </span>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+              if (todayRecs.length < 5) return null
+              const setWins = new Map<string, { w: number; l: number }>()
+              todayRecs.forEach(r => {
+                const upd = (id: string, won: boolean) => {
+                  const cur = setWins.get(id) ?? { w: 0, l: 0 }
+                  setWins.set(id, won ? { ...cur, w: cur.w + 1 } : { ...cur, l: cur.l + 1 })
+                }
+                upd(r.participant1Id, r.p1Score > r.p2Score)
+                upd(r.participant2Id, r.p2Score > r.p1Score)
+              })
+              const top3 = [...setWins.entries()]
+                .filter(([, v]) => v.w + v.l >= 2)
+                .sort((a, b) => b[1].w / (b[1].w + b[1].l) - a[1].w / (a[1].w + a[1].l))
+                .slice(0, 3)
+              if (top3.length === 0) return null
+              const getName = (id: string) => players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? '?'
+              return (
+                <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
+                  <span className="text-[10px] text-yellow-600 font-semibold">세트승률</span>
+                  {top3.map(([id, v]) => {
+                    const pct = Math.round(v.w / (v.w + v.l) * 100)
+                    return (
+                      <span key={id} className="text-[10px] bg-yellow-50 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded-full font-medium">
+                        {getName(id)} {pct}%
+                      </span>
+                    )
+                  })}
+                </div>
+              )
+            })()}
             {recUnverifiedCount > 0 && (
               <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
                 className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
