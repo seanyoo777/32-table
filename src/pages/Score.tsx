@@ -708,6 +708,12 @@ function ManualEntry() {
                     {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 )}
+                {(recSearch || recTournamentId || recUnverifiedOnly) && (
+                  <button
+                    onClick={() => { setRecSearch(''); setRecTournamentId(''); setRecUnverifiedOnly(false); setRecPage(0) }}
+                    className="flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium whitespace-nowrap"
+                  >초기화 ✕</button>
+                )}
               </div>
               {filteredRecords.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">검색 결과가 없습니다</p>
