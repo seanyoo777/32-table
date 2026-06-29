@@ -658,6 +658,30 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 신규 선수 등록 칩 */}
+          {(() => {
+            const todayISO = new Date().toISOString().slice(0, 10)
+            const newToday = players.filter(p => p.createdAt && p.createdAt.slice(0, 10) === todayISO)
+            if (newToday.length === 0) return null
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-2">
+                  <Users size={14} className="text-blue-500" /> 오늘 신규 선수 등록
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-2xl font-black text-blue-600">{newToday.length}</span>
+                  <span className="text-sm text-gray-500">명 오늘 등록</span>
+                  {newToday.slice(0, 6).map(p => (
+                    <span key={p.id} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
+                      {p.name}
+                    </span>
+                  ))}
+                  {newToday.length > 6 && <span className="text-xs text-gray-400">+{newToday.length - 6}명</span>}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 종목별 평균 세트 수 */}
           {eventSetStats.length > 0 && (
             <section className="card">
