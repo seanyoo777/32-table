@@ -1821,6 +1821,56 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 경기 승패 네트워크 */}
+          {(() => {
+            const todayISO = new Date().toISOString().split('T')[0]
+            const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+            if (todayRecs.length < 5) return null
+            const idSet = new Set<string>()
+            todayRecs.forEach(r => { idSet.add(r.participant1Id); idSet.add(r.participant2Id) })
+            if (idSet.size > 8) return null
+            const ids = [...idSet]
+            const W = 200, H = 140, R = 65
+            const cx = W / 2, cy = H / 2
+            const pos = ids.map((id, i) => {
+              const a = (i / ids.length) * 2 * Math.PI - Math.PI / 2
+              return { id, x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) }
+            })
+            const posMap = new Map(pos.map(p => [p.id, p]))
+            const getName = (id: string) => players.find(p => p.id === id)?.name?.slice(0, 1) ?? '?'
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-2">
+                  <Activity size={14} className="text-rose-500" /> 오늘 승패 네트워크
+                </h2>
+                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="w-full">
+                  <defs>
+                    <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                      <path d="M0,0 L6,3 L0,6 Z" fill="#6366f1" opacity="0.6" />
+                    </marker>
+                  </defs>
+                  {todayRecs.map((r, i) => {
+                    const winner = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+                    const loser = r.p1Score > r.p2Score ? r.participant2Id : r.participant1Id
+                    const src = posMap.get(winner), dst = posMap.get(loser)
+                    if (!src || !dst) return null
+                    const dx = dst.x - src.x, dy = dst.y - src.y
+                    const len = Math.sqrt(dx * dx + dy * dy) || 1
+                    const x1 = src.x + dx / len * 8, y1 = src.y + dy / len * 8
+                    const x2 = dst.x - dx / len * 10, y2 = dst.y - dy / len * 10
+                    return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#6366f1" strokeWidth="1" opacity="0.4" markerEnd="url(#arr)" />
+                  })}
+                  {pos.map(({ id, x, y }) => (
+                    <g key={id}>
+                      <circle cx={x} cy={y} r={8} fill="#e0e7ff" stroke="#6366f1" strokeWidth="1.5" />
+                      <text x={x} y={y + 4} textAnchor="middle" fontSize="8" fill="#4338ca" fontWeight="bold">{getName(id)}</text>
+                    </g>
+                  ))}
+                </svg>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
