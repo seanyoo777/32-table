@@ -917,6 +917,26 @@ function ManualEntry() {
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+              if (todayRecs.length < 3) return null
+              const spreadMap = new Map<string, number>()
+              todayRecs.forEach(r => {
+                const p1spread = (spreadMap.get(r.participant1Id) ?? 0) + ((r.p1Score ?? 0) - (r.p2Score ?? 0))
+                const p2spread = (spreadMap.get(r.participant2Id) ?? 0) + ((r.p2Score ?? 0) - (r.p1Score ?? 0))
+                spreadMap.set(r.participant1Id, p1spread)
+                spreadMap.set(r.participant2Id, p2spread)
+              })
+              const top = [...spreadMap.entries()].sort((a, b) => b[1] - a[1])[0]
+              if (!top || top[1] < 2) return null
+              const name = players.find(p => p.id === top[0])?.name ?? pairs.find(p => p.id === top[0])?.name ?? '?'
+              return (
+                <span className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  {name} +{top[1]}
+                </span>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
               if (todayRecs.length < 5) return null
               const setWins = new Map<string, { w: number; l: number }>()
               todayRecs.forEach(r => {

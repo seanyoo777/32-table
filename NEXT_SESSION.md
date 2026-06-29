@@ -1362,7 +1362,7 @@ Rankings.tsx 복식 헤더에 오늘 scoreRecords에서 승리가 있는
 Schedule.tsx 헤더 Stats 바에 오늘 첫 미완료 슬롯 startTime까지 남은 분을
 실시간 cyan 칩으로 표시. 15분 이내=red pulse. 오늘 슬롯 1개+ && 미완료 있는 경우.
 
-### 2-427. 대시보드 활성 LIVE 경기 코트별 경과시간 테이블 (v5.311)
+### 2-427. ✅ 대시보드 활성 LIVE 경기 코트별 경과시간 테이블 (완료 v5.311)
 Dashboard.tsx LIVE 경기 2개+ 시 코트번호-선수명-경과분 순으로
 compact 테이블(3열)을 LIVE 섹션 하단에 추가.
 matchCalls calledAt 기준. LIVE 2개+ && 모두 calledAt 있을 때 조건.
