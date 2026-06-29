@@ -718,6 +718,24 @@ function ManualEntry() {
             </h3>
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+              if (todayRecs.length < 5) return null
+              const evCount = new Map<string, number>()
+              todayRecs.forEach(r => {
+                const lbl = tournaments.find(t => t.id === r.tournamentId)?.events.find(e => e.id === r.eventId)?.label ?? '기타'
+                evCount.set(lbl, (evCount.get(lbl) ?? 0) + 1)
+              })
+              const top3 = [...evCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+              return (
+                <div className="flex items-center gap-1 flex-wrap">
+                  {top3.map(([lbl, n]) => (
+                    <span key={lbl} className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full flex-shrink-0">{lbl} {n}</span>
+                  ))}
+                </div>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
               const todayIds = new Set<string>()
               scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).forEach(r => {
                 if (r.participant1Id) todayIds.add(r.participant1Id)
