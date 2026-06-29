@@ -1402,7 +1402,7 @@ Rankings.tsx 단식 탭 상단 chips 행에 오늘 scoreRecords 기준 p1 vs p2 
 "이름A vs 이름B" 형식의 rose 칩으로 표시. 오늘 첫 경기 1건+ 조건.
 클릭 시 /score 이동.
 
-### 2-435. 대시보드 미응답 호출 최장 선수 이름 orange 칩 (v5.319)
+### 2-435. ✅ 대시보드 미응답 호출 최장 선수 이름 orange 칩 (완료 v5.319)
 Dashboard.tsx 경기 호출 섹션 헤더 영역에 pendingCalls 중 calledAt 가장 오래된
 경기의 participant1Name을 orange 칩으로 표시. "N분 미응답: [이름]" 형식.
 pendingCalls 1건+ && 30분+ 조건.

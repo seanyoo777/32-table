@@ -1294,6 +1294,18 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         })()}
         {(() => {
           const todayISO = new Date().toISOString().split('T')[0]
+          const todayDayNo0 = plan.days?.find(d => d.date === todayISO)?.day ?? null
+          if (todayDayNo0 === null) return null
+          const todayAssigned = plan.slots.filter(s => (s.day ?? 1) === todayDayNo0 && s.participant1 && s.participant2)
+          if (todayAssigned.length < 2) return null
+          return (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 flex-shrink-0">
+              오늘 배정 {todayAssigned.length}경기
+            </span>
+          )
+        })()}
+        {(() => {
+          const todayISO = new Date().toISOString().split('T')[0]
           const todayDayNo = plan.days?.find(d => d.date === todayISO)?.day ?? null
           if (todayDayNo === null) return null
           const todaySlots = plan.slots.filter(s => (s.day ?? 1) === todayDayNo && s.participant1 && s.participant2)
