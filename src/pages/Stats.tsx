@@ -153,6 +153,20 @@ export default function Stats() {
     return c
   }, [visibleTours])
 
+  // 종목별 평균 세트 수
+  const eventSetStats = useMemo(() => {
+    const rows: Array<{ label: string; avg: number; count: number }> = []
+    for (const t of visibleTours) {
+      for (const ev of t.events) {
+        const recs = scoreRecords.filter(r => r.tournamentId === t.id && r.eventId === ev.id && r.sets && r.sets.length > 0)
+        if (recs.length === 0) continue
+        const totalSets = recs.reduce((s, r) => s + r.sets.length, 0)
+        rows.push({ label: ev.label, avg: Math.round((totalSets / recs.length) * 10) / 10, count: recs.length })
+      }
+    }
+    return rows.sort((a, b) => b.avg - a.avg)
+  }, [visibleTours, scoreRecords])
+
   const completedTours = tournaments.filter(t => t.status === 'completed').length
   const totalMedalEvents = medalRows.filter(r => r.gold).length
 
@@ -410,6 +424,31 @@ export default function Stats() {
               {checkInStats.unchecked.length > 0 && (
                 <p className="text-xs text-orange-500 mt-2">미체크인 {checkInStats.unchecked.length}명</p>
               )}
+            </section>
+          )}
+
+          {/* 종목별 평균 세트 수 */}
+          {eventSetStats.length > 0 && (
+            <section className="card">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                <Layers size={14} className="text-indigo-500" /> 종목별 평균 세트 수
+              </h2>
+              <div className="space-y-2">
+                {eventSetStats.map(({ label, avg, count }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <div className="w-28 text-xs text-gray-600 text-right flex-shrink-0 truncate">{label}</div>
+                    <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden relative">
+                      <div
+                        className="h-full bg-indigo-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (avg / 7) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="w-20 text-xs font-semibold text-indigo-700 flex-shrink-0">
+                      평균 {avg}세트 <span className="text-gray-400 font-normal">({count}경기)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 
