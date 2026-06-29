@@ -367,6 +367,48 @@ export default function Stats() {
               </div>
             </section>
 
+            {/* 선수 부문별 파이 차트 */}
+            {(() => {
+              const slices = DIVISIONS.map(d => ({ d, n: divDist[d] })).filter(x => x.n > 0)
+              if (slices.length < 2 || slices.reduce((s, x) => s + x.n, 0) < 3) return null
+              const total = slices.reduce((s, x) => s + x.n, 0)
+              const CX = 60, CY = 60, R = 48
+              let angle = -Math.PI / 2
+              const paths = slices.map(({ d, n }) => {
+                const sweep = (n / total) * 2 * Math.PI
+                const x1 = CX + R * Math.cos(angle), y1 = CY + R * Math.sin(angle)
+                angle += sweep
+                const x2 = CX + R * Math.cos(angle), y2 = CY + R * Math.sin(angle)
+                const large = sweep > Math.PI ? 1 : 0
+                return { d, n, path: `M${CX},${CY} L${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} Z` }
+              })
+              const COLOR_MAP: Record<string, string> = { '초등': '#6366f1', '중등': '#8b5cf6', '고등': '#ec4899', '대학': '#f59e0b', '일반': '#10b981', '생활체육': '#3b82f6' }
+              return (
+                <section className="card">
+                  <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                    <Users size={14} className="text-purple-500" /> 선수 부문 구성
+                  </h2>
+                  <div className="flex items-center gap-4">
+                    <svg width={120} height={120} viewBox="0 0 120 120">
+                      {paths.map(({ d, path }) => (
+                        <path key={d} d={path} fill={COLOR_MAP[d] ?? '#9ca3af'} opacity={0.85} />
+                      ))}
+                    </svg>
+                    <div className="flex flex-col gap-1">
+                      {paths.map(({ d, n }) => (
+                        <div key={d} className="flex items-center gap-1.5 text-xs">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLOR_MAP[d] ?? '#9ca3af' }} />
+                          <span className="text-gray-600">{d}</span>
+                          <span className="ml-auto font-semibold text-gray-700">{n}명</span>
+                          <span className="text-gray-400 text-[10px]">{Math.round(n / total * 100)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )
+            })()}
+
             {/* 부문별 평균 포인트 */}
             {divAvgPoints.length >= 2 && (() => {
               const maxAvg = Math.max(...divAvgPoints.map(d => d.avg), 1)
