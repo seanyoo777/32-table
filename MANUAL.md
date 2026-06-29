@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.17 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.20 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,32 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-126. v5.20 — 대시보드 대기경기 선수명 검색 필터
+
+자동 루프 세션. Dashboard.tsx 대기경기 목록에 실시간 선수명 검색.
+
+### 변경 (Dashboard.tsx)
+- `pendingSearch` state + 검색 input + ✕ 초기화 버튼.
+- `filteredPendingMatches` IIFE로 participant1/2 이름 매칭 필터 적용.
+
+## 12-125. v5.19 — 홈 메모 핀 고정 기능
+
+자동 루프 세션. Home.tsx 빠른 메모 위젯에 핀 토글 추가.
+
+### 변경 (Home.tsx)
+- `Memo` 타입에 `pinned?: boolean` 추가.
+- `togglePin(i)` 함수: 핀 토글 후 pinned 메모를 목록 상단 정렬.
+- 고정 메모: 황색 ring-1, 📌 아이콘 표시.
+
+## 12-124. v5.18 — 경기일정 팝오버 점수입력 바로가기
+
+자동 루프 세션. Schedule.tsx 슬롯 팝오버에 점수입력 이동 버튼 추가.
+
+### 변경 (Schedule.tsx)
+- `useNavigate` 추가.
+- 팝오버 하단 "⚡ 점수입력" 버튼 → `/score` 이동.
+- 완료 경기(`completedMatchSet`) 또는 미배정 슬롯은 버튼 숨김/비활성.
 
 ## 12-123. v5.17 — 경기일정 슬롯 참가자별 경기 수 뱃지
 
