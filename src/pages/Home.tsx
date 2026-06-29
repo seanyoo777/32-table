@@ -437,10 +437,12 @@ export default function Home() {
                   const p2Name = pMap[r.participant2Id] ?? '?'
                   const isP1Win = r.p1Score > r.p2Score
                   return (
-                    <div key={r.id} className="flex items-center gap-2 text-xs">
-                      <span className={`font-semibold truncate flex-1 ${isP1Win ? 'text-green-600' : 'text-gray-500'}`}>{p1Name}</span>
-                      <span className="font-bold text-gray-700 tabular-nums flex-shrink-0">{r.p1Score}-{r.p2Score}</span>
-                      <span className={`font-semibold truncate flex-1 text-right ${!isP1Win ? 'text-green-600' : 'text-gray-500'}`}>{p2Name}</span>
+                    <div key={r.id} className="flex items-center gap-1.5 text-xs py-0.5">
+                      <span className={`text-[10px] font-bold px-1 py-0.5 rounded flex-shrink-0 ${isP1Win ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'}`}>{isP1Win ? 'W' : 'L'}</span>
+                      <span className={`font-semibold truncate flex-1 ${isP1Win ? 'text-green-700' : 'text-red-500'}`}>{p1Name}</span>
+                      <span className="font-black text-gray-700 tabular-nums flex-shrink-0 text-[11px] bg-gray-100 px-1.5 rounded">{r.p1Score}:{r.p2Score}</span>
+                      <span className={`font-semibold truncate flex-1 text-right ${!isP1Win ? 'text-green-700' : 'text-red-500'}`}>{p2Name}</span>
+                      <span className={`text-[10px] font-bold px-1 py-0.5 rounded flex-shrink-0 ${!isP1Win ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'}`}>{!isP1Win ? 'W' : 'L'}</span>
                     </div>
                   )
                 })}
