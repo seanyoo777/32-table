@@ -2042,6 +2042,27 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
+        {/* 오늘 상대 칩 */}
+        {!editing && (() => {
+          const todayISO = new Date().toISOString().split('T')[0]
+          const todayRecs = playerRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+          if (todayRecs.length === 0) return null
+          const oppNames = todayRecs.map(r => {
+            const oppId = r.participant1Id === player.id ? r.participant2Id : r.participant1Id
+            return oppId ? (pMap[oppId] ?? null) : null
+          }).filter(Boolean) as string[]
+          const unique = [...new Set(oppNames)].slice(0, 3)
+          if (unique.length === 0) return null
+          return (
+            <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+              <span className="text-[10px] text-gray-400 flex-shrink-0">상대:</span>
+              {unique.map(name => (
+                <span key={name} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{name}</span>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* 평균 세트 득점/실점 */}
         {!editing && (() => {
           const setRecs = recentRecords.filter(r => r.sets && r.sets.length > 0)
