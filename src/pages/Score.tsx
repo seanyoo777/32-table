@@ -373,7 +373,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 
 // ── Manual Entry ─────────────────────────────────────────
 function ManualEntry() {
-  const { players, pairs, tournaments, scoreRecords, addScoreRecord, updateScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
+  const { players, pairs, tournaments, scoreRecords, matchCalls, addScoreRecord, updateScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
   const [submitted, setSubmitted] = useState(false)
   const [lastResult, setLastResult] = useState<{ winner: string; loser: string; score: string } | null>(null)
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
@@ -745,6 +745,20 @@ function ManualEntry() {
               return (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium flex-shrink-0">
                   오늘 {todayIds.size}명 참여
+                </span>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO) && c.tableNo)
+              if (todayCalls.length < 5) return null
+              const courtCount = new Map<number, number>()
+              todayCalls.forEach(c => courtCount.set(c.tableNo, (courtCount.get(c.tableNo) ?? 0) + 1))
+              if (courtCount.size < 2) return null
+              const topEntry = [...courtCount.entries()].sort((a, b) => b[1] - a[1])[0]
+              return (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 font-medium flex-shrink-0">
+                  코트 {topEntry[0]}번 최다 {topEntry[1]}경기
                 </span>
               )
             })()}
