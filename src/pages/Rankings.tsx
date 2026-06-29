@@ -518,6 +518,11 @@ export default function Rankings() {
                       <span className="text-green-600 font-medium">{p.wins}승</span>
                       <span className="text-gray-300 mx-1">/</span>
                       <span className="text-red-500">{p.losses}패</span>
+                      {p.wins + p.losses > 0 && (
+                        <span className="ml-1.5 text-xs bg-blue-50 text-blue-600 font-medium px-1.5 py-0.5 rounded-full">
+                          {Math.round(p.wins / (p.wins + p.losses) * 100)}%
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center gap-1">
@@ -610,6 +615,11 @@ export default function Rankings() {
                       <span className="text-green-600 font-medium">{p.wins}승</span>
                       <span className="text-gray-300 mx-1">/</span>
                       <span className="text-red-500">{p.losses}패</span>
+                      {p.wins + p.losses > 0 && (
+                        <span className="ml-1.5 text-xs bg-blue-50 text-blue-600 font-medium px-1.5 py-0.5 rounded-full">
+                          {Math.round(p.wins / (p.wins + p.losses) * 100)}%
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-center flex items-center justify-center gap-1">
                       <button onClick={() => setPairStatsModal(p)} className="text-gray-400 hover:text-indigo-600 p-1" title="페어 전적 보기"><BarChart2 size={13} /></button>
