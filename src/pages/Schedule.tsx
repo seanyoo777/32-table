@@ -1560,6 +1560,18 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                         )
                       })()}
                     </h3>
+                    {courtSlots.length >= 2 && (() => {
+                      const doneN = courtSlots.filter(s => completedMatchSet.has(`${s.eventId}-${s.matchNo}`)).length
+                      const pct = Math.round(doneN / courtSlots.length * 100)
+                      return (
+                        <div className="mb-2">
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-400'}`} style={{ width: `${pct}%` }} />
+                          </div>
+                          {pct > 0 && <div className="text-right text-[9px] text-gray-400 mt-0.5">{doneN}/{courtSlots.length} ({pct}%)</div>}
+                        </div>
+                      )
+                    })()}
                     <div className="space-y-1.5">
                       {courtSlots.map((slot, si) => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`);
                         const toMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }

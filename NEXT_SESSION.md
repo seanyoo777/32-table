@@ -800,17 +800,29 @@ Dashboard.tsx 하단에 오늘 호출 완료(acknowledged) 경기 목록 최근 
 Schedule.tsx 일정표 페이지 상단에 오늘 완료/전체 경기 수 요약 칩 추가.
 "완료 N / 전체 M (P%)" 형태. completedMatchSet 기반. 경기 있는 날만 표시.
 
-### 2-278. 홈 화면 오늘 완료 경기 수 요약 칩 (v5.163)
+### 2-278. 홈 화면 오늘 완료 경기 수 요약 칩 (v5.163) ✅ Done
 Home.tsx Col3 운영 상태 칩 행에 "오늘 완료 N경기" 파란 칩 추가.
 scoreRecords에서 오늘 날짜 기록 수 기반. 1건+ 조건.
 
-### 2-279. 랭킹 탭 최고 연승 배지 (v5.164)
+### 2-279. 랭킹 탭 최고 연승 배지 (v5.164) ✅ Done
 Rankings.tsx 선수 행에 현재 연승 수(최근 기록 기준) 표시.
 3연승+ 선수에게만 🔥 N연승 amber 배지 표시. scoreRecords 기반.
 
-### 2-280. 통계 탭 요일별 경기 분포 (v5.165)
+### 2-280. 통계 탭 요일별 경기 분포 (v5.165) ✅ Done
 Stats.tsx에 요일별(월~일) 총 기록 수 가로 막대 그래프 추가.
 recordedAt 기반 요일 분류. 5건+ 조건. 오늘 요일 indigo 강조.
+
+### 2-281. 대시보드 미완료 경기 경보 배너 (v5.166)
+Dashboard.tsx 상단에 미완료(result 없음) 경기가 10건+ 있을 때 amber 배너 표시.
+"미완료 N경기 남음" + 대진표 이동 링크. dismiss 버튼(X) 포함.
+
+### 2-282. 점수 입력 탭 오늘 입력자 현황 (v5.167)
+Score.tsx ManualEntry에 "오늘 N명 참여" 칩 추가.
+오늘 scoreRecords 기준 고유 player ID 수 집계. 2명+ 조건.
+
+### 2-283. 일정표 슬롯 완료 비율 진행 바 (v5.168)
+Schedule.tsx ScheduleDetail 각 코트 헤더에 해당 코트 완료/전체 슬롯 수 미니 progress bar 추가.
+completedMatchSet 기반. 슬롯 2개+ 코트만 표시.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
