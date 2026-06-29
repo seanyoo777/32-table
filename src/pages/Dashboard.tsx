@@ -1073,6 +1073,32 @@ export default function DashboardPage() {
                 })()}
               </div>
             )}
+          {liveMatches.length >= 2 && (() => {
+            const rows = liveMatches.map(lm => {
+              const call = matchCalls.find(c => c.matchId === lm.matchId)
+              if (!call?.calledAt) return null
+              const elapsed = Math.floor((now.getTime() - new Date(call.calledAt).getTime()) / 60000)
+              return { tableNo: call.tableNo, p1: call.participant1Name, p2: call.participant2Name, elapsed }
+            }).filter((x): x is { tableNo: number; p1: string; p2: string; elapsed: number } => x !== null)
+            if (rows.length < 2) return null
+            return (
+              <div className="mt-2 border-t border-gray-100 pt-1.5">
+                <table className="w-full text-[10px] text-gray-600">
+                  <tbody>
+                    {rows.sort((a, b) => b.elapsed - a.elapsed).map((row, i) => (
+                      <tr key={i} className="border-b border-gray-50 last:border-0">
+                        <td className="py-0.5 px-1 font-semibold text-gray-700 w-8">코트 {row.tableNo}</td>
+                        <td className="py-0.5 px-1 truncate max-w-[80px]">{row.p1}</td>
+                        <td className="py-0.5 px-1 text-gray-400 text-center">vs</td>
+                        <td className="py-0.5 px-1 truncate max-w-[80px]">{row.p2}</td>
+                        <td className={`py-0.5 px-1 text-right font-medium whitespace-nowrap ${row.elapsed >= 30 ? 'text-red-500' : 'text-gray-500'}`}>{row.elapsed}분</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
           </div>
         </div>
 

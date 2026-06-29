@@ -1358,7 +1358,7 @@ indigo chip으로 표시. 오늘 3건+ 조건.
 Rankings.tsx 복식 헤더에 오늘 scoreRecords에서 승리가 있는
 고유 페어 수를 emerald chip으로 표시. 오늘 2건+ 조건.
 
-### 2-426. 일정 탭 오늘 경기 시작까지 남은 시간 실시간 칩 (v5.310)
+### 2-426. ✅ 일정 탭 오늘 경기 시작까지 남은 시간 실시간 칩 (완료 v5.310)
 Schedule.tsx 헤더 Stats 바에 오늘 첫 미완료 슬롯 startTime까지 남은 분을
 실시간 cyan 칩으로 표시. 15분 이내=red pulse. 오늘 슬롯 1개+ && 미완료 있는 경우.
 
