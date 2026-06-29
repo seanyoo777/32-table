@@ -74,6 +74,20 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── 대회 상태 칩 ── */}
+      {tournaments.length > 0 && (() => {
+        const ongoingN = tournaments.filter(t => t.status === 'ongoing').length
+        const upcomingN = tournaments.filter(t => t.status === 'draft' || t.status === 'upcoming').length
+        const completedN = tournaments.filter(t => t.status === 'completed').length
+        return (
+          <div className="flex-shrink-0 flex items-center gap-1.5 flex-wrap">
+            {ongoingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-green-200 transition-colors">진행중 {ongoingN}</button>}
+            {upcomingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-blue-200 transition-colors">예정 {upcomingN}</button>}
+            {completedN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium hover:bg-gray-200 transition-colors">완료 {completedN}</button>}
+          </div>
+        )
+      })()}
+
       {/* ── 경기 현황 요약 ── */}
       {activeTournaments.length > 0 && (
         <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-100 text-sm">
