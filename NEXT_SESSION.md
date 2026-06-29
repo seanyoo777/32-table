@@ -1278,7 +1278,7 @@ Rankings.tsx 복식 탭에서 오늘 scoreRecords 기준 가장 많이 경기한
 Dashboard.tsx 코트 현황 헤더에 최근 5분 이내 scoreRecords에 추가된
 기록 수를 파란 플래시 chip으로 표시. 1건+ 조건.
 
-### 2-406. 점수 탭 오늘 검증률 미니 도넛 SVG (v5.290)
+### 2-406. ✅ 점수 탭 오늘 검증률 미니 도넛 SVG (완료 v5.290)
 Score.tsx 필터 영역에 오늘 기록 중 verified vs 미검증 비율을
 작은 SVG 도넛으로 표시. 오늘 5건+ 조건.
 

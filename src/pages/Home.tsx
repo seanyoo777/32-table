@@ -1308,6 +1308,18 @@ export default function Home() {
                           return <span className="ml-auto text-[10px] bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">🏆 {name} {topPts}pt</span>
                         })()}
                       </div>
+                      {(() => {
+                        const totalM = t.events.reduce((s, ev) => s + ev.matches.filter(m => m.result).length, 0)
+                        const participants = new Set(t.events.flatMap(ev => ev.matches.flatMap(m => [m.participant1Id, m.participant2Id].filter(Boolean) as string[]))).size
+                        if (totalM === 0 && participants === 0) return null
+                        return (
+                          <div className="flex gap-1.5 mb-1 flex-wrap">
+                            {totalM > 0 && <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">{totalM}경기</span>}
+                            {participants > 0 && <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">{participants}명</span>}
+                            <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">{t.events.length}종목</span>
+                          </div>
+                        )
+                      })()}
                       <div className="space-y-0.5">
                         {completedEvents.slice(0, 3).map(ev => {
                           const sorted = Object.entries(ev.awards!.points).sort(([, a], [, b]) => b - a)
