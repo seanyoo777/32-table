@@ -1,6 +1,6 @@
 import { useStore } from '../store/useStore'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, Calendar, ClipboardList, TableProperties, Zap, QrCode, Monitor, Bell, LayoutDashboard, Users, Award, Star } from 'lucide-react'
+import { Trophy, Calendar, ClipboardList, TableProperties, Zap, QrCode, Monitor, Bell, LayoutDashboard, Users, Award, Star, BarChart2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Home() {
@@ -494,6 +494,35 @@ export default function Home() {
               <button onClick={() => navigate('/score')} className="mt-2 text-[10px] text-blue-500 hover:text-blue-700 w-full text-right">더보기 →</button>
             </div>
           )}
+
+          {/* 오늘 시간대별 경기 수 미니 차트 */}
+          {(() => {
+            const todayISO = now.toISOString().split('T')[0]
+            const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+            if (todayRecs.length < 3) return null
+            const bins = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, cnt: todayRecs.filter(r => new Date(r.recordedAt).getHours() === i * 2 || new Date(r.recordedAt).getHours() === i * 2 + 1).length }))
+            const maxCnt = Math.max(1, ...bins.map(b => b.cnt))
+            const currentH = now.getHours()
+            return (
+              <div className="card flex-shrink-0">
+                <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+                  <BarChart2 size={14} className="text-indigo-500" /> 오늘 시간대별 기록
+                  <span className="text-xs text-gray-400 font-normal ml-auto">{todayRecs.length}건</span>
+                </h2>
+                <div className="flex items-end gap-0.5 h-10">
+                  {bins.map(({ h, cnt }) => (
+                    <div key={h} className="flex flex-col items-center flex-1">
+                      <div className={`w-full rounded-t-sm transition-all ${h <= currentH && currentH < h + 2 ? 'bg-indigo-500' : cnt > 0 ? 'bg-indigo-300' : 'bg-gray-100'}`}
+                        style={{ height: `${Math.round(cnt / maxCnt * 100)}%`, minHeight: cnt > 0 ? '2px' : '0' }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between text-[9px] text-gray-300 mt-0.5 px-0.5">
+                  <span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>24시</span>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Recent tournaments (scrollable) */}
           <div className="card flex-1 min-h-0 flex flex-col overflow-hidden">
