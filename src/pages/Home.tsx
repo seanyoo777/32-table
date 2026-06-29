@@ -107,6 +107,10 @@ export default function Home() {
               미확인 기록 {scoreRecords.filter(r => !r.verified).length}
             </span>
           )}
+          {(() => {
+            const n = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO).length
+            return n > 0 ? <span className="flex-shrink-0 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">오늘 기록 {n}건</span> : null
+          })()}
         </div>
       )}
 
