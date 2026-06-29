@@ -262,6 +262,27 @@ export default function Home() {
           <span className="text-xs">오늘 배정된 경기 일정이 없습니다</span>
         </div>
       )}
+      {activeTournaments.length === 0 && (() => {
+        const upcoming = tournaments.filter(t => t.status === 'upcoming' && t.date)
+          .sort((a, b) => a.date!.localeCompare(b.date!))
+        const next = upcoming[0]
+        if (!next) return null
+        const diff = Math.round((new Date(next.date!).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+        if (diff < 0) return null
+        return (
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 bg-blue-50 rounded-xl border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+            onClick={() => navigate(`/tournament?open=${next.id}`)}>
+            <span className="text-lg">📆</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-blue-800 truncate">{next.name}</div>
+              <div className="text-[10px] text-blue-500">{next.date}{next.venue ? ` · ${next.venue}` : ''}</div>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${diff === 0 ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
+              {diff === 0 ? 'D-Day' : `D-${diff}`}
+            </span>
+          </div>
+        )
+      })()}
       {todaySlotCount > 0 && (() => {
         const doneMatchSet = new Set(
           activeTournaments.flatMap(t => t.events.flatMap(ev =>
