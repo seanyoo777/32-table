@@ -1146,6 +1146,20 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         )}
       </div>
 
+      {/* 부문 색상 범례 */}
+      {(() => {
+        const usedDivs = [...new Set(filteredSlots.map(s => s.division).filter(Boolean))] as Division[]
+        if (usedDivs.length < 2) return null
+        return (
+          <div className="flex-shrink-0 bg-gray-50 border-b border-gray-100 px-4 py-1.5 flex items-center gap-2 flex-wrap no-print">
+            <span className="text-[10px] text-gray-400 font-medium">부문</span>
+            {usedDivs.map(div => (
+              <span key={div} className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${divColors[div]}`}>{div}</span>
+            ))}
+          </div>
+        )
+      })()}
+
       {/* 충돌 경고 패널 */}
       {conflicts.length > 0 && showConflicts && (
         <div className="flex-shrink-0 bg-red-50 border-b border-red-100 px-4 py-2.5 max-h-44 overflow-y-auto no-print">
