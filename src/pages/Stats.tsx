@@ -428,6 +428,29 @@ export default function Stats() {
             </section>
           </div>
 
+          {/* 오늘 경기 시간대 분포 */}
+          {(() => {
+            const todayStr = new Date().toISOString().slice(0, 10)
+            const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayStr))
+            if (todayRecs.length === 0) return null
+            const morning = todayRecs.filter(r => { const h = new Date(r.recordedAt).getHours(); return h < 12 }).length
+            const afternoon = todayRecs.filter(r => { const h = new Date(r.recordedAt).getHours(); return h >= 12 && h < 18 }).length
+            const evening = todayRecs.filter(r => { const h = new Date(r.recordedAt).getHours(); return h >= 18 }).length
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-2">
+                  오늘 경기 시간대 분포
+                  <span className="text-[10px] text-gray-400 font-normal">총 {todayRecs.length}건</span>
+                </h2>
+                <div className="flex gap-2 flex-wrap">
+                  {morning > 0 && <span className="text-xs bg-sky-100 text-sky-700 px-2.5 py-1 rounded-full font-medium">오전 {morning}건</span>}
+                  {afternoon > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-medium">오후 {afternoon}건</span>}
+                  {evening > 0 && <span className="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-medium">저녁 {evening}건</span>}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 체크인 현황 분석 */}
           {checkInStats.total > 0 && (
             <section className="card">
