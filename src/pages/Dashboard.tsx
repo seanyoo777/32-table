@@ -63,12 +63,19 @@ export default function DashboardPage() {
   const [selectedMatchKeys, setSelectedMatchKeys] = useState<Set<string>>(new Set())
   const [pendingTourFilter, setPendingTourFilter] = useState('')
   const [callTourFilter, setCallTourFilter] = useState('')
+  const [bulkTableNo, setBulkTableNo] = useState(1)
 
   function toggleSelectMatch(key: string) {
     setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
   }
   function toggleSelectAll(callableKeys: string[]) {
     setSelectedMatchKeys(s => s.size === callableKeys.length ? new Set() : new Set(callableKeys))
+  }
+  function bulkAssignTable() {
+    const updates: Record<string, number> = {}
+    selectedMatchKeys.forEach(key => { updates[key] = bulkTableNo })
+    setRowTableNos(prev => ({ ...prev, ...updates }))
+    setSelectedMatchKeys(new Set())
   }
   function bulkCall() {
     let nextTable = callTableNo
@@ -510,10 +517,24 @@ export default function DashboardPage() {
                   전체
                 </label>
                 {selectedMatchKeys.size > 0 && (
-                  <button onClick={bulkCall}
-                    className="text-[11px] bg-orange-500 text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">
-                    {selectedMatchKeys.size}개 일괄 호출
-                  </button>
+                  <>
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number" min={1} max={30} value={bulkTableNo}
+                        onChange={e => setBulkTableNo(Number(e.target.value) || 1)}
+                        className="w-8 text-xs text-center border border-gray-200 rounded px-0.5 py-0.5 bg-white"
+                        title="일괄 배정 코트 번호"
+                      />
+                      <button onClick={bulkAssignTable}
+                        className="text-[11px] bg-blue-500 text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">
+                        {selectedMatchKeys.size}개 코트배정
+                      </button>
+                    </div>
+                    <button onClick={bulkCall}
+                      className="text-[11px] bg-orange-500 text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">
+                      {selectedMatchKeys.size}개 일괄 호출
+                    </button>
+                  </>
                 )}
               </div>
             )}
