@@ -127,6 +127,20 @@ export default function CheckInPage() {
     URL.revokeObjectURL(url)
   }
 
+  function exportNotCheckedInCSV() {
+    const rows = ['이름,소속,부문,성별,연락처']
+    for (const p of [...notCheckedIn].sort((a, b) => a.name.localeCompare(b.name))) {
+      rows.push([p.name, p.school, p.division, p.gender, p.phone ?? ''].join(','))
+    }
+    const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `미체크인_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const feePaid = players.filter(p => p.feePaid)
   const feeFiltered = feeQuery
     ? players.filter(p => p.name.includes(feeQuery) || p.school.includes(feeQuery))
@@ -404,7 +418,12 @@ export default function CheckInPage() {
       {/* ── 체크인 현황 ── */}
       {tab === 'list' && (
         <div className="space-y-3">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {notCheckedIn.length > 0 && (
+              <button onClick={exportNotCheckedInCSV} className="btn-secondary text-sm flex items-center gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50">
+                <Download size={14} /> 미체크인 CSV
+              </button>
+            )}
             <button onClick={exportAttendanceCSV} className="btn-secondary text-sm flex items-center gap-1.5">
               <Download size={14} /> 출석 CSV
             </button>
