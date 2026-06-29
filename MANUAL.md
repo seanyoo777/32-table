@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.10 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.11 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,23 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-18. v4.11 — 대기경기 인라인 코트 선택·홈 오늘 일정 요약
+
+자동 루프 세션. §2 항목 2개 연속 구현·배포.
+
+### 대기경기 행 인라인 코트 번호 입력 (Dashboard.tsx)
+- 대기중 경기 각 행에 코트 번호 `<input type="number">` + 호출 버튼 추가.
+- `rowTableNos: Record<string, number>` 상태로 경기별 독립 코트 선택 가능.
+- 미지정 시 전역 `callTableNo` 기본값 사용 — 기존 경기 호출 카드와 연동.
+- 검증: 233개 대기경기 각각에 인라인 input·호출 버튼 표시 확인.
+
+### 홈 오늘 일정 요약 바 (Home.tsx)
+- 경기 현황 바 아래 오늘 날짜(YYYY-MM-DD) 일치 schedule이 있으면 보라색 요약 바 표시.
+- 총 슬롯 수 + 첫 경기 시각 + 일정 이름 표시. 오늘 일정 없으면 숨김.
+- 검증: 테스트 일정 주입 → "📅 오늘 일정 3경기 슬롯 · 첫 경기 09:00" 표시 확인.
 
 ---
 
