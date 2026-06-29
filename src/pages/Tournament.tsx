@@ -1025,6 +1025,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
   const [activeView, setActiveView] = useState<'bracket' | 'standings'>('bracket')
   const [selectedRound, setSelectedRound] = useState(1)
   const [resultModal, setResultModal] = useState<BracketMatch | null>(null)
+  const [matchSearch, setMatchSearch] = useState('')
 
   const realMatches = event.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
   // 미완료 경기 목록 (라운드→포지션 순) — 모달 next/prev 이동용
@@ -1051,6 +1052,13 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
 
   const rounds = [...new Set(event.matches.map(m => m.round))].sort((a, b) => a - b)
   const roundMatches = event.matches.filter(m => m.round === selectedRound && m.participant1Id && m.participant2Id && !m.isBye)
+  const displayMatches = matchSearch
+    ? roundMatches.filter(m => {
+        const n1 = (pMap[m.participant1Id!]?.name ?? '').toLowerCase()
+        const n2 = (pMap[m.participant2Id!]?.name ?? '').toLowerCase()
+        return n1.includes(matchSearch.toLowerCase()) || n2.includes(matchSearch.toLowerCase())
+      })
+    : roundMatches
   const standings = isLeague || isGrouped
     ? calcStandings(event.matches, event.participantIds)
     : {}
@@ -1180,13 +1188,26 @@ function EventBracket({ event, pMap, onRecord, onClearResult }: {
               onClearResult={onClearResult}
             />
           ) : isLarge || isLeague || isGrouped ? (
-            <MatchList
-              matches={roundMatches}
-              pMap={pMap}
-              onClickMatch={(m) => setResultModal(m)}
-              onClearResult={onClearResult}
-              groupMap={Object.fromEntries(event.groups.map(g => [g.id, g.name]))}
-            />
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  className="input flex-1 text-sm py-1.5"
+                  placeholder="선수명 검색..."
+                  value={matchSearch}
+                  onChange={e => setMatchSearch(e.target.value)}
+                />
+                {matchSearch && (
+                  <button onClick={() => setMatchSearch('')} className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">✕</button>
+                )}
+              </div>
+              <MatchList
+                matches={displayMatches}
+                pMap={pMap}
+                onClickMatch={(m) => setResultModal(m)}
+                onClearResult={onClearResult}
+                groupMap={Object.fromEntries(event.groups.map(g => [g.id, g.name]))}
+              />
+            </>
           ) : (
             <BracketTree
               event={event}
