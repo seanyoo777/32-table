@@ -498,7 +498,11 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-1.5">
                           {isLongest && <span className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold animate-pulse">장기경기</span>}
                           {liveElapsed !== null && (
-                            <span className={`text-[10px] font-mono px-1 rounded ${liveElapsed >= 15 ? 'bg-red-200 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
+                              liveElapsed >= 60 ? 'bg-red-200 text-red-700' :
+                              liveElapsed >= 30 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
                               {liveElapsed}분
                             </span>
                           )}
