@@ -716,7 +716,7 @@ export default function Rankings() {
                         {(todayPlayerMatchCount.get(p.id) ?? 0) > 0 && <span className="text-[9px] px-1 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium flex-shrink-0">오늘 {todayPlayerMatchCount.get(p.id)}경기</span>}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-500">{highlight(p.school)}</td>
+                    <td className="py-3 px-4 text-gray-500 max-w-[120px] truncate" title={p.school}>{highlight(p.school)}</td>
                     {showDiv && <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>}
                     {showGender && (
                       <td className="py-3 px-4 text-center">
@@ -905,7 +905,7 @@ export default function Rankings() {
                         )
                       })()}
                     </td>
-                    <td className="py-3 px-4 text-gray-500 text-xs">{p.school}</td>
+                    <td className="py-3 px-4 text-gray-500 text-xs max-w-[120px] truncate" title={p.school}>{p.school}</td>
                     <td className="py-3 px-4"><span className={`badge ${divColors[p.division]}`}>{p.division}</span></td>
                     <td className="py-3 px-4 text-center">
                       <span className={`badge ${p.gender === '남' ? 'bg-blue-50 text-blue-600' : p.gender === '여' ? 'bg-pink-50 text-pink-600' : 'bg-purple-50 text-purple-600'}`}>
