@@ -1368,31 +1368,44 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
-        {/* Tournament match history */}
-        {tourMatches.length > 0 && (
-          <div className="mb-4">
-            <h4 className="font-semibold text-sm text-gray-700 mb-2">대회 경기 기록</h4>
-            <div className="space-y-1.5 max-h-48 overflow-y-auto">
-              {tourMatches.map(({ match, tournamentName, eventLabel }, idx) => {
-                const isP1 = match.participant1Id === player.id
-                const oppId = isP1 ? match.participant2Id! : match.participant1Id!
-                const oppName = pMap[oppId] ?? '?'
-                const isWin = match.result?.winnerId === player.id
-                const setStr = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
-                return (
-                  <div key={idx} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isWin ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-                    <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>
-                      {isWin ? '승' : '패'}
-                    </span>
-                    <span className="flex-1 font-medium truncate">vs {oppName}</span>
-                    <span className="text-xs text-gray-400 truncate">{tournamentName} {eventLabel}</span>
-                    <span className="text-xs text-gray-500 flex-shrink-0">{setStr}</span>
+        {/* Tournament match history — grouped by event */}
+        {tourMatches.length > 0 && (() => {
+          const grouped: { key: string; tourName: string; evLabel: string; items: typeof tourMatches }[] = []
+          tourMatches.forEach(m => {
+            const key = `${m.tournamentName}||${m.eventLabel}`
+            const g = grouped.find(g => g.key === key)
+            if (g) g.items.push(m)
+            else grouped.push({ key, tourName: m.tournamentName, evLabel: m.eventLabel, items: [m] })
+          })
+          return (
+            <div className="mb-4">
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">대회 경기 기록</h4>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {grouped.map(g => (
+                  <div key={g.key}>
+                    <div className="text-[10px] font-semibold text-gray-400 mt-1 mb-1 px-1">{g.tourName} · {g.evLabel}</div>
+                    {g.items.map(({ match }, idx) => {
+                      const isP1 = match.participant1Id === player.id
+                      const oppId = isP1 ? match.participant2Id! : match.participant1Id!
+                      const oppName = pMap[oppId] ?? '?'
+                      const isWin = match.result?.winnerId === player.id
+                      const setStr = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
+                      return (
+                        <div key={idx} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isWin ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                          <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>
+                            {isWin ? '승' : '패'}
+                          </span>
+                          <span className="flex-1 font-medium truncate">vs {oppName}</span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">{setStr}</span>
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Score records */}
         {recentRecords.length > 0 && (
