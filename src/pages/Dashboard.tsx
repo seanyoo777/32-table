@@ -440,6 +440,22 @@ export default function DashboardPage() {
                 </div>
               )
             })()}
+            {(() => {
+              const fiveMinsAgo = Date.now() - 5 * 60 * 1000
+              const recent = players
+                .filter(p => p.checkedIn && p.createdAt && new Date(p.createdAt).getTime() >= fiveMinsAgo)
+                .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))[0]
+              if (!recent) return null
+              const diffMs = Date.now() - new Date(recent.createdAt).getTime()
+              const diffMin = Math.round(diffMs / 60000)
+              return (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+                  <span className="text-[10px] text-green-700 font-medium">방금 체크인: {recent.name}</span>
+                  <span className="text-[10px] text-gray-400">{diffMin === 0 ? '방금' : `${diffMin}분 전`}</span>
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
