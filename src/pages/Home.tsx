@@ -816,6 +816,27 @@ export default function Home() {
                         </div>
                       )
                     })()}
+                    {(() => {
+                      const todayISO = new Date().toISOString().slice(0, 10)
+                      const tourToday = scoreRecords.filter(r => r.tournamentId === t.id && r.recordedAt?.startsWith(todayISO))
+                      if (tourToday.length < 3) return null
+                      const freq = new Map<string, number>()
+                      tourToday.forEach(r => {
+                        if (r.participant1Id) freq.set(r.participant1Id, (freq.get(r.participant1Id) ?? 0) + 1)
+                        if (r.participant2Id) freq.set(r.participant2Id, (freq.get(r.participant2Id) ?? 0) + 1)
+                      })
+                      const [topId, topN] = [...freq.entries()].sort((a, b) => b[1] - a[1])[0] ?? []
+                      if (!topId || topN < 2) return null
+                      const name = players.find(p => p.id === topId)?.name ?? pairs.find(p => p.id === topId)?.name
+                      if (!name) return null
+                      return (
+                        <div className="mt-1.5">
+                          <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-full font-medium">
+                            최다 {topN}경기 {name}
+                          </span>
+                        </div>
+                      )
+                    })()}
                     <div className="flex gap-1.5 mt-2">
                       <button onClick={e => { e.stopPropagation(); navigate('/score') }}
                         className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-green-700">
