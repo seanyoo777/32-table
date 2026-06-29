@@ -1124,6 +1124,18 @@ export default function DashboardPage() {
                 const color = rate >= 80 ? 'bg-green-100 text-green-700' : rate >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
                 return <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${color}`}>응답률 {rate}%</span>
               })()}
+              {(() => {
+                const unacked = matchCalls.filter(c => !c.acknowledged && c.calledAt)
+                if (unacked.length < 2) return null
+                const oldest = unacked.sort((a, b) => (a.calledAt ?? '').localeCompare(b.calledAt ?? ''))[0]
+                const minAgo = Math.round((Date.now() - new Date(oldest.calledAt!).getTime()) / 60000)
+                if (minAgo < 15) return null
+                return (
+                  <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                    코트 {oldest.tableNo}번 장기 미응답
+                  </span>
+                )
+              })()}
             </h2>
             <div className="flex gap-1.5 mb-1.5 items-center">
               <input
