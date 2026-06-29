@@ -529,7 +529,11 @@ export default function DashboardPage() {
                   const p2 = pMap[r.participant2Id]?.name ?? '?'
                   return (
                     <div key={r.id} className="flex items-center gap-2 bg-white rounded px-2 py-1.5 border border-amber-100 text-xs">
-                      <span className="flex-1 font-medium truncate">{p1} vs {p2}</span>
+                      <span className="flex-1 font-medium truncate">
+                        <button onClick={() => navigate(`/rankings?search=${encodeURIComponent(p1)}`)} className="hover:text-blue-600 hover:underline">{p1}</button>
+                        {' vs '}
+                        <button onClick={() => navigate(`/rankings?search=${encodeURIComponent(p2)}`)} className="hover:text-blue-600 hover:underline">{p2}</button>
+                      </span>
                       <span className="text-gray-500">{r.p1Score}-{r.p2Score}</span>
                       <button onClick={() => verifyScoreRecord(r.id)}
                         className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200">확인</button>
