@@ -1136,6 +1136,9 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     if (undoTimer) clearTimeout(undoTimer)
     setUndoTimer(null)
   }
+  function handleUpdateSlotNote(slotId: string, note: string) {
+    updateSchedule(plan.id, { slots: plan.slots.map(s => s.id === slotId ? { ...s, note: note || undefined } : s) })
+  }
   function handleBulkShift(deltaMin: number) {
     const t2m = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
     const m2t = (mm: number) => `${String(Math.floor(Math.abs(mm) / 60) % 24).padStart(2, '0')}:${String(Math.abs(mm) % 60).padStart(2, '0')}`
@@ -1563,6 +1566,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
                             <span className="text-[10px] text-gray-400">~{formatTime12h(slot.endTime)}</span>
                             {isDone ? <span className="text-[9px] text-green-600 font-bold ml-auto">✓완료</span> : <span className="text-[10px] text-gray-500 ml-auto">{slot.division} {slot.eventType} #{slot.matchNo}</span>}
+                            {slot.note && <span className="text-[9px] text-amber-600 ml-0.5 flex-shrink-0" title={slot.note}>✎</span>}
                           </div>
                           {slot.participant1 && slot.participant2 ? (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -1661,6 +1665,16 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                 <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full">수정됨 {new Date(popoverSlot.updatedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             )}
+          </div>
+          <div className="mt-2">
+            <input
+              type="text"
+              placeholder="메모 추가..."
+              maxLength={50}
+              defaultValue={popoverSlot.note ?? ''}
+              onBlur={e => handleUpdateSlotNote(popoverSlot.id, e.target.value.trim())}
+              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1 placeholder-gray-300 focus:outline-none focus:border-blue-300"
+            />
           </div>
           {(() => {
             const courtSlots = filteredSlots.filter(s => s.courtNo === popoverSlot.courtNo).sort((a, b) => a.startTime.localeCompare(b.startTime))
