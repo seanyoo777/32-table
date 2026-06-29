@@ -1051,7 +1051,11 @@ export default function DashboardPage() {
                     <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : isOverdue ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>
                       {c.tableNo}번
                     </span>
-                    <span className="flex-1 truncate font-medium">{c.participant1Name} vs {c.participant2Name}</span>
+                    <span className="flex-1 min-w-0 font-medium flex items-center gap-1">
+                      <button onClick={e => { e.stopPropagation(); navigate('/checkin') }} className="truncate hover:underline hover:text-teal-600 text-left" title={`${c.participant1Name} 체크인 확인`}>{c.participant1Name}</button>
+                      <span className="text-gray-400 flex-shrink-0">vs</span>
+                      <button onClick={e => { e.stopPropagation(); navigate('/checkin') }} className="truncate hover:underline hover:text-teal-600 text-left" title={`${c.participant2Name} 체크인 확인`}>{c.participant2Name}</button>
+                    </span>
                     {isOverdue && <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold flex-shrink-0">⚠ 미응답</span>}
                     <span className="text-gray-400 flex-shrink-0 flex items-center gap-1">
                       {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
