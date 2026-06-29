@@ -458,9 +458,17 @@ export default function Home() {
                           <StatusBadge status={t.status} />
                         </div>
                         <div className="flex gap-1 mb-1.5 flex-wrap">
-                          {t.events.slice(0, 4).map(ev => (
-                            <span key={ev.id} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{ev.label}</span>
-                          ))}
+                          {t.events.slice(0, 4).map(ev => {
+                            const evTotal = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                            const evDone = ev.matches.filter(m => m.result).length
+                            const evPct = evTotal > 0 ? Math.round(evDone / evTotal * 100) : null
+                            return (
+                              <span key={ev.id} className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${evPct === 100 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                {ev.label}
+                                {evPct !== null && <span className="text-[10px] font-bold opacity-70">{evPct}%</span>}
+                              </span>
+                            )
+                          })}
                           {t.events.length > 4 && <span className="text-xs text-gray-400">+{t.events.length - 4}</span>}
                         </div>
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
