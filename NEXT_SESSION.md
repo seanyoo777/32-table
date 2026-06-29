@@ -423,17 +423,26 @@ unverifiedRecords p1/p2 이름 버튼화. /rankings?search=NAME navigate.
 ### 2-160. ✅ 경기일정 전체 슬롯 일괄 시간 이동 (완료 v5.50)
 Schedule.tsx 헤더 ±N분 일괄 시프트. input + -/+ 버튼. undo 8초 공유.
 
-### 2-161. 랭킹 선수 모달 대회별 순위 표시 (v5.51)
-Rankings.tsx PlayerStatsModal에 참가 대회별 최종 순위(종목 내 등수) 표시.
-scoreRecords 기반 해당 대회+종목 내 승수 계산, "N위" 배지.
+### 2-161. ✅ 랭킹 선수 모달 대회별 종목 순위 배지 (완료 v5.51)
+tournaments 데이터 기반 승수로 종목 내 순위 계산. 1위=황금, 상위3=파랑.
 
-### 2-162. 홈 오늘 코트 가동률 칩 (v5.52)
-Home.tsx 경기 현황 바에 오늘 사용 중 코트 수 / 전체 코트 수 "코트 N/M" 칩 추가.
-schedulePlans의 오늘 슬롯 courtNo Set 기준.
+### 2-162. ✅ 홈 오늘 코트 가동률 칩 (완료 v5.52)
+todaySchedules courtNo Set 기준 전체/활성 코트 수 purple 칩.
 
-### 2-163. 대시보드 LIVE 경기 종목 필터 칩 (v5.53)
-Dashboard.tsx 실시간 진행중 목록에 종목 필터 칩 추가.
-활성 종목 수 2개 이상 시 표시. 선택 시 해당 종목 LIVE만 필터링.
+### 2-163. ✅ Dashboard LIVE 경기 종목 필터 칩 (완료 v5.53)
+종목 2개 이상 시 전체/종목별 필터 칩. liveEventFilter state 추가.
+
+### 2-164. 통계 선수 포인트 분포 히스토그램 (v5.54)
+Stats.tsx 활성 대회 참가 선수들의 포인트 분포 히스토그램.
+100pt 구간별 인라인 가로 막대, 구간 레이블 + 선수 수.
+
+### 2-165. 경기일정 슬롯 검색 필터 (v5.55)
+Schedule.tsx 일정 상세 헤더에 선수명/종목 검색 input 추가.
+일치하는 슬롯만 표시, 검색어 없으면 전체 표시. ✕ 초기화.
+
+### 2-166. 대회 경기 목록 선수 이름 클릭 → 랭킹 이동 (v5.56)
+Tournament.tsx MatchList 경기 행 participant 이름을 클릭 시 /rankings?search=NAME.
+완료/대기 경기 모두 적용.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

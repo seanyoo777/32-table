@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.50 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.53 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,36 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-160. v5.53 — Dashboard LIVE 종목 필터 칩
+
+자동 루프. Dashboard.tsx LIVE 목록 종목 필터.
+
+### 변경 (Dashboard.tsx)
+- `liveEventFilter` state 추가.
+- 종목 2개 이상 시 전체/종목별 칩 렌더. filteredLiveMatches IIFE 분리.
+
+---
+
+## 12-159. v5.52 — 홈 오늘 코트 가동률 칩
+
+자동 루프. Home.tsx 경기 현황 바 purple 칩.
+
+### 변경 (Home.tsx)
+- `todaySchedules` courtNo Set으로 totalCourtSet.
+- activeCourtSet = liveMatches.tableNo + 미확인 호출 tableNo 교집합으로 used 계산.
+
+---
+
+## 12-158. v5.51 — 랭킹 선수 모달 대회별 종목 순위
+
+자동 루프. Rankings.tsx PlayerStatsModal 종목 순위 섹션.
+
+### 변경 (Rankings.tsx)
+- tourMatches 기반 대회별 이벤트 그룹. tournaments 매칭으로 전체 참가자 winMap 계산.
+- rank = 나보다 wins 많은 참가자 수 + 1. 대회 경기 기록 섹션 위 배치.
 
 ---
 
