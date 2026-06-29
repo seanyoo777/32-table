@@ -715,6 +715,20 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+            {(() => {
+              const todayISO = now.toISOString().split('T')[0]
+              const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO) && c.tableNo)
+              if (todayCalls.length < 5) return null
+              const counts = new Map<number, number>()
+              todayCalls.forEach(c => counts.set(c.tableNo, (counts.get(c.tableNo) ?? 0) + 1))
+              if (counts.size < 2) return null
+              const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
+              return (
+                <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  {top[0]}번 {top[1]}호출
+                </span>
+              )
+            })()}
             {liveMatches.length >= 1 && (() => {
               const maxElapsed = liveMatches.map(lm => {
                 const call = matchCalls.find(c => c.matchId === lm.matchId)
