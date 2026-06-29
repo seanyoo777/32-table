@@ -844,6 +844,21 @@ function ManualEntry() {
             })()}
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
+              const todaySorted = scoreRecords
+                .filter(r => r.recordedAt?.startsWith(todayISO))
+                .sort((a, b) => (b.recordedAt ?? '').localeCompare(a.recordedAt ?? ''))
+              if (todaySorted.length < 3) return null
+              const last = todaySorted[0]
+              const timeStr = last.recordedAt ? new Date(last.recordedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : null
+              if (!timeStr) return null
+              return (
+                <span className="text-[10px] bg-slate-50 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  마지막 {timeStr}
+                </span>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
               if (todayRecs.length < 5) return null
               const pairCount = new Map<string, number>()
