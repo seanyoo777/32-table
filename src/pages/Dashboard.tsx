@@ -352,6 +352,26 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+            {todayRecs.length >= 3 && (() => {
+              const morning = todayRecs.filter(r => new Date(r.recordedAt).getHours() < 12).length
+              const afternoon = todayRecs.filter(r => { const h = new Date(r.recordedAt).getHours(); return h >= 12 && h < 18 }).length
+              const evening = todayRecs.filter(r => new Date(r.recordedAt).getHours() >= 18).length
+              const items = [
+                { label: '오전', count: morning, cls: 'bg-teal-200 text-teal-700' },
+                { label: '오후', count: afternoon, cls: 'bg-amber-200 text-amber-700' },
+                { label: '저녁', count: evening, cls: 'bg-indigo-200 text-indigo-700' }
+              ]
+              return (
+                <div className="flex-shrink-0 px-4 py-1.5 bg-white border-b border-gray-50 flex gap-1.5">
+                  {items.map(({ label, count, cls }) => (
+                    <div key={label} className={`flex-1 rounded-lg text-center py-0.5 ${count > 0 ? cls : 'bg-gray-50 text-gray-300'}`}>
+                      <div className="text-[10px] font-semibold">{count > 0 ? count : '-'}</div>
+                      <div className="text-[9px] opacity-70">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
             {todayRecs.length >= 2 && (() => {
               const freq = new Map<string, number>()
               todayRecs.forEach(r => {
