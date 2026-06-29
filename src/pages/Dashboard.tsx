@@ -977,34 +977,38 @@ export default function DashboardPage() {
           </div>
 
           {/* Event progress */}
-          {activeTournaments.length > 0 && (
-            <div className="card flex-shrink-0">
-              <h2 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
-                <Trophy size={13} className="text-blue-500" /> 종목별 진행률
-              </h2>
-              <div className="space-y-1.5">
-                {activeTournaments.flatMap(t =>
-                  t.events.map(ev => {
-                    const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
-                    const done = ev.matches.filter(m => m.result && !m.result.walkedOver).length
-                    const pct = total > 0 ? Math.round(done / total * 100) : 0
-                    return { key: `${t.id}-${ev.id}`, label: ev.label, total, done, pct }
-                  })
-                ).slice(0, 10).map(({ key, label, total, done, pct }) => (
-                  <div key={key}>
-                    <div className="flex justify-between text-xs mb-0.5">
-                      <span className="font-medium truncate flex-1 mr-2">{label}</span>
-                      <span className="text-gray-400 flex-shrink-0">{done}/{total} ({pct}%)</span>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                        style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                ))}
+          {activeTournaments.length > 0 && (() => {
+            const BLOCKS = 8
+            const rows = activeTournaments.flatMap(t =>
+              t.events.map(ev => {
+                const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                const done = ev.matches.filter(m => m.result && !m.result.walkedOver).length
+                const pct = total > 0 ? Math.round(done / total * 100) : 0
+                const filled = Math.round(pct / 100 * BLOCKS)
+                const bar = '█'.repeat(filled) + '░'.repeat(BLOCKS - filled)
+                return { key: `${t.id}-${ev.id}`, label: ev.label, total, done, pct, bar }
+              })
+            ).slice(0, 12)
+            return (
+              <div className="card flex-shrink-0">
+                <h2 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+                  <Trophy size={13} className="text-blue-500" /> 종목별 진행률
+                </h2>
+                <table className="w-full text-[11px]">
+                  <tbody>
+                    {rows.map(({ key, label, total, done, pct, bar }) => (
+                      <tr key={key} className="border-b border-gray-50 last:border-0">
+                        <td className="py-0.5 pr-2 font-medium text-gray-700 truncate max-w-[90px]">{label}</td>
+                        <td className="py-0.5 pr-2 text-gray-400 text-right whitespace-nowrap">{done}/{total}</td>
+                        <td className={`py-0.5 font-mono tracking-tighter whitespace-nowrap ${pct === 100 ? 'text-green-500' : 'text-blue-400'}`}>{bar}</td>
+                        <td className="py-0.5 pl-1.5 text-gray-400 text-right whitespace-nowrap">{pct}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Call history */}
           {(() => {
