@@ -161,6 +161,7 @@ export default function Rankings() {
       list = list.filter(p => p.division === rankView)
       if (subGender !== 'all') list = list.filter(p => p.gender === subGender)
     }
+    if (selectedDiv) list = list.filter(p => p.division === selectedDiv)
     if (search) list = list.filter(p => p.name.includes(search) || p.school.includes(search))
     if (filterCheckIn === 'checked') list = list.filter(p => p.checkedIn)
     else if (filterCheckIn === 'unchecked') list = list.filter(p => !p.checkedIn)
@@ -170,7 +171,7 @@ export default function Rankings() {
       : sortBy === 'wins' ? b.wins - a.wins
       : b.points - a.points
     )
-  }, [players, rankView, subGender, sortBy, search, filterCheckIn, hideZeroPoints, isDivView, tournamentParticipantIds])
+  }, [players, rankView, subGender, sortBy, search, filterCheckIn, hideZeroPoints, isDivView, tournamentParticipantIds, selectedDiv])
 
   const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
   const pagedPlayers = filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -482,6 +483,28 @@ export default function Rankings() {
           </div>
         )}
       </div>
+
+      {/* 부문 퀵 필터 — singles only */}
+      {tab === 'singles' && (() => {
+        const divCounts = DIVISIONS.map(d => ({ d, n: players.filter(p => p.division === d).length })).filter(x => x.n > 0)
+        if (divCounts.length < 2) return null
+        return (
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => { setSelectedDiv(null); setPage(1) }}
+              className={`text-xs px-2.5 py-1 rounded-lg font-medium border transition-colors ${!selectedDiv ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400'}`}>
+              전체
+            </button>
+            {divCounts.map(({ d, n }) => (
+              <button key={d}
+                onClick={() => { setSelectedDiv(selectedDiv === d ? null : d); setPage(1) }}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium border transition-colors ${selectedDiv === d ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-400'}`}>
+                {d} <span className="opacity-60">{n}</span>
+              </button>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Rank view selector — singles only */}
       {tab === 'singles' && (
