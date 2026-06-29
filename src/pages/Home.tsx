@@ -1259,7 +1259,20 @@ export default function Home() {
                   if (completedEvents.length === 0) return null
                   return (
                     <div key={t.id} className="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
-                      <div className="font-medium text-xs text-gray-600 truncate mb-1">{t.name}</div>
+                      <div className="font-medium text-xs text-gray-600 truncate mb-1 flex items-center gap-1.5">
+                        {t.name}
+                        {(() => {
+                          const totals = new Map<string, number>()
+                          completedEvents.forEach(ev => {
+                            Object.entries(ev.awards?.points ?? {}).forEach(([id, pts]) => totals.set(id, (totals.get(id) ?? 0) + pts))
+                          })
+                          if (totals.size === 0) return null
+                          const [topId, topPts] = [...totals.entries()].sort(([, a], [, b]) => b - a)[0]
+                          const name = pMap[topId]
+                          if (!name) return null
+                          return <span className="ml-auto text-[10px] bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">🏆 {name} {topPts}pt</span>
+                        })()}
+                      </div>
                       <div className="space-y-0.5">
                         {completedEvents.slice(0, 3).map(ev => {
                           const sorted = Object.entries(ev.awards!.points).sort(([, a], [, b]) => b - a)
