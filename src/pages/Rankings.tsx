@@ -239,6 +239,20 @@ export default function Rankings() {
     return m
   }, [pairs, scoreRecords])
 
+  const pairLastMatchDays = useMemo(() => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    const m = new Map<string, number>()
+    pairs.forEach(p => {
+      const recs = scoreRecords.filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+      if (recs.length === 0) return
+      const latest = recs.reduce((best, r) => (r.recordedAt ?? '') > (best.recordedAt ?? '') ? r : best)
+      if (!latest.recordedAt) return
+      const d = Math.round((todayMs - new Date(latest.recordedAt).setHours(0, 0, 0, 0)) / 86400000)
+      m.set(p.id, d)
+    })
+    return m
+  }, [pairs, scoreRecords])
+
   const playerWinStreak = useMemo(() => {
     const m = new Map<string, number>()
     players.forEach(p => {
@@ -1012,6 +1026,9 @@ export default function Rankings() {
                         <span className="ml-1.5 text-xs bg-blue-50 text-blue-600 font-medium px-1.5 py-0.5 rounded-full">
                           {Math.round(p.wins / (p.wins + p.losses) * 100)}%
                         </span>
+                      )}
+                      {pairLastMatchDays.has(p.id) && (
+                        <div className="text-[9px] text-gray-400 mt-0.5">{pairLastMatchDays.get(p.id) === 0 ? '오늘' : `${pairLastMatchDays.get(p.id)}일 전`}</div>
                       )}
                     </td>
                     <td className="py-3 px-4 text-center flex items-center justify-center gap-1">

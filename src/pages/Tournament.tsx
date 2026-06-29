@@ -875,12 +875,14 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
           const pct = total > 0 ? Math.round(done / total * 100) : -1
           const isActive = !showSummary && activeEventId === ev.id
           const pctChipColor = pct < 0 ? '' : pct === 100 ? 'bg-green-100 text-green-700' : pct >= 50 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+          const uniquePlayers = new Set(ev.matches.flatMap(m => [m.participant1Id, m.participant2Id].filter(Boolean))).size
           return (
             <button key={ev.id} onClick={() => { setActiveEventId(ev.id); setShowSummary(false) }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
               {ev.label}
               <span className={`ml-1.5 text-xs ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>{done}/{total}</span>
               {pct >= 0 && <span className={`ml-1 text-[10px] px-1 py-0.5 rounded font-semibold ${isActive ? 'bg-blue-500 text-blue-100' : pctChipColor}`}>{pct}%</span>}
+              {uniquePlayers > 0 && <span className={`ml-1 text-[10px] px-1 py-0.5 rounded ${isActive ? 'bg-blue-500 text-blue-100' : 'bg-violet-50 text-violet-600'}`}>{uniquePlayers}명</span>}
             </button>
           )
         })}

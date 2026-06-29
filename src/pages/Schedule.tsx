@@ -1269,6 +1269,22 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             </span>
           )
         })()}
+        {filteredSlots.length >= 2 && (() => {
+          const slotsWithTime = filteredSlots.filter(s => s.startTime).sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))
+          if (slotsWithTime.length < 2) return null
+          const last = slotsWithTime[slotsWithTime.length - 1]
+          const [h, m] = (last.startTime ?? '').split(':').map(Number)
+          if (isNaN(h) || isNaN(m)) return null
+          const endMin = h * 60 + m + 30
+          const endH = Math.floor(endMin / 60) % 24
+          const endM = endMin % 60
+          const timeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
+          return (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 flex-shrink-0">
+              완료 예상 {timeStr}
+            </span>
+          )
+        })()}
         {conflicts.length === 0 ? (
           <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 충돌 없음
