@@ -1316,6 +1316,39 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         )}
       </div>
 
+      {/* 시간대별 경기 밀도 히트맵 바 */}
+      {filteredSlots.length >= 3 && (() => {
+        const slotsWithTime = filteredSlots.filter(s => s.startTime)
+        if (slotsWithTime.length < 3) return null
+        const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+        const times = slotsWithTime.map(s => toMins(s.startTime))
+        const minT = Math.min(...times), maxT = Math.max(...times)
+        if (maxT - minT < 30) return null
+        const bucketSize = 30
+        const numBuckets = Math.ceil((maxT - minT) / bucketSize) + 1
+        const buckets = Array.from({ length: numBuckets }, () => 0)
+        times.forEach(t => { const bi = Math.floor((t - minT) / bucketSize); if (bi < numBuckets) buckets[bi]++ })
+        const maxBucket = Math.max(...buckets, 1)
+        return (
+          <div className="flex-shrink-0 px-4 py-1 bg-white border-b border-gray-50 flex items-center gap-1 no-print">
+            <span className="text-[9px] text-gray-400 flex-shrink-0 mr-1">밀도</span>
+            {buckets.map((n, i) => {
+              const intensity = n / maxBucket
+              const t = minT + i * bucketSize
+              const hh = Math.floor(t / 60), mm = t % 60
+              return (
+                <div key={i} title={`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} (${n}경기)`}
+                  className="flex-1 h-4 rounded-sm relative group cursor-default"
+                  style={{ background: `rgba(99,102,241,${0.1 + intensity * 0.8})` }}>
+                  {n > 0 && <span className="absolute inset-0 flex items-center justify-center text-[7px] text-white font-bold opacity-0 group-hover:opacity-100">{n}</span>}
+                </div>
+              )
+            })}
+            <span className="text-[9px] text-gray-400 flex-shrink-0 ml-1">{String(Math.floor(maxT/60)).padStart(2,'0')}:{String(maxT%60).padStart(2,'0')}</span>
+          </div>
+        )
+      })()}
+
       {/* 부문 색상 범례 */}
       {(() => {
         const usedDivs = [...new Set(filteredSlots.map(s => s.division).filter(Boolean))] as Division[]
