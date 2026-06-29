@@ -172,6 +172,21 @@ export default function Home() {
             <span className={`font-semibold flex-shrink-0 text-xs ${allChecked ? 'text-green-700' : 'text-teal-700'}`}>
               {checkedCount}/{players.length}명
             </span>
+            {(() => {
+              const pct = Math.round(checkedCount / players.length * 100)
+              const R = 11, stroke = 3, circ = 2 * Math.PI * R, dash = circ * pct / 100
+              const color = allChecked ? '#22c55e' : '#14b8a6'
+              return (
+                <svg width={28} height={28} viewBox="0 0 28 28" className="flex-shrink-0">
+                  <circle cx={14} cy={14} r={R} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
+                  <circle cx={14} cy={14} r={R} fill="none" stroke={color} strokeWidth={stroke}
+                    strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+                    transform="rotate(-90 14 14)" />
+                  <text x={14} y={13} textAnchor="middle" fontSize="5" fill={color} fontWeight="bold">{checkedCount}</text>
+                  <text x={14} y={19.5} textAnchor="middle" fontSize="5" fill="#9ca3af">/{players.length}</text>
+                </svg>
+              )
+            })()}
           </div>
           {allChecked && <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex-shrink-0">전원 체크인!</span>}
           {players.filter(p => !p.checkedIn).length > 0 && (
