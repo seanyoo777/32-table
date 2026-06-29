@@ -442,7 +442,7 @@ export default function DashboardPage() {
       {activeTournaments.length > 0 && (() => {
         const rows = activeTournaments.flatMap(t =>
           t.events
-            .map(ev => ({ tName: t.name, evLabel: ev.label, pending: ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye && !m.result).length }))
+            .map(ev => ({ tId: t.id, tName: t.name, evLabel: ev.label, pending: ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye && !m.result).length }))
             .filter(r => r.pending > 0)
         )
         if (rows.length === 0) return null
@@ -451,9 +451,10 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-semibold text-gray-500 flex-shrink-0">종목 잔여</span>
               {rows.map((r, i) => (
-                <span key={i} className="text-[10px] bg-yellow-50 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <button key={i} onClick={() => navigate(`/tournament/${r.tId}`)}
+                  className="text-[10px] bg-yellow-50 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded-full whitespace-nowrap hover:bg-yellow-100 transition-colors">
                   {r.tName.length > 6 ? r.tName.slice(0, 6) + '…' : r.tName} · {r.evLabel} <strong>{r.pending}</strong>
-                </span>
+                </button>
               ))}
             </div>
           </div>
