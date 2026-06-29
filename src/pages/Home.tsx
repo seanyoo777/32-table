@@ -9,6 +9,11 @@ export default function Home() {
   const [now, setNow] = useState(new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t) }, [])
   const [showUnchecked, setShowUnchecked] = useState(false)
+  const [memos, setMemos] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('pingpong-memos') || '[]') } catch { return [] } })
+  const [memoInput, setMemoInput] = useState('')
+  useEffect(() => { localStorage.setItem('pingpong-memos', JSON.stringify(memos)) }, [memos])
+  function addMemo() { if (!memoInput.trim()) return; setMemos(m => [memoInput.trim(), ...m]); setMemoInput('') }
+  function deleteMemo(i: number) { setMemos(m => m.filter((_, idx) => idx !== i)) }
 
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
   const allActiveMatches = activeTournaments.flatMap(t => t.events.flatMap(ev => ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)))
@@ -555,6 +560,39 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          <div className="card flex-shrink-0">
+            <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+              <ClipboardList size={14} className="text-gray-400" /> 메모
+              {memos.length > 0 && <span className="text-[10px] text-gray-400 font-normal ml-auto">{memos.length}개</span>}
+            </h2>
+            <div className="flex gap-1.5 mb-2">
+              <input
+                value={memoInput}
+                onChange={e => setMemoInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') addMemo() }}
+                placeholder="메모 입력 후 Enter"
+                className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:border-blue-300"
+              />
+              <button onClick={addMemo}
+                disabled={!memoInput.trim()}
+                className="text-xs bg-blue-500 text-white px-2.5 py-1.5 rounded-lg font-medium disabled:opacity-40 hover:bg-blue-600">
+                추가
+              </button>
+            </div>
+            {memos.length > 0 ? (
+              <div className="space-y-1 max-h-[120px] overflow-y-auto">
+                {memos.map((m, i) => (
+                  <div key={i} className="flex items-start gap-1.5 text-xs bg-yellow-50 border border-yellow-100 rounded-lg px-2.5 py-1.5">
+                    <span className="flex-1 text-gray-700 break-all">{m}</span>
+                    <button onClick={() => deleteMemo(i)} className="text-gray-300 hover:text-red-400 flex-shrink-0 mt-0.5">✕</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[11px] text-gray-300 text-center py-2">메모가 없습니다</div>
+            )}
+          </div>
 
           {completedTournaments.length > 0 && (
             <div className="card flex-shrink-0">
