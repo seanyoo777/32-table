@@ -373,7 +373,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 
 // ── Manual Entry ─────────────────────────────────────────
 function ManualEntry() {
-  const { players, pairs, tournaments, scoreRecords, addScoreRecord, verifyScoreRecord, recordMatchResult } = useStore()
+  const { players, pairs, tournaments, scoreRecords, addScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
   const [submitted, setSubmitted] = useState(false)
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
   const [recorder, setRecorder] = useState('')
@@ -648,6 +648,11 @@ function ManualEntry() {
                           ? <button onClick={() => verifyScoreRecord(r.id)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded flex-shrink-0">확인</button>
                           : <Check size={12} className="text-green-500 flex-shrink-0" />
                         }
+                        <button
+                          onClick={() => { if (window.confirm('이 기록을 삭제하시겠습니까?')) removeScoreRecord(r.id) }}
+                          className="text-xs text-red-400 hover:text-red-600 px-1.5 py-0.5 rounded flex-shrink-0"
+                          title="기록 삭제"
+                        ><X size={11} /></button>
                       </div>
                     )
                   })}

@@ -84,6 +84,7 @@ interface StoreState {
   // Score Records
   addScoreRecord: (r: ScoreRecord) => void
   verifyScoreRecord: (id: string) => void
+  removeScoreRecord: (id: string) => void
 
   // Live Matches
   setLiveMatch: (m: LiveMatch) => void
@@ -301,6 +302,7 @@ export const useStore = create<StoreState>()(
       verifyScoreRecord: (id) => set((s) => ({
         scoreRecords: s.scoreRecords.map(r => r.id === id ? { ...r, verified: true } : r)
       })),
+      removeScoreRecord: (id) => set((s) => ({ scoreRecords: s.scoreRecords.filter(r => r.id !== id) })),
 
       // Live Matches
       setLiveMatch: (m) => set((s) => ({

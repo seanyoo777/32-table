@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { Trophy, Calendar, ClipboardList, TableProperties, Zap, QrCode, Monitor, Bell, LayoutDashboard, Users, Award, Star } from 'lucide-react'
 
 export default function Home() {
-  const { players, pairs, tournaments, schedules, appSettings, matchCalls } = useStore()
+  const { players, pairs, tournaments, schedules, appSettings, matchCalls, liveMatches } = useStore()
   const navigate = useNavigate()
 
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
+  const allActiveMatches = activeTournaments.flatMap(t => t.events.flatMap(ev => ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)))
+  const pendingTotal = allActiveMatches.filter(m => !m.result).length
+  const doneTotal = allActiveMatches.filter(m => !!m.result).length
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
 
   const divisionCounts = players.reduce((acc, p) => {
@@ -53,6 +56,23 @@ export default function Home() {
           <Stat label="일정표" value={schedules.length} />
         </div>
       </div>
+
+      {/* ── 경기 현황 요약 ── */}
+      {activeTournaments.length > 0 && (
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-100 text-sm">
+          <span className="text-gray-400 text-xs font-medium flex-shrink-0">경기 현황</span>
+          <div className="flex gap-3 flex-1 min-w-0">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" /><span className="text-gray-600">대기 <strong className="text-gray-800">{pendingTotal}</strong></span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" /><span className="text-gray-600">LIVE <strong className="text-red-600">{liveMatches.length}</strong></span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" /><span className="text-gray-600">완료 <strong className="text-gray-800">{doneTotal}</strong></span></span>
+          </div>
+          {matchCalls.filter(c => !c.acknowledged).length > 0 && (
+            <span className="flex-shrink-0 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+              미확인 호출 {matchCalls.filter(c => !c.acknowledged).length}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── 3-column main grid ── */}
       <div className="flex-1 min-h-0 grid gap-4" style={{ gridTemplateColumns: '260px 1fr 260px' }}>

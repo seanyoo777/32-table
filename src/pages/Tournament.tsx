@@ -82,6 +82,7 @@ export default function TournamentPage() {
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tourPage, setTourPage] = useState(0)
+  const [tourFilter, setTourFilter] = useState<'all' | 'ongoing' | 'completed' | 'draft'>('all')
   const TOUR_PAGE_SIZE = 12
   const selected = tournaments.find(t => t.id === selectedId)
 
@@ -129,10 +130,29 @@ export default function TournamentPage() {
         </div>
       ) : (
         (() => {
-          const sorted = [...tournaments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          const filterLabels: Array<{ key: typeof tourFilter; label: string }> = [
+            { key: 'all', label: `전체 (${tournaments.length})` },
+            { key: 'ongoing', label: `진행중 (${tournaments.filter(t => t.status === 'ongoing').length})` },
+            { key: 'completed', label: `완료 (${tournaments.filter(t => t.status === 'completed').length})` },
+            { key: 'draft', label: `준비중 (${tournaments.filter(t => t.status === 'draft').length})` },
+          ]
+          const sorted = [...tournaments]
+            .filter(t => tourFilter === 'all' || t.status === tourFilter)
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
           const totalPages = Math.ceil(sorted.length / TOUR_PAGE_SIZE)
           const paged = sorted.slice(tourPage * TOUR_PAGE_SIZE, (tourPage + 1) * TOUR_PAGE_SIZE)
           return (<>
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          {filterLabels.map(({ key, label }) => (
+            <button key={key} onClick={() => { setTourFilter(key); setTourPage(0) }}
+              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${tourFilter === key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {sorted.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">해당 상태의 대회가 없습니다</p>
+        ) : null}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paged.map(t => {
             const totalMatches = t.events.reduce((s, e) => s + e.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
