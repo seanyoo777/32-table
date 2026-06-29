@@ -169,6 +169,27 @@ export default function Home() {
         </div>
       )}
 
+      {scoreRecords.length > 0 && (() => {
+        const recent = [...scoreRecords].reverse().slice(0, 3)
+        const pNameMap = new Map(players.map(p => [p.id, p.name]))
+        const pairNameMap = new Map(pairs.map(p => [p.id, p.name]))
+        const getName = (id: string) => pNameMap.get(id) ?? pairNameMap.get(id) ?? '?'
+        return (
+          <div className="flex-shrink-0 flex items-center gap-2 px-4 py-1.5 bg-green-50 rounded-xl border border-green-100 text-xs overflow-x-auto">
+            <span className="text-green-600 font-medium flex-shrink-0">최근</span>
+            {recent.map(r => {
+              const winner = r.p1Score > r.p2Score ? getName(r.participant1Id) : getName(r.participant2Id)
+              return (
+                <span key={r.id} className="flex-shrink-0 bg-white rounded-lg px-2 py-0.5 border border-green-100 text-gray-600">
+                  <span className="font-semibold text-green-700">{winner}</span>
+                  <span className="text-gray-400 ml-1">{r.p1Score}-{r.p2Score}</span>
+                </span>
+              )
+            })}
+          </div>
+        )
+      })()}
+
       {/* ── 체크인 현황 미니 바 ── */}
       {players.length > 0 && players.some(p => p.checkedIn) && (() => {
         const checkedCount = players.filter(p => p.checkedIn).length
