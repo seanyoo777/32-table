@@ -802,7 +802,7 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
   onRecord: (evId: string, mId: string, result: MatchResult) => void
   onClearResult: (evId: string, mId: string) => void
 }) {
-  const { syncStatus, syncTournament } = useStore()
+  const { syncStatus, syncTournament, scoreRecords } = useStore()
   const [activeEventId, setActiveEventId] = useState<string>(tournament.events[0]?.id ?? '')
   const [showSummary, setShowSummary] = useState(false)
   const activeEvent = tournament.events.find(e => e.id === activeEventId)
@@ -1165,6 +1165,15 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
                   <span className="font-bold text-sm">{label}</span>
                   <span className="text-blue-200 text-xs ml-2">{done}/{rMatches.length}경기 완료</span>
                   <span className="text-blue-300 text-xs ml-2">({rIdx + 1}/{rounds.length})</span>
+                  {(() => {
+                    const pending = rMatches.length - done
+                    if (pending === 0) return null
+                    const tourRecs = scoreRecords.filter(r => r.tournamentId === tournament.id && r.sets && r.sets.length > 0)
+                    if (tourRecs.length < 3) return null
+                    const avgSets = tourRecs.reduce((s, r) => s + (r.sets?.length ?? 0), 0) / tourRecs.length
+                    const estMin = Math.round(avgSets * 5 * pending)
+                    return <span className="ml-2 text-[11px] bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded font-semibold">약 {estMin}분</span>
+                  })()}
                 </div>
                 <button
                   onClick={() => rIdx < rounds.length - 1 && setSelectedRound(rounds[rIdx + 1])}
