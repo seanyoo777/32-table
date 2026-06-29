@@ -415,6 +415,13 @@ export default function Home() {
                   const evTotal = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
                   return evTotal > 0 && ev.matches.filter(m => m.result).length < evTotal
                 }).length
+                const ddayChip = (() => {
+                  if (!t.date) return null
+                  const diff = Math.round((new Date(t.date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+                  if (diff === 0) return <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">D-0</span>
+                  if (diff > 0) return <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">D-{diff}</span>
+                  return <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">D+{Math.abs(diff)}</span>
+                })()
                 return (
                   <div key={t.id}
                     className="bg-green-50 border border-green-200 rounded-xl p-3 cursor-pointer hover:bg-green-100 transition-colors"
@@ -422,6 +429,7 @@ export default function Home() {
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
                       <div className="font-semibold text-green-800 text-sm truncate flex-1">{t.name}</div>
+                      {ddayChip}
                       {tourCalls > 0 && (
                         <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold animate-pulse flex-shrink-0">
                           <Bell size={9} className="inline mr-0.5" />{tourCalls}
