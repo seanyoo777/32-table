@@ -380,9 +380,12 @@ export default function Home() {
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-green-600 mb-1.5">
-                      {t.events.length}종목 · {doneM}/{totalM}경기 ({pct}%)
-                      {pendingM > 0 && <span className="ml-2 text-yellow-600 font-medium">대기 {pendingM}</span>}
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      <span className="text-xs text-green-600">{t.events.length}종목 · {doneM}/{totalM}경기 ({pct}%)</span>
+                      {pendingM > 0
+                        ? <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">{pendingM}경기 남음</span>
+                        : totalM > 0 && <span className="text-[10px] bg-green-200 text-green-700 px-1.5 py-0.5 rounded-full font-bold">완료</span>
+                      }
                     </div>
                     <div className="h-1 bg-green-200 rounded-full">
                       <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
