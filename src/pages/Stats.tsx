@@ -1628,6 +1628,43 @@ export default function Stats() {
             )
           })()}
 
+          {/* 부문별 체크인 완료율 바 차트 */}
+          {(() => {
+            const DIVS = ['초등','중등','고등','대학','일반','생활체육'] as const
+            const rows = DIVS.map(d => ({
+              label: d,
+              total: players.filter(p => p.division === d).length,
+              done: players.filter(p => p.division === d && p.checkedIn).length
+            })).filter(r => r.total >= 1)
+            if (rows.length < 2) return null
+            const maxTotal = Math.max(...rows.map(r => r.total), 1)
+            return (
+              <section className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">부문별 체크인 완료율</div>
+                <div className="space-y-2">
+                  {rows.map(({ label, total, done }) => {
+                    const pct = Math.round(done / total * 100)
+                    return (
+                      <div key={label} className="flex items-center gap-3">
+                        <div className="w-14 text-xs text-gray-600 text-right flex-shrink-0">{label}</div>
+                        <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden relative">
+                          <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-teal-400' : 'bg-teal-200'}`}
+                            style={{ width: `${Math.round(total / maxTotal * 100)}%` }}>
+                            <div className="h-full bg-teal-500 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                        <div className="w-20 text-xs text-right flex-shrink-0">
+                          <span className={`font-semibold ${pct === 100 ? 'text-green-600' : 'text-teal-700'}`}>{done}/{total}</span>
+                          <span className="text-gray-400 ml-1">{pct}%</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
