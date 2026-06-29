@@ -900,6 +900,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [undoSlots, setUndoSlots] = useState<typeof plan.slots | null>(null)
   const [undoTimer, setUndoTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [courtFilter, setCourtFilter] = useState<number | null>(null)       // 코트 필터
+  const [slotSearch, setSlotSearch] = useState('')
   const [bulkShiftMin, setBulkShiftMin] = useState(10)
   const [popoverSlot, setPopoverSlot] = useState<typeof plan.slots[0] | null>(null)
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 })
@@ -931,7 +932,14 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     : plan.slots
   const allCourtsInView = [...new Set(dayFilteredSlots.map(s => s.courtNo))].sort()
 
-  const filteredSlots = dayFilteredSlots.filter(s => courtFilter === null || s.courtNo === courtFilter)
+  const filteredSlots = dayFilteredSlots.filter(s => {
+    if (courtFilter !== null && s.courtNo !== courtFilter) return false
+    if (slotSearch.trim()) {
+      const q = slotSearch.trim().toLowerCase()
+      return (s.participant1?.toLowerCase().includes(q) || s.participant2?.toLowerCase().includes(q) || s.eventType?.toLowerCase().includes(q) || s.division?.toLowerCase().includes(q))
+    }
+    return true
+  })
 
   // 참가자별 오늘(현재 뷰) 경기 수 집계
   const participantMatchCount = new Map<string, number>()
@@ -1167,6 +1175,11 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               {allCourtsInView.map(c => <option key={c} value={c}>코트 {c}</option>)}
             </select>
           )}
+          <div className="relative flex-shrink-0">
+            <input type="text" value={slotSearch} onChange={e => setSlotSearch(e.target.value)}
+              placeholder="선수·종목 검색" className="text-xs border border-gray-200 rounded-lg px-2 py-1 pr-5 bg-white w-32" />
+            {slotSearch && <button onClick={() => setSlotSearch('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-[10px]">✕</button>}
+          </div>
           {undoSlots && (
             <button onClick={handleUndo}
               className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100 animate-pulse">
