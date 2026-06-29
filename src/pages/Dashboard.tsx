@@ -510,6 +510,11 @@ export default function DashboardPage() {
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
                     </div>
                     <div className={`text-[10px] truncate ${c.status === 'free' ? 'text-gray-400' : 'text-gray-600 font-medium'}`}>{c.label}</div>
+                    {c.status === 'live' && (() => {
+                      const lm = liveMatches.find(l => l.tableNo === c.no)
+                      if (!lm || lm.completedSets.length === 0) return null
+                      return <div className="text-[9px] text-red-400 font-medium">{lm.completedSets.length}세트 완료</div>
+                    })()}
                   </div>
                   {courtPopover === c.no && (() => {
                     const call = pendingCalls.find(pc => pc.tableNo === c.no)
