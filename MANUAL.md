@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.90 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.93 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,44 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-100. v4.93 — 대시보드 코트 현황 전체 보기 토글
+
+자동 루프 세션. Dashboard.tsx 코트 현황판에 전체 보기 토글 추가.
+
+### 변경 (Dashboard.tsx)
+- `courtExpanded: boolean` 상태 추가.
+- 코트 현황 헤더에 "전체 ▼" / "접기 ▲" 버튼.
+- 접힌 상태: 기존 가로 스크롤 + 빈 코트 칩.
+- 펼친 상태: `flex-wrap gap-1` 그리드, 빈 코트 칩 숨김.
+- 부모 container도 확장 시 `flex-col`으로 전환.
+
+---
+
+## 12-99. v4.92 — 점수 입력 방금 입력한 경기 미리보기
+
+자동 루프 세션. Score.tsx 점수 입력 완료 시 결과 미리보기 카드 표시.
+
+### 변경 (Score.tsx)
+- `lastResult: { winner, loser, score } | null` 상태 추가.
+- `handleSubmit()` 내 `setLastResult()` 호출, 3초 후 `null`로 초기화.
+- 최근 입력 기록 카드 위에 조건부 미리보기 카드 표시.
+- 녹색 배경 카드, 승자 🏆 이름, `세트 N-M`, "3초 후 닫힘" 텍스트.
+
+---
+
+## 12-98. v4.91 — 홈 빠른 메모 위젯
+
+자동 루프 세션. Home.tsx Col 3 하단에 메모 위젯 카드 추가.
+
+### 변경 (Home.tsx)
+- `memos: string[]` 상태 — `localStorage['pingpong-memos']` 초기화, 변경 시 동기화.
+- `memoInput` 상태 + `addMemo()` / `deleteMemo(i)` 함수.
+- 입력창 + "추가" 버튼, Enter 키 지원.
+- 메모 목록: 노란 배경 카드, 항목별 ✕ 삭제, 최대 120px 스크롤.
+- 비어있을 때 "메모가 없습니다" 회색 텍스트.
 
 ---
 
