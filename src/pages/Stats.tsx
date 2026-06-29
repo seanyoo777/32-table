@@ -770,15 +770,25 @@ export default function Stats() {
                   <Trophy size={14} className="text-amber-500" /> 대회별 완료 경기
                 </h2>
                 <div className="space-y-1.5">
-                  {items.map((item, i) => (
+                  {items.map((item, i) => {
+                    const pct = item.total > 0 ? item.done / item.total : 0
+                    const R = 8, circ = 2 * Math.PI * R, dash = pct * circ
+                    const color = pct === 1 ? '#22c55e' : pct >= 0.5 ? '#f59e0b' : '#d1d5db'
+                    return (
                     <div key={i} className="flex items-center gap-2">
                       <span className="text-[11px] text-gray-600 w-28 flex-shrink-0 truncate">{item.name}</span>
                       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-amber-400 rounded-full" style={{ width: `${Math.round(item.done / maxDone * 100)}%` }} />
                       </div>
                       <span className="text-[11px] text-gray-500 w-12 text-right flex-shrink-0">{item.done}/{item.total}</span>
+                      <svg width={20} height={20} viewBox="0 0 20 20" className="flex-shrink-0">
+                        <circle cx={10} cy={10} r={R} fill="none" stroke="#e5e7eb" strokeWidth={3} />
+                        <circle cx={10} cy={10} r={R} fill="none" stroke={color} strokeWidth={3}
+                          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" transform="rotate(-90 10 10)" />
+                      </svg>
                     </div>
-                  ))}
+                  )})}
+
                 </div>
               </section>
             )
