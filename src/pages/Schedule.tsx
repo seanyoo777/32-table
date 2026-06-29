@@ -893,6 +893,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [assignTeamCourts, setAssignTeamCourts] = useState(0)  // 단체전 전용 코트 수(0=분리 안 함)
   const [showConflicts, setShowConflicts] = useState(false)
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null)  // 인라인 편집 중인 슬롯
+  const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null)  // 드래그 중인 슬롯
+  const [dragOverCourt, setDragOverCourt] = useState<number | null>(null)   // 드롭 대상 코트
 
   // 이 일정의 최대 코트 수(인라인 코트 이동 select 범위)
   const planMaxCourts = Math.max(1,
@@ -1242,14 +1244,24 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               {filteredCourts.map(c => {
                 const courtSlots = filteredSlots.filter(s => s.courtNo === c).sort((a, b) => a.startTime.localeCompare(b.startTime))
                 return (
-                  <div key={c} className="card">
+                  <div key={c}
+                    className={`card transition-colors ${dragOverCourt === c && draggingSlotId ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+                    onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverCourt(c) }}
+                    onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCourt(null) }}
+                    onDrop={e => { e.preventDefault(); const sid = draggingSlotId || e.dataTransfer.getData('slotId'); if (sid) { handleMoveSlot(sid, { courtNo: c }); setDraggingSlotId(null); setDragOverCourt(null) } }}
+                  >
                     <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm">
                       <Building2 size={14} /> 코트 {c}
                       <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
                     </h3>
                     <div className="space-y-1.5">
                       {courtSlots.map(slot => (
-                        <div key={slot.id} className={`p-1.5 rounded border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''}`}>
+                        <div key={slot.id}
+                          className={`p-1.5 rounded border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''}`}
+                          draggable={!slot.type || slot.type === 'match'}
+                          onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('slotId', slot.id); setDraggingSlotId(slot.id); setEditingSlotId(null) }}
+                          onDragEnd={() => { setDraggingSlotId(null); setDragOverCourt(null) }}
+                        >
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
