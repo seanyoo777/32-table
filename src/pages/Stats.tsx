@@ -440,6 +440,29 @@ export default function Stats() {
                   </button>
                 )}
               </div>
+              {/* 도넛 차트 */}
+              {(() => {
+                const pct = checkInStats.total > 0 ? checkInStats.checked / checkInStats.total : 0
+                const r = 36, cx = 48, cy = 48, circ = 2 * Math.PI * r
+                const filled = circ * pct
+                return (
+                  <div className="flex items-center gap-5 mb-4">
+                    <svg width={96} height={96} viewBox="0 0 96 96">
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e5e7eb" strokeWidth={10} />
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#14b8a6" strokeWidth={10}
+                        strokeDasharray={`${filled} ${circ}`} strokeDashoffset={circ * 0.25}
+                        strokeLinecap="round" />
+                      <text x={cx} y={cy - 5} textAnchor="middle" fontSize={14} fontWeight="bold" fill="#14b8a6">{Math.round(pct * 100)}%</text>
+                      <text x={cx} y={cy + 11} textAnchor="middle" fontSize={8} fill="#9ca3af">체크인율</text>
+                    </svg>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-teal-500 flex-shrink-0" /><span className="text-gray-600">체크인 <strong>{checkInStats.checked}명</strong></span></div>
+                      <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-gray-200 flex-shrink-0" /><span className="text-gray-500">미체크인 <strong>{checkInStats.unchecked.length}명</strong></span></div>
+                      <div className="text-gray-400 pt-1">전체 {checkInStats.total}명</div>
+                    </div>
+                  </div>
+                )
+              })()}
               {/* 전체 진행률 */}
               <div className="mb-3">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
