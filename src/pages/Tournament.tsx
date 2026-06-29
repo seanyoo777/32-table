@@ -1038,6 +1038,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
   const [resultModal, setResultModal] = useState<BracketMatch | null>(null)
   const [matchSearch, setMatchSearch] = useState('')
   const [completionToast, setCompletionToast] = useState<string | null>(null)
+  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set())
 
   const realMatches = event.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)
   // 미완료 경기 목록 (라운드→포지션 순) — 모달 next/prev 이동용
@@ -1179,10 +1180,15 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
                     const isGR = isGrouped && event.groups.length > 0 && r <= (event.groups[0]?.participantIds.length - 1)
                     const isQR = isSeededQual && event.matches.find(m => m.round === r && m.participant1Id && m.participant2Id)?.phase === 'qual'
                     const lbl = isGR || isQR ? `예선${r}R` : getRoundName(r - (isGrouped ? event.groups[0]?.participantIds.length - 1 : 0), totalRounds)
+                    const isCollapsed = expandedRounds.has(r)
                     return (
-                      <button key={r} onClick={() => setSelectedRound(r)}
-                        className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : d === rm.length && rm.length > 0 ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>
-                        {lbl} {d}/{rm.length}
+                      <button key={r}
+                        onClick={() => {
+                          setSelectedRound(r)
+                          if (selectedRound === r) setExpandedRounds(prev => { const s = new Set(prev); isCollapsed ? s.delete(r) : s.add(r); return s })
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1 ${selectedRound === r ? 'bg-blue-600 text-white border-blue-600' : d === rm.length && rm.length > 0 ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>
+                        {lbl} {d}/{rm.length}{selectedRound === r ? <span className="opacity-70">{isCollapsed ? '▶' : '▼'}</span> : null}
                       </button>
                     )
                   })}
@@ -1212,7 +1218,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
                   <button onClick={() => setMatchSearch('')} className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">✕</button>
                 )}
               </div>
-              <MatchList
+              {!expandedRounds.has(selectedRound) && <MatchList
                 matches={displayMatches}
                 pMap={pMap}
                 onClickMatch={(m) => setResultModal(m)}
@@ -1221,7 +1227,7 @@ function EventBracket({ event, pMap, onRecord, onClearResult, tournamentId }: {
                 tournamentId={tournamentId}
                 eventId={event.id}
                 eventLabel={event.label}
-              />
+              />}
             </>
           ) : (
             <BracketTree
