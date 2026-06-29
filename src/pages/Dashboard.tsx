@@ -1135,7 +1135,7 @@ export default function DashboardPage() {
                     <div className="text-[9px] text-gray-400 font-medium pt-1 pb-0.5">{dateLabel}</div>
                   )}
                   <div id={`call-${c.id}`}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-all ${c.acknowledged ? 'bg-gray-50 opacity-60' : isOverdue ? 'bg-red-50 border border-red-400 animate-pulse' : highlightCallId === c.id ? 'bg-yellow-50 border border-yellow-400 ring-2 ring-yellow-300' : 'bg-orange-50 border border-orange-200'}`}>
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-all ${c.acknowledged ? 'bg-gray-50 opacity-60' : isOverdue ? 'bg-red-50 border border-red-400 animate-pulse' : highlightCallId === c.id ? 'bg-yellow-50 border border-yellow-400 ring-2 ring-yellow-300' : 'bg-orange-50 border border-orange-200'} ${!c.acknowledged ? (c.eventLabel?.includes('혼합') ? 'border-l-[3px] border-l-pink-400' : c.eventLabel?.includes('복식') ? 'border-l-[3px] border-l-indigo-400' : 'border-l-[3px] border-l-blue-400') : ''}`}>
                     <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : isOverdue ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>
                       {c.tableNo}번
                     </span>

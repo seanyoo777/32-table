@@ -925,9 +925,12 @@ players.createdAt 기준 오늘 등록. 0명이면 숨김. green 칩.
 Tournament.tsx 라운드 버튼 중 participant 모두 배정됐지만 result 없는 경기가 있는 라운드에
 ring-1 ring-amber-300 animate-pulse 추가. 라운드 시작이 명확한 경우만.
 
-### 2-313. 경기일정 코트뷰 빈 슬롯 수 gray 칩 (v5.198)
-Schedule.tsx 코트뷰 각 코트 섹션 헤더에 미배정 슬롯 수 gray 칩 추가.
-participant1/participant2 없는 슬롯 카운트. 1개+ 조건.
+### 2-313. ⏭ 경기일정 코트뷰 미배정 슬롯 수 칩 (이미 구현됨 Schedule.tsx:1590)
+orange "미배정 N" 칩 이미 코트 섹션 헤더에 존재. 스킵.
+
+### 2-314. 대시보드 호출 경기 종목 색상 배지 강화 (v5.198)
+Dashboard.tsx matchCall 카드의 eventLabel에 종목 타입 파생 색상 테두리 추가.
+"단식"=blue, "복식"=indigo, "혼합"=pink border-l-2. 현재 기본 회색 대비 개선.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
