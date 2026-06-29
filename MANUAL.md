@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.12 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.13 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,17 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-20. v4.13 — 체크인 선수 검색 하이라이트
+
+자동 루프 세션. 체크인 탭 스테이션 검색 결과에서 이름·학교 매칭 글자 강조.
+
+### 체크인 검색 하이라이트 (CheckIn.tsx)
+- `hl(text, query)` 헬퍼: 검색어 첫 일치 위치를 `<mark>` 태그로 감싸 노란 배경 표시.
+- 스테이션 탭 결과 목록의 선수 이름·학교명에 적용.
+- 검증: "김" 검색 시 20개 `<mark>` 요소 확인 (1100명 데이터 기준).
 
 ---
 
