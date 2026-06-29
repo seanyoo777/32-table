@@ -533,6 +533,19 @@ export default function Home() {
                           </div>
                         )}
                       </div>
+                      {totalM > 0 && (() => {
+                        const R = 9, CX = 12, circumf = +(2 * Math.PI * R).toFixed(2)
+                        const arc = +(circumf * pct / 100).toFixed(2)
+                        const strokeColor = pct === 100 ? '#16a34a' : pct >= 50 ? '#22c55e' : '#86efac'
+                        return (
+                          <svg width="24" height="24" viewBox="0 0 24 24" className="flex-shrink-0" title={`${pct}%`}>
+                            <circle cx={CX} cy={CX} r={R} fill="none" stroke="#bbf7d0" strokeWidth="3" />
+                            <circle cx={CX} cy={CX} r={R} fill="none" stroke={strokeColor} strokeWidth="3"
+                              strokeDasharray={`${arc} ${circumf}`} strokeLinecap="round"
+                              transform={`rotate(-90 ${CX} ${CX})`} />
+                          </svg>
+                        )
+                      })()}
                       {ddayChip}
                       {tourCalls > 0 && (
                         <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold animate-pulse flex-shrink-0">
