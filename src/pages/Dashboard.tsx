@@ -372,6 +372,22 @@ export default function DashboardPage() {
                 </div>
               )
             })()}
+            {todayRecs.length >= 3 && (() => {
+              const morning = todayRecs.filter(r => new Date(r.recordedAt).getHours() < 12).length
+              const afternoon = todayRecs.filter(r => { const h = new Date(r.recordedAt).getHours(); return h >= 12 && h < 18 }).length
+              const evening = todayRecs.filter(r => new Date(r.recordedAt).getHours() >= 18).length
+              const slots = [{ label: '오전', count: morning, cls: 'bg-teal-100 text-teal-700 border-teal-300' }, { label: '오후', count: afternoon, cls: 'bg-amber-100 text-amber-700 border-amber-300' }, { label: '저녁', count: evening, cls: 'bg-indigo-100 text-indigo-700 border-indigo-300' }]
+              const peak = slots.reduce((best, s) => s.count > best.count ? s : best, slots[0])
+              if (peak.count === 0) return null
+              return (
+                <div className="flex-shrink-0 px-4 py-1 bg-white border-b border-gray-50 flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-400 flex-shrink-0">활성 시간대</span>
+                  <span className={`text-[10px] border px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${peak.cls}`}>
+                    {peak.label} {peak.count}건
+                  </span>
+                </div>
+              )
+            })()}
             {todayRecs.length >= 2 && (() => {
               const freq = new Map<string, number>()
               todayRecs.forEach(r => {

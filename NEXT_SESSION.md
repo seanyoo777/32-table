@@ -1314,7 +1314,7 @@ Stats.tsx scoreRecords 전체에서 가장 큰 |p1Score - p2Score|를
 Home.tsx 활성 대회 카드에 schedules에서 오늘 가장 빠른 미완료
 슬롯까지 남은 분을 파란 chip으로 표시. 0~60분 이내 조건.
 
-### 2-415. 랭킹 오늘 최다 점수차 승리 선수 칩 (v5.299)
+### 2-415. ✅ 랭킹 오늘 최다 점수차 승리 선수 칩 (완료 v5.299)
 Rankings.tsx 싱글 탭에서 오늘 가장 큰 margin으로 이긴 선수 이름과
 점수를 amber chip으로 표시. 오늘 3건+ 조건.
 
