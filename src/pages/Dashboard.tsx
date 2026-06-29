@@ -1323,6 +1323,18 @@ export default function DashboardPage() {
               })()}
             </div>
           </div>
+          {(() => {
+            const unacked = pendingCalls.filter(c => c.participant1Name || c.participant2Name)
+            if (unacked.length < 2) return null
+            const first = unacked[0]
+            const n1 = first.participant1Name ?? '?'
+            const n2 = first.participant2Name ?? '?'
+            return (
+              <div className="text-[10px] text-gray-400 px-1 mt-0.5 truncate">
+                {n1} vs {n2}{unacked.length > 1 ? ` 외 ${unacked.length - 1}건` : ''}
+              </div>
+            )
+          })()}
 
           {/* 오늘 호출 완료 히스토리 */}
           {(() => {
