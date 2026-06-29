@@ -79,10 +79,15 @@ export default function Home() {
         const ongoingN = tournaments.filter(t => t.status === 'ongoing').length
         const upcomingN = tournaments.filter(t => t.status === 'draft' || t.status === 'upcoming').length
         const completedN = tournaments.filter(t => t.status === 'completed').length
+        const upcomingTours = tournaments.filter(t => (t.status === 'draft' || t.status === 'upcoming') && t.date).sort((a, b) => a.date.localeCompare(b.date))
+        const nextTour = upcomingTours[0]
+        const dDiff = nextTour ? Math.round((new Date(nextTour.date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000) : null
+        const dLabel = dDiff === null ? null : dDiff === 0 ? 'D-Day' : dDiff > 0 ? `D-${dDiff}` : null
         return (
           <div className="flex-shrink-0 flex items-center gap-1.5 flex-wrap">
             {ongoingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-green-200 transition-colors">진행중 {ongoingN}</button>}
             {upcomingN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium hover:bg-blue-200 transition-colors">예정 {upcomingN}</button>}
+            {dLabel && <span className="text-[11px] bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full font-bold">{dLabel}</span>}
             {completedN > 0 && <button onClick={() => navigate('/tournament')} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium hover:bg-gray-200 transition-colors">완료 {completedN}</button>}
           </div>
         )
