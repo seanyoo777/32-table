@@ -546,7 +546,19 @@ export default function Rankings() {
                   </tr>
                 )})}
                 {pagedPlayers.length === 0 && (
-                  <tr><td colSpan={9} className="py-12 text-center text-gray-400">선수가 없습니다</td></tr>
+                  <tr>
+                    <td colSpan={9} className="py-10 text-center">
+                      {search || filterCheckIn !== 'all' ? (
+                        <div className="space-y-2">
+                          <div className="text-gray-400 text-sm">검색 결과가 없습니다</div>
+                          <button onClick={() => { setSearch(''); setFilterCheckIn('all') }}
+                            className="text-xs text-blue-500 hover:text-blue-700 underline">필터 초기화</button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">선수가 없습니다</span>
+                      )}
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
