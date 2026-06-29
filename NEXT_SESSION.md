@@ -449,11 +449,10 @@ Schedule.tsx 헤더 slotSearch input. participant1/2+eventType+division 검색.
 ### 2-166. ✅ 대회 경기 목록 선수명 클릭 → 랭킹 이동 (완료 v5.56)
 MatchList useNavigate 추가. P1/P2 이름 클릭 → /rankings?search=NAME.
 
-### 2-167. 홈 오늘 일정 슬롯 완료율 미니 바 (v5.57)
-Home.tsx 오늘 일정 요약 섹션에 완료/전체 슬롯 수 + 인라인 진행 바 추가.
-completedMatchSet 기반으로 오늘 슬롯 중 완료된 비율 표시.
+### 2-167. ⏭ 홈 오늘 일정 슬롯 완료율 미니 바 (이미 구현됨 Home.tsx:403-438)
+todayDone/todaySlotCount + 퍼센트 progress bar 이미 존재.
 
-### 2-168. 랭킹 복식 페어 포인트 트렌드 화살표 (v5.58)
+### 2-168. ⏭ 랭킹 복식 페어 포인트 트렌드 화살표 (이미 구현됨 Rankings.tsx:223)
 Rankings.tsx 복식 페어 목록 행에도 동일한 ↑/↓/— 트렌드 화살표 추가.
 pairTrend useMemo, scoreRecords 기반 최근 3경기.
 
@@ -947,9 +946,21 @@ Dashboard.tsx 대기경기 상단에 현재 filteredPendingMatches 평균 선수
 Home.tsx Col1 체크인 바 아래에 가장 최근 체크인 선수 이름 + "N분 전" 표시.
 players.createdAt 역순 1명. 클릭 → /checkin. 1명+ 조건.
 
-### 2-320. 랭킹 탭 복식 페어 성별 아이콘 뱃지 (v5.204)
+### 2-320. ✅ 랭킹 탭 복식 페어 성별 아이콘 뱃지 (완료 v5.204)
 Rankings.tsx 복식 페어 목록 행에 pairType(남복/여복/혼복) 아이콘 + 색상 뱃지 표시.
 남복=파랑♂, 여복=분홍♀, 혼복=보라⚤. 이름 셀 옆에 표시.
+
+### 2-321. 랭킹 단식 탭 검색 결과 범위 칩 (v5.205)
+Rankings.tsx singles 탭 상단 통계 카드 행에 검색/필터 활성 시 "N명 검색됨 (전체 M명 중)" gray 칩 표시.
+search || filterDivision || filterCheckIn 활성 조건. filteredPlayers.length !== players.length 시 표시.
+
+### 2-322. 홈 화면 오늘 남은 경기 수 칩 (v5.206)
+Home.tsx 오늘 일정 요약 섹션 코트 칩 행에 현재 시각 이후 남은 slotCount blue 칩 추가.
+todayAllSlots에서 startTime >= nowHHmm 필터. "앞으로 N경기" 형태. 1경기+ 조건.
+
+### 2-323. 대시보드 코트 활성/빈 현황 칩 요약 (v5.207)
+Dashboard.tsx 코트 현황판 타이틀 옆에 "N코트 활성 · M코트 빈" 컴팩트 칩 추가.
+liveCourtSet/emptyCourtNos 기반. 코트 2개+ 조건.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

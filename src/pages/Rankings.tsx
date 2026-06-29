@@ -700,6 +700,15 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 검색 결과 범위 칩 */}
+      {tab === 'singles' && filteredPlayers.length !== players.length && (search || filterCheckIn !== 'all' || selectedDiv !== null || hideZeroPoints) && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+            {filteredPlayers.length}명 검색됨 (전체 {players.length}명 중)
+          </span>
+        </div>
+      )}
+
       {/* 포인트 분포 히스토그램 */}
       {tab === 'singles' && players.length >= 2 && (() => {
         const pts = players.map(p => p.points).filter(v => v > 0)
