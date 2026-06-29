@@ -153,6 +153,26 @@ export default function Stats() {
     return c
   }, [visibleTours])
 
+  // scoreRecords 기반 선수별 승률 TOP 5
+  const winRateTop5 = useMemo(() => {
+    const map: Record<string, { wins: number; losses: number }> = {}
+    for (const r of scoreRecords) {
+      if (!map[r.participant1Id]) map[r.participant1Id] = { wins: 0, losses: 0 }
+      if (!map[r.participant2Id]) map[r.participant2Id] = { wins: 0, losses: 0 }
+      if (r.p1Score > r.p2Score) { map[r.participant1Id].wins++; map[r.participant2Id].losses++ }
+      else if (r.p2Score > r.p1Score) { map[r.participant2Id].wins++; map[r.participant1Id].losses++ }
+    }
+    return Object.entries(map)
+      .filter(([, s]) => s.wins + s.losses >= 1)
+      .map(([id, s]) => ({
+        id, name: players.find(p => p.id === id)?.name ?? id,
+        wins: s.wins, losses: s.losses,
+        rate: Math.round(s.wins / (s.wins + s.losses) * 100),
+      }))
+      .sort((a, b) => b.rate - a.rate || b.wins - a.wins)
+      .slice(0, 5)
+  }, [scoreRecords, players])
+
   // 종목별 평균 세트 수
   const eventSetStats = useMemo(() => {
     const rows: Array<{ label: string; avg: number; count: number }> = []
@@ -446,6 +466,28 @@ export default function Stats() {
                     <div className="w-20 text-xs font-semibold text-indigo-700 flex-shrink-0">
                       평균 {avg}세트 <span className="text-gray-400 font-normal">({count}경기)</span>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 점수 기록 기반 승률 TOP 5 */}
+          {winRateTop5.length > 0 && (
+            <section className="card">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                <TrendingUp size={14} className="text-rose-500" /> 승률 TOP {winRateTop5.length} (점수 기록 기준)
+              </h2>
+              <div className="space-y-2">
+                {winRateTop5.map((p, i) => (
+                  <div key={p.id} className="flex items-center gap-3">
+                    <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-300 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span>
+                    <span className="flex-1 text-sm font-medium truncate">{p.name}</span>
+                    <span className="text-xs text-gray-400">{p.wins}승 {p.losses}패</span>
+                    <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-rose-400 rounded-full" style={{ width: `${p.rate}%` }} />
+                    </div>
+                    <span className="text-sm font-bold text-rose-600 w-10 text-right">{p.rate}%</span>
                   </div>
                 ))}
               </div>
