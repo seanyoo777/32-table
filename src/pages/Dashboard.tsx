@@ -265,6 +265,21 @@ export default function DashboardPage() {
         const hourCounts = Array.from({ length: 24 }, (_, h) => todayRecs.filter(r => new Date(r.recordedAt).getHours() === h).length)
         const maxHour = Math.max(...hourCounts, 1)
         const currentHour = now.getHours()
+        const todayStreakStr = (() => {
+          if (todayRecs.length < 2) return undefined
+          const winMap = new Map<string, number>()
+          const sorted = [...todayRecs].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
+          sorted.forEach(r => {
+            const winner = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+            const loser = r.p1Score > r.p2Score ? r.participant2Id : r.participant1Id
+            winMap.set(winner, (winMap.get(winner) ?? 0) + 1)
+            winMap.set(loser, 0)
+          })
+          let bestId = '', bestN = 0
+          winMap.forEach((n, id) => { if (n > bestN) { bestN = n; bestId = id } })
+          if (bestN < 2) return undefined
+          return `${pMap[bestId]?.name ?? '?'} ${bestN}연승`
+        })()
         return (
           <>
             <div className="flex-shrink-0 grid grid-cols-6 gap-3 px-4 py-3 bg-white border-b border-gray-100">
@@ -272,7 +287,7 @@ export default function DashboardPage() {
               <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" />
               <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" sub={todayRecords > 0 ? `오늘 ${todayRecords}건` : undefined} />
               <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
-              <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" />
+              <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" sub={todayStreakStr} />
               {(() => {
                 const R = 11, circ = 2 * Math.PI * R
                 const verifiedN = todayRecs.filter(r => r.verified).length
