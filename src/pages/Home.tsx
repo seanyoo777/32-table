@@ -26,7 +26,17 @@ export default function Home() {
 
   const topPlayers = [...players].sort((a, b) => b.points - a.points).slice(0, 8)
 
-  const pMap = Object.fromEntries(players.map(p => [p.id, p.name]))
+  const pMap = Object.fromEntries([
+    ...players.map(p => [p.id, p.name]),
+    ...pairs.map(p => [p.id, p.name]),
+  ])
+  const nextPending = activeTournaments
+    .flatMap(t => t.events.flatMap(ev =>
+      ev.matches
+        .filter(m => m.participant1Id && m.participant2Id && !m.result && !m.isBye)
+        .map(m => ({ ...m, tournamentName: t.name, eventLabel: ev.label }))
+    ))
+    .slice(0, 3)
   const completedTournaments = [...tournaments]
     .filter(t => t.status === 'completed')
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -343,6 +353,32 @@ export default function Home() {
               전체 랭킹 보기 →
             </button>
           </div>
+
+          {nextPending.length > 0 && (
+            <div className="card flex-shrink-0">
+              <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+                <Bell size={13} className="text-orange-400" /> 다음 호출 예정
+                <span className="text-xs text-gray-400 font-normal ml-auto">대기 {pendingTotal}경기</span>
+              </h2>
+              <div className="space-y-1.5">
+                {nextPending.map(m => (
+                  <div key={`${m.tournamentId}-${m.eventId}-${m.id}`}
+                    className="flex items-center gap-2 text-xs bg-orange-50 border border-orange-100 rounded-lg px-2.5 py-1.5">
+                    <span className="text-orange-400 font-medium w-12 truncate flex-shrink-0">{m.eventLabel}</span>
+                    <span className="flex-1 font-medium truncate">
+                      {pMap[m.participant1Id!] ?? '?'} vs {pMap[m.participant2Id!] ?? '?'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="mt-2 w-full text-xs text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-lg py-1 font-medium"
+              >
+                대시보드에서 호출 →
+              </button>
+            </div>
+          )}
 
           {completedTournaments.length > 0 && (
             <div className="card flex-shrink-0">
