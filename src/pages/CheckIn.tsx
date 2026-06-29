@@ -47,6 +47,7 @@ export default function CheckInPage() {
   const [walkinDiv, setWalkinDiv] = useState<Division>('일반')
   const [walkinGender, setWalkinGender] = useState<'남' | '여'>('남')
   const [divFilter, setDivFilter] = useState<string>('')
+  const [showUnchecked, setShowUnchecked] = useState(false)
   const [playerPopover, setPlayerPopover] = useState<string | null>(null)
 
   const checkedIn = players.filter(p => p.checkedIn)
@@ -570,6 +571,13 @@ export default function CheckInPage() {
               ))}
             </select>
             {notCheckedIn.length > 0 && (
+              <button
+                onClick={() => setShowUnchecked(v => !v)}
+                className={`btn-secondary text-sm flex items-center gap-1.5 ${showUnchecked ? 'bg-orange-100 text-orange-700 border-orange-300' : 'text-gray-600'}`}>
+                미체크인만 {notCheckedIn.length}명
+              </button>
+            )}
+            {notCheckedIn.length > 0 && (
               <button onClick={exportNotCheckedInCSV} className="btn-secondary text-sm flex items-center gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50">
                 <Download size={14} /> 미체크인 CSV
               </button>
@@ -640,7 +648,7 @@ export default function CheckInPage() {
 
           {/* By Division */}
           {(['초등','중등','고등','대학','일반','생활체육'] as const).filter(d => !divFilter || d === divFilter).map(div => {
-            const divPlayers = players.filter(p => p.division === div)
+            const divPlayers = players.filter(p => p.division === div && (!showUnchecked || !p.checkedIn))
             const divIn = divPlayers.filter(p => p.checkedIn)
             return (
               <div key={div} className="card py-3">
