@@ -499,6 +499,45 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 최다 경기 선수 TOP3 */}
+          {(() => {
+            const todayStr = new Date().toISOString().slice(0, 10)
+            const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayStr))
+            if (todayRecs.length === 0) return null
+            const countMap = new Map<string, { wins: number; losses: number }>()
+            todayRecs.forEach(r => {
+              const isWin1 = r.p1Score > r.p2Score
+              if (r.participant1Id) {
+                const e = countMap.get(r.participant1Id) ?? { wins: 0, losses: 0 }
+                isWin1 ? e.wins++ : e.losses++; countMap.set(r.participant1Id, e)
+              }
+              if (r.participant2Id) {
+                const e = countMap.get(r.participant2Id) ?? { wins: 0, losses: 0 }
+                isWin1 ? e.losses++ : e.wins++; countMap.set(r.participant2Id, e)
+              }
+            })
+            const nameMap: Record<string, string> = {}
+            players.forEach(p => { nameMap[p.id] = p.name })
+            const top3 = [...countMap.entries()]
+              .sort((a, b) => (b[1].wins + b[1].losses) - (a[1].wins + a[1].losses))
+              .slice(0, 3)
+            if (top3.length === 0) return null
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-2">
+                  <Activity size={14} className="text-orange-500" /> 오늘 최다 경기 선수 TOP3
+                </h2>
+                <div className="flex gap-2 flex-wrap">
+                  {top3.map(([id, { wins, losses }], i) => (
+                    <span key={id} className={`text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 ${i === 0 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {i === 0 && '🔥 '}{nameMap[id] ?? id} <span className="text-[10px] opacity-70">{wins}승{losses}패</span>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 체크인 현황 분석 */}
           {checkInStats.total > 0 && (
             <section className="card">
