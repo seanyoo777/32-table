@@ -183,6 +183,19 @@ export default function Stats() {
       .slice(0, 5)
   }, [scoreRecords, players])
 
+  // 종목별 총 경기 수
+  const eventMatchCounts = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const t of visibleTours) {
+      for (const ev of t.events) {
+        const n = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+        if (n === 0) continue
+        map.set(ev.label, (map.get(ev.label) ?? 0) + n)
+      }
+    }
+    return [...map.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count)
+  }, [visibleTours])
+
   // 종목별 평균 세트 수
   const eventSetStats = useMemo(() => {
     const rows: Array<{ label: string; avg: number; count: number }> = []
@@ -808,6 +821,30 @@ export default function Stats() {
               </section>
             )
           })()}
+
+          {/* 종목별 경기 수 */}
+          {eventMatchCounts.length >= 2 && (
+            <section className="card">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                <Grid3x3 size={14} className="text-teal-500" /> 종목별 경기 수
+              </h2>
+              <div className="space-y-2">
+                {eventMatchCounts.map(({ label, count }) => {
+                  const maxCount = eventMatchCounts[0].count
+                  const pct = Math.round(count / maxCount * 100)
+                  return (
+                    <div key={label} className="flex items-center gap-3">
+                      <div className="w-28 text-xs text-gray-600 text-right flex-shrink-0 truncate">{label}</div>
+                      <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-teal-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="w-12 text-xs font-semibold text-teal-700 flex-shrink-0 text-right">{count}경기</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
 
           {/* 종목별 평균 세트 수 */}
           {eventSetStats.length > 0 && (
