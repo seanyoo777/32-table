@@ -248,6 +248,28 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* 활성 대회별 종목 미완료 경기 현황 */}
+      {activeTournaments.length > 0 && (() => {
+        const rows = activeTournaments.flatMap(t =>
+          t.events
+            .map(ev => ({ tName: t.name, evLabel: ev.label, pending: ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye && !m.result).length }))
+            .filter(r => r.pending > 0)
+        )
+        if (rows.length === 0) return null
+        return (
+          <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-100">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-semibold text-gray-500 flex-shrink-0">종목 잔여</span>
+              {rows.map((r, i) => (
+                <span key={i} className="text-[10px] bg-yellow-50 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  {r.tName.length > 6 ? r.tName.slice(0, 6) + '…' : r.tName} · {r.evLabel} <strong>{r.pending}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* 종목 완료 알림 배너 */}
       {completedEvents.length > 0 && (
         <div className="flex-shrink-0 px-4 py-2 bg-green-50 border-b border-green-100">
