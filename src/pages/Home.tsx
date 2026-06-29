@@ -270,6 +270,24 @@ export default function Home() {
         )
       })()}
 
+      {/* ── 최근 체크인 선수 칩 ── */}
+      {players.some(p => p.checkedIn) && (() => {
+        const recent3 = [...players.filter(p => p.checkedIn)]
+          .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+          .slice(0, 3)
+        if (recent3.length === 0) return null
+        return (
+          <div className="flex-shrink-0 flex items-center gap-2 flex-wrap px-1">
+            <span className="text-[11px] text-gray-400 flex-shrink-0">최근 체크인</span>
+            {recent3.map(p => (
+              <span key={p.id} className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-medium">
+                {p.name}
+              </span>
+            ))}
+          </div>
+        )
+      })()}
+
       {/* ── 오늘 일정 요약 ── */}
       {activeTournaments.length > 0 && todaySlotCount === 0 && (
         <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-400">
