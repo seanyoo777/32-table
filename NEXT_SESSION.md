@@ -10,17 +10,20 @@ git pull && npm run dev
 ```
 Claude에게: **"NEXT_SESSION.md 읽고 남은 항목 루프 구현"**
 
-## 1. 현재 상태 (v5.158)
-- **HEAD**: c008c88 — push·자동배포(https://32-table.pages.dev)
-- **⚠️ 미커밋 파일**: `src/pages/Home.tsx` (2-274 코드 삽입됨, 검증 전)
-- **이번 세션 완료 7기능**:
-  1. Score.tsx 7일 추이 SVG 선 그래프 — 1c8919c (v5.153)
-  2. CheckIn.tsx 스테이션 탭 부문별 체크인율 막대 — fdd253b (v5.154)
-  3. Tournament.tsx 라운드 예상 완료시간 강화 — 012e534 (v5.155)
-  4. Home.tsx 활성 대회 SVG 진행률 링 — ec81c98 (v5.156)
-  5. Score.tsx 미확인 기록 일괄 확인 버튼 — 497601b (v5.157)
-  6. Stats.tsx 종목별 경기 수 가로 막대 — c008c88 (v5.158)
-  7. Home.tsx D-N 예고 카드 (코드 완성, 미커밋 → 다음 세션 2-274)
+## 1. 현재 상태 (v5.171)
+- **HEAD**: a904256 — push·자동배포(https://32-table.pages.dev)
+- **미커밋 파일**: 없음 (클린)
+- **이번 세션 완료 10기능**:
+  1. Score.tsx 7일 추이 SVG 선 그래프 — v5.153
+  2. CheckIn.tsx 스테이션 탭 부문별 체크인율 막대 — v5.154
+  3. Tournament.tsx 라운드 예상 완료시간 강화 — v5.155
+  4. Home.tsx 활성 대회 SVG 진행률 링 — v5.156
+  5. Score.tsx 미확인 기록 일괄 확인 버튼 — v5.157
+  6. Stats.tsx 종목별 경기 수 가로 막대 — v5.158
+  7. Home.tsx D-N 예고 카드 (2-274) — 이전 세션 코드 완성
+  8. Rankings.tsx 복식 탭 부문 필터 버튼 — a904256 (v5.169)
+  9. Score.tsx 세트 수 분포 바 차트 — a904256 (v5.170)
+  10. Tournament.tsx 종목 탭 완료율 % 칩 — a904256 (v5.171)
 
 ---
 
@@ -812,17 +815,41 @@ Rankings.tsx 선수 행에 현재 연승 수(최근 기록 기준) 표시.
 Stats.tsx에 요일별(월~일) 총 기록 수 가로 막대 그래프 추가.
 recordedAt 기반 요일 분류. 5건+ 조건. 오늘 요일 indigo 강조.
 
-### 2-281. 대시보드 미완료 경기 경보 배너 (v5.166)
+### 2-281. 대시보드 미완료 경기 경보 배너 (v5.166) ✅ Done
 Dashboard.tsx 상단에 미완료(result 없음) 경기가 10건+ 있을 때 amber 배너 표시.
 "미완료 N경기 남음" + 대진표 이동 링크. dismiss 버튼(X) 포함.
 
-### 2-282. 점수 입력 탭 오늘 입력자 현황 (v5.167)
+### 2-282. 점수 입력 탭 오늘 입력자 현황 (v5.167) ✅ Done
 Score.tsx ManualEntry에 "오늘 N명 참여" 칩 추가.
 오늘 scoreRecords 기준 고유 player ID 수 집계. 2명+ 조건.
 
-### 2-283. 일정표 슬롯 완료 비율 진행 바 (v5.168)
+### 2-283. 일정표 슬롯 완료 비율 진행 바 (v5.168) ✅ Done
 Schedule.tsx ScheduleDetail 각 코트 헤더에 해당 코트 완료/전체 슬롯 수 미니 progress bar 추가.
 completedMatchSet 기반. 슬롯 2개+ 코트만 표시.
+
+### 2-284. ✅ 랭킹 탭 복식 부문 필터 버튼 (완료 v5.169)
+Rankings.tsx 복식 탭 부문 필터를 2-275 스타일로 통일.
+pairs 있는 부문만 표시, 건수 뱃지, 전체=blue / 부문=indigo. 재클릭 시 전체로 복귀.
+
+### 2-285. ✅ 점수 기록 탭 세트 분포 차트 (완료 v5.170)
+Score.tsx ManualEntry 기록 탭에 세트 수 분포(2~5세트) 미니 바 차트 추가.
+filteredRecords 세트 데이터 10건+ 조건. rose 가로 바 + 건수 + %.
+
+### 2-286. ✅ 대진표 종목 완료율 뱃지 (완료 v5.171)
+Tournament.tsx TournamentDetail 종목 탭 버튼에 완료율 % 칩 추가.
+100%=green, 50%+=blue, 미달=gray. 활성 탭은 blue-500 배경.
+
+### 2-287. 대진표 종목 탭 참가자 수 뱃지 (v5.172)
+Tournament.tsx 종목 탭 버튼에 참가자(unique player) 수 칩 추가.
+ev.matches에서 participant1Id/participant2Id 중복 제거 후 카운트. 현재 done/total 옆에 표시.
+
+### 2-288. 랭킹 복식 페어 마지막 경기 날짜 (v5.173)
+Rankings.tsx 복식 탭 페어 목록 행에 마지막 경기 날짜 "N일 전" gray 텍스트 추가.
+scoreRecords participant1Id/participant2Id 기준 최근 기록 날짜. 1경기+ 페어만.
+
+### 2-289. 경기일정 오늘 남은 경기 예상 완료 시각 (v5.174)
+Schedule.tsx ScheduleDetail 헤더 Stats 바에 오늘 남은 슬롯 기준 예상 완료 시각 칩 추가.
+마지막 슬롯 startTime + 평균 경기시간(30분) = HH:MM teal 칩. 슬롯 2개+ 조건.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
