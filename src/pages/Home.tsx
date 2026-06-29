@@ -8,6 +8,7 @@ export default function Home() {
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t) }, [])
+  const [showUnchecked, setShowUnchecked] = useState(false)
 
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
   const allActiveMatches = activeTournaments.flatMap(t => t.events.flatMap(ev => ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)))
@@ -138,9 +139,31 @@ export default function Home() {
             </span>
           </div>
           {players.filter(p => !p.checkedIn).length > 0 && (
-            <span className="flex-shrink-0 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
-              미체크인 {players.filter(p => !p.checkedIn).length}
-            </span>
+            <div className="relative flex-shrink-0">
+              <button onClick={() => setShowUnchecked(v => !v)}
+                className="text-xs bg-orange-100 text-orange-600 hover:bg-orange-200 px-2 py-0.5 rounded-full font-medium">
+                미체크인 {players.filter(p => !p.checkedIn).length} {showUnchecked ? '▲' : '▼'}
+              </button>
+              {showUnchecked && (
+                <div className="absolute top-full right-0 mt-1 z-30 bg-white border border-orange-200 rounded-xl shadow-lg p-2 min-w-[140px]"
+                  onClick={e => e.stopPropagation()}>
+                  {players.filter(p => !p.checkedIn).slice(0, 5).map(p => (
+                    <div key={p.id} className="text-xs text-gray-700 py-0.5 px-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                      <span className="truncate">{p.name}</span>
+                      <span className="text-gray-400 text-[10px] flex-shrink-0">{p.division}</span>
+                    </div>
+                  ))}
+                  {players.filter(p => !p.checkedIn).length > 5 && (
+                    <div className="text-[10px] text-gray-400 px-1 pt-1">+{players.filter(p => !p.checkedIn).length - 5}명 더</div>
+                  )}
+                  <button onClick={() => { setShowUnchecked(false); navigate('/checkin') }}
+                    className="mt-1.5 w-full text-[10px] bg-orange-500 text-white rounded-lg py-1 font-medium">
+                    체크인 관리 →
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
