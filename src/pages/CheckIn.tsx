@@ -78,6 +78,11 @@ export default function CheckInPage() {
     }
   }
 
+  function uncheckIn(id: string) {
+    updatePlayer(id, { checkedIn: false })
+    if (lastScanned?.id === id) setLastScanned(null)
+  }
+
   function resetAll() {
     players.forEach(p => updatePlayer(p.id, { checkedIn: false }))
   }
@@ -214,10 +219,16 @@ export default function CheckInPage() {
               </div>
 
               {scanStatus === 'success' && lastScanned && (
-                <div className="animate-pulse">
+                <div>
                   <p className="text-green-700 font-bold text-lg">{lastScanned.name} 선수</p>
                   <p className="text-green-600 text-sm">{lastScanned.school} · {lastScanned.division}</p>
                   <p className="text-green-500 text-xs mt-1">✓ 체크인 완료!</p>
+                  <button
+                    onClick={() => { uncheckIn(lastScanned.id); setScanStatus('idle') }}
+                    className="mt-2 text-xs text-gray-400 hover:text-red-500 flex items-center gap-0.5 mx-auto"
+                  >
+                    <X size={11} /> 취소
+                  </button>
                 </div>
               )}
               {scanStatus === 'error' && (
@@ -286,9 +297,18 @@ export default function CheckInPage() {
                     </span>
                   </div>
                   {p.checkedIn ? (
-                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                      <CheckCircle size={12} /> 완료
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-green-600 font-medium flex items-center gap-0.5">
+                        <CheckCircle size={12} /> 완료
+                      </span>
+                      <button
+                        onClick={() => uncheckIn(p.id)}
+                        title="체크인 취소"
+                        className="text-gray-300 hover:text-red-400 transition-colors"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => manualCheckIn(p.id)}
