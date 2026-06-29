@@ -198,6 +198,25 @@ export default function Rankings() {
     return m
   }, [players, scoreRecords])
 
+  const pairTrend = useMemo(() => {
+    const m = new Map<string, '↑' | '↓' | '—'>()
+    pairs.forEach(p => {
+      const recs = scoreRecords
+        .filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+        .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))
+        .slice(-3)
+      if (recs.length < 2) return
+      let wins = 0, losses = 0
+      recs.forEach(r => {
+        const isP1 = r.participant1Id === p.id
+        const won = isP1 ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+        if (won) wins++; else losses++
+      })
+      m.set(p.id, wins >= 2 ? '↑' : losses >= 2 ? '↓' : '—')
+    })
+    return m
+  }, [pairs, scoreRecords])
+
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
     .filter(p => !search || p.name.includes(search) || p.school.includes(search))
@@ -739,6 +758,7 @@ export default function Rankings() {
                     <td className="py-3 px-4 text-right">
                       <span className="font-bold text-blue-600">{p.points.toLocaleString()}</span>
                       <span className="text-xs text-gray-400 ml-1">P</span>
+                      {(() => { const t = pairTrend.get(p.id); return t ? <span className={`ml-1 text-xs font-bold ${t === '↑' ? 'text-green-500' : t === '↓' ? 'text-red-500' : 'text-gray-300'}`}>{t}</span> : null })()}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="text-green-600 font-medium">{p.wins}승</span>
