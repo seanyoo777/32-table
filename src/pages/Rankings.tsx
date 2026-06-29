@@ -456,6 +456,40 @@ export default function Rankings() {
       {/* Scrollable content */}
       <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3">
 
+      {/* 오늘의 MVP */}
+      {tab === 'singles' && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+        if (todayRecs.length === 0) return null
+        const winsMap: Record<string, number> = {}
+        const lastOpp: Record<string, string> = {}
+        todayRecs.forEach(r => {
+          const winnerId = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+          const loserId = r.p1Score > r.p2Score ? r.participant2Id : r.participant1Id
+          if (winnerId) { winsMap[winnerId] = (winsMap[winnerId] ?? 0) + 1; lastOpp[winnerId] = loserId ?? '' }
+        })
+        const topId = Object.keys(winsMap).sort((a, b) => winsMap[b] - winsMap[a])[0]
+        if (!topId || winsMap[topId] < 1) return null
+        const mvp = players.find(p => p.id === topId)
+        if (!mvp) return null
+        const oppName = players.find(p => p.id === lastOpp[topId])?.name ?? '?'
+        return (
+          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl">
+            <span className="text-2xl">🏆</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold text-yellow-600 tracking-wide">오늘의 MVP</div>
+              <div className="font-bold text-gray-800">{mvp.name}
+                <span className="text-xs text-gray-400 font-normal ml-2">{mvp.school} · {mvp.division}</span>
+              </div>
+              <div className="text-xs text-gray-500">오늘 {winsMap[topId]}승 · 최근 vs {oppName}</div>
+            </div>
+            <button onClick={() => setStatsModal(mvp)} className="text-xs bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-2 py-1 rounded-lg font-medium border border-yellow-200">
+              전적 보기
+            </button>
+          </div>
+        )
+      })()}
+
       {/* Singles Table */}
       {tab === 'singles' && (
         <div className="card p-0 overflow-hidden">
