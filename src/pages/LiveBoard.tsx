@@ -6,7 +6,7 @@ import { Monitor, Trophy, Clock, Zap, Bell } from 'lucide-react'
 // 전체화면으로 사용: 경기장 내 모니터/빔프로젝터에 띄워두세요
 
 export default function LiveBoardPage() {
-  const { tournaments, players, pairs, liveMatches, matchCalls } = useStore()
+  const { tournaments, players, pairs, liveMatches, matchCalls, announcement, setAnnouncement } = useStore()
   const [now, setNow] = useState(new Date())
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null)
@@ -77,6 +77,18 @@ export default function LiveBoardPage() {
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={announcement}
+              onChange={e => setAnnouncement(e.target.value)}
+              placeholder="공지사항 입력 (라이브보드에 표시됩니다)"
+              className="bg-gray-800 border border-gray-700 text-sm text-white rounded px-2 py-1 w-64 placeholder-gray-500"
+            />
+            {announcement && (
+              <button onClick={() => setAnnouncement('')} className="text-gray-400 hover:text-white text-xs px-1">✕</button>
+            )}
+          </div>
           <button
             onClick={toggleFullscreen}
             className="bg-blue-600 hover:bg-blue-700 text-sm px-3 py-1 rounded"
@@ -109,6 +121,14 @@ export default function LiveBoardPage() {
             <div className="text-gray-400 text-sm mt-1">{dateStr}</div>
           </div>
         </div>
+
+        {/* 공지사항 배너 */}
+        {announcement && (
+          <div className="flex items-center gap-3 bg-yellow-500/20 border border-yellow-500/40 rounded-xl px-4 py-3">
+            <span className="text-yellow-400 text-xl flex-shrink-0">📢</span>
+            <p className="text-yellow-100 font-semibold text-lg leading-snug">{announcement}</p>
+          </div>
+        )}
 
         {/* Live Matches (from liveMatches store) */}
         {liveMatches.length > 0 && (
