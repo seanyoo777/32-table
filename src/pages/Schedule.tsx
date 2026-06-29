@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { generateSmartSlots, previewSmartPlan, calcDayCourtMinutes, calcDayOperatingMinutes, matchMinutes, calcRoundsFromParticipants, detectScheduleConflicts, scheduleTournamentMatches, shiftSlotsAfterDelay, moveScheduleSlot } from '../utils/scheduleUtils'
 import type { DayConfig } from '../utils/scheduleUtils'
@@ -884,6 +885,7 @@ export default function SchedulePage() {
 }
 
 function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack: () => void }) {
+  const navigate = useNavigate()
   const { tournaments, updateTournament, updateSchedule, players, pairs, teams, schedules } = useStore()
   const plan = schedules.find(s => s.id === planProp.id) ?? planProp
   const [viewMode, setViewMode] = useState<'time' | 'court'>('time')
@@ -1511,6 +1513,13 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               <div className="text-center text-green-600 font-bold text-[10px] pt-1">✓ 완료된 경기</div>
             )}
           </div>
+          {popoverSlot.participant1 && popoverSlot.participant2 && (
+            <button
+              onClick={() => { setPopoverSlot(null); navigate('/score') }}
+              disabled={completedMatchSet.has(`${popoverSlot.eventId}-${popoverSlot.matchNo}`)}
+              className="mt-2 w-full text-[11px] font-bold py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+            >⚡ 점수입력</button>
+          )}
         </div>
       )}
     </div>
