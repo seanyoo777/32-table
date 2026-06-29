@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.31 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.34 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,37 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-41. v4.34 — 점수기록 인라인 수정 기능
+
+자동 루프 세션. 직접입력 기록 행에 세트스코어 인라인 편집 추가.
+
+### 수정 UI (Score.tsx ManualEntry + useStore.ts)
+- store에 `updateScoreRecord(id, Partial<ScoreRecord>)` 액션 추가.
+- 연필 아이콘(Keyboard) 버튼 → `editingId` state 전환, p1Score/p2Score 입력란 표시.
+- 동점 저장 불가, 저장 시 updateScoreRecord 반영 후 편집 모드 해제.
+
+---
+
+## 12-40. v4.33 — 대시보드 최근 호출 이력 패널
+
+자동 루프 세션. Dashboard Col 3에 acknowledged 호출 이력 카드 추가.
+
+### 호출 이력 (Dashboard.tsx)
+- `matchCalls.filter(c => c.acknowledged).reverse().slice(0, 5)`.
+- 코트 번호·선수명·호출 시각 한 줄씩, 이력 없으면 카드 숨김.
+
+---
+
+## 12-39. v4.32 — 체크인 전원 체크인 버튼
+
+자동 루프 세션. 체크인 진행률 바 우측에 일괄 체크인 버튼 추가.
+
+### 전원 체크인 (CheckIn.tsx)
+- `checkInAll()`: 미체크인 선수 전원 `updatePlayer(id, {checkedIn: true})`.
+- confirm 후 실행, 전원 완료 시 버튼 자동 숨김.
 
 ---
 
