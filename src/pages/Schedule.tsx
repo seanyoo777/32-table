@@ -1222,6 +1222,15 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         <StatMini label="코트 수" value={`${filteredCourts.length}개`} />
         <StatMini label="종목 수" value={`${plan.events.length}개`} />
         <StatMini label="예상 종료" value={formatTime12h(endTime) || '-'} />
+        {(() => {
+          const unassigned = filteredSlots.filter(s => !s.participant1 || !s.participant2).length
+          if (unassigned === 0) return null
+          return (
+            <span className="text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full flex-shrink-0">
+              미배정 {unassigned}
+            </span>
+          )
+        })()}
         {conflicts.length === 0 ? (
           <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 충돌 없음

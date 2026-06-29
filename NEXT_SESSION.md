@@ -644,17 +644,26 @@ gapMin≥60 → "⚠ 빈 시간대 N분" amber, 30~59 → gray "휴식 N분" 유
 ### 2-232. ✅ 통계 체크인 효과 승률 비교 바 (완료 v5.118)
 체크인 완료 vs 미체크인 평균 승률 2줄 bar. 경기 기록 있는 선수만 집계.
 
-### 2-233. 대시보드 호출 경기 종료 후 자동 제거 확인 팝업 (v5.119)
-Dashboard.tsx 경기 호출 카드의 "확인" 버튼에 confirm 단계 추가.
-현재: 클릭 즉시 acknowledged=true. 개선: "확인됨" 상태로 0.5초 표시 후 제거.
+### 2-233. ✅ 대시보드 호출 확인 버튼 플래시 피드백 (완료 v5.119)
+"확인됨!" 0.5초 green 플래시 후 acknowledged 처리. flashAckCallId state.
 
-### 2-234. 랭킹 선수 모달 CSV 내보내기 날짜 컬럼 추가 (v5.120)
-Rankings.tsx handleExportCSV scoreRecords 행에 날짜(recordedAt) 컬럼 이미 존재하나
-tourMatches 행엔 날짜 없음. tourMatches에 tournamentDate 컬럼 추가 (tournament.date 참조).
+### 2-234. ✅ 랭킹 CSV 대회경기 날짜 컬럼 추가 (완료 v5.120)
+tourMatches 행에 tournament.date 조회하여 날짜 컬럼 채움.
 
-### 2-235. 통계 탭 오늘 신규 선수 등록 칩 (v5.121)
-Stats.tsx 체크인 섹션 아래에 오늘(createdAt ISO 기준) 신규 등록된 선수 수 표시.
-"오늘 신규 N명" blue 칩. createdAt 없는 Player 스키마면 건너뜀.
+### 2-235. ✅ 통계 오늘 신규 선수 등록 칩 (완료 v5.121)
+players.createdAt ISO 기준 오늘 등록 선수 수 + 이름 칩. 0명이면 숨김.
+
+### 2-236. 홈 페이지 최근 체크인 선수 칩 목록 (v5.122)
+Home.tsx 체크인 진행바 아래에 가장 최근 체크인 선수 3명 이름 칩 표시.
+players.checkedIn + createdAt 기준(체크인 시각 없으면 등록순) 최근 3명.
+
+### 2-237. 대회 경기 목록 부전승 구분 표시 (v5.123)
+Tournament.tsx MatchList에서 m.isBye=true 경기 행에 "부전승" badge 추가.
+현재는 일반 경기와 동일한 스타일. 다른 배경 + 이탤릭 텍스트.
+
+### 2-238. 일정표 슬롯 참가자 미배정 수 카운터 칩 (v5.124)
+Schedule.tsx ScheduleDetail 헤더 영역에 미배정 슬롯(participant1/2 없음) 수 orange 칩.
+현재 슬롯 수 칩 옆에 배치. 0개이면 숨김.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
