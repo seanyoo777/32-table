@@ -290,6 +290,27 @@ export default function Stats() {
               label="메달 확정 종목" value={totalMedalEvents} sub={`${matchStats.events}종목`} />
           </div>
 
+          {/* 오늘/어제/그제 경기 수 비교 */}
+          {(() => {
+            const dates = [0, 1, 2].map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0] })
+            const labels = ['오늘', '어제', '그제']
+            const counts = dates.map(iso => scoreRecords.filter(r => r.recordedAt?.startsWith(iso)).length)
+            if (counts[0] < 1) return null
+            const maxC = Math.max(...counts, 1)
+            const colors = ['bg-indigo-500', 'bg-indigo-200', 'bg-gray-200']
+            return (
+              <div className="flex gap-3 items-end">
+                {counts.map((n, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full rounded-t-lg transition-all" style={{ height: `${Math.max(n / maxC * 36, n > 0 ? 4 : 0)}px` }} className={`${colors[i]} w-full rounded-t-lg`} title={`${labels[i]} ${n}건`} />
+                    <span className="text-[9px] font-bold text-gray-600">{n}</span>
+                    <span className="text-[9px] text-gray-400">{labels[i]}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
           {/* 대회 상태 분포 파이 */}
           {tournaments.length >= 2 && (() => {
             const ongoingN = tournaments.filter(t => t.status === 'ongoing').length
