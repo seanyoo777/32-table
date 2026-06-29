@@ -201,6 +201,24 @@ export default function Rankings() {
     return m
   }, [scoreRecords])
 
+  const todayPlayerBestWin = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const m = new Map<string, { s1: number; s2: number }>()
+    scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).forEach(r => {
+      const diff = Math.abs(r.p1Score - r.p2Score)
+      if (diff < 3) return
+      const p1Won = r.p1Score > r.p2Score
+      const updateWinner = (id: string | undefined, myScore: number, oppScore: number) => {
+        if (!id) return
+        const cur = m.get(id)
+        if (!cur || myScore - oppScore > cur.s1 - cur.s2) m.set(id, { s1: myScore, s2: oppScore })
+      }
+      if (p1Won) updateWinner(r.participant1Id, r.p1Score, r.p2Score)
+      else updateWinner(r.participant2Id, r.p2Score, r.p1Score)
+    })
+    return m
+  }, [scoreRecords])
+
   const playerTrend = useMemo(() => {
     const m = new Map<string, '↑' | '↓' | '—'>()
     players.forEach(p => {
@@ -914,6 +932,15 @@ export default function Rankings() {
                           return (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 font-bold flex-shrink-0">
                               ⚠ {ls}연패 중
+                            </span>
+                          )
+                        })()}
+                        {(() => {
+                          const bw = todayPlayerBestWin.get(p.id)
+                          if (!bw) return null
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-bold flex-shrink-0">
+                              압도 {bw.s1}-{bw.s2}
                             </span>
                           )
                         })()}
