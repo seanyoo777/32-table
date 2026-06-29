@@ -1518,7 +1518,13 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           <div className="space-y-0.5 text-xs text-gray-500">
             <div className="flex justify-between"><span>코트</span><span className="font-medium text-gray-700">{popoverSlot.courtNo}번</span></div>
             <div className="flex justify-between"><span>시간</span><span className="font-medium text-gray-700">{formatTime12h(popoverSlot.startTime)}~{formatTime12h(popoverSlot.endTime)}</span></div>
-            <div className="flex justify-between"><span>경기</span><span className="font-medium text-gray-700">#{popoverSlot.matchNo} {popoverSlot.round ?? ''}</span></div>
+            <div className="flex justify-between items-center">
+              <span>경기</span>
+              <span className="flex items-center gap-1">
+                <span className="font-medium text-gray-700">#{popoverSlot.matchNo}</span>
+                {popoverSlot.round && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">{popoverSlot.round}</span>}
+              </span>
+            </div>
             {completedMatchSet.has(`${popoverSlot.eventId}-${popoverSlot.matchNo}`) && (
               <div className="text-center text-green-600 font-bold text-[10px] pt-1">✓ 완료된 경기</div>
             )}
