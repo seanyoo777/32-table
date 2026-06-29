@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.37 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.40 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,38 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-47. v4.40 — 통계 페이지 종목별 평균 세트 수 막대 차트
+
+자동 루프 세션. Stats.tsx에 종목별 평균 세트 수를 가로 막대로 시각화하는 섹션 추가.
+
+### 변경 (Stats.tsx)
+- `eventSetStats` useMemo: scoreRecords.sets.length 평균을 종목별 집계, 내림차순 정렬.
+- 인디고 색상 가로 막대 (최대 7세트 기준 스케일).
+- 체크인 현황 분석 섹션 아래 위치. 데이터 있을 때만 표시.
+
+---
+
+## 12-46. v4.39 — 대시보드 오늘 기록 수 스탯 카드
+
+자동 루프 세션. Dashboard.tsx Stats row(4열→5열) 확장, "오늘 기록" 카드 추가.
+
+### 변경 (Dashboard.tsx)
+- `grid-cols-4` → `grid-cols-5`.
+- 오늘 날짜(`recordedAt.slice(0,10) === todayISO`) 기준 scoreRecords 건수 표시.
+- 보라색 테마 카드, IIFE로 todayISO 계산.
+
+---
+
+## 12-45. v4.38 — 설정 페이지 체크인 전체 초기화 버튼
+
+자동 루프 세션. 체크인 상태만 리셋하는 전용 액션 및 UI 추가.
+
+### 변경 (useStore.ts + Settings.tsx)
+- `resetAllCheckIns()`: players.checkedIn → false (포인트/레이팅 유지).
+- Settings.tsx "체크인 초기화" 섹션(teal 테마): 현재 체크인 수 표시, confirm 2단계, 0명이면 버튼 비활성.
 
 ---
 
