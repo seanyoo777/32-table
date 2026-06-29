@@ -1231,6 +1231,21 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             </span>
           )
         })()}
+        {(() => {
+          if (filteredSlots.length < 2) return null
+          const toMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
+          const earliest = filteredSlots.reduce((min, s) => s.startTime < min ? s.startTime : min, filteredSlots[0].startTime)
+          const latest = filteredSlots.reduce((max, s) => (s.endTime ?? '') > max ? (s.endTime ?? '') : max, '')
+          if (!earliest || !latest) return null
+          const totalMin = toMins(latest) - toMins(earliest)
+          if (totalMin <= 0) return null
+          const h = Math.floor(totalMin / 60), m = totalMin % 60
+          return (
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0">
+              총 {h > 0 ? `${h}시간 ` : ''}{m > 0 ? `${m}분` : ''}
+            </span>
+          )
+        })()}
         {conflicts.length === 0 ? (
           <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 충돌 없음
