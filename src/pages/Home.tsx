@@ -444,6 +444,27 @@ export default function Home() {
                 </div>
               )
             })()}
+            {(() => {
+              const courtPlayers = new Map<number, Set<string>>()
+              todayAllSlots.forEach(sl => {
+                if (!sl.participant1 && !sl.participant2) return
+                if (!courtPlayers.has(sl.courtNo)) courtPlayers.set(sl.courtNo, new Set())
+                if (sl.participant1) courtPlayers.get(sl.courtNo)!.add(sl.participant1)
+                if (sl.participant2) courtPlayers.get(sl.courtNo)!.add(sl.participant2)
+              })
+              if (courtPlayers.size < 2) return null
+              const sorted = [...courtPlayers.entries()].sort((a, b) => a[0] - b[0])
+              const maxCount = Math.max(...sorted.map(([, s]) => s.size))
+              return (
+                <div className="flex gap-1 flex-wrap">
+                  {sorted.map(([c, s]) => (
+                    <span key={c} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${s.size === maxCount ? 'bg-violet-50 text-violet-600 border-violet-200 font-medium' : 'bg-white text-gray-500 border-gray-200'}`}>
+                      {c}코트 {s.size}명
+                    </span>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
