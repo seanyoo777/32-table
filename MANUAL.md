@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.40 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.43 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,38 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-50. v4.43 — 대회 목록 이름 검색 필터
+
+자동 루프 세션. Tournament.tsx 대회 목록 상단에 실시간 검색 input 추가.
+
+### 변경 (Tournament.tsx)
+- `tourSearch` state 추가.
+- 검색 input (`대회 이름 검색...`) → sorted 배열에 `t.name.includes(tourSearch)` 필터 적용.
+- 검색 시 페이지 0 리셋, 내용 있을 때 ✕ 클리어 버튼 표시.
+
+---
+
+## 12-49. v4.42 — 홈 선수 0명 온보딩 가이드 카드
+
+자동 루프 세션. Home.tsx에 players.length === 0 조건부 온보딩 3단계 카드 추가.
+
+### 변경 (Home.tsx)
+- 3열 그리드 위에 dashed border 카드 삽입 (players.length === 0 일 때만).
+- ①선수 등록(→/rankings) ②대회 생성(→/tournament) ③체크인(→/checkin) 버튼 제공.
+
+---
+
+## 12-48. v4.41 — 점수 입력 심판/입력자 이름 자동 기억
+
+자동 루프 세션. Score.tsx 두 컴포넌트의 recorder를 localStorage로 영속화.
+
+### 변경 (Score.tsx)
+- LiveScoreboard·ManualEntry의 `recorder` 초기값을 `localStorage.getItem('pp-recorder') ?? ''`로 복원.
+- onChange 시 `localStorage.setItem('pp-recorder', value)` 즉시 저장.
+- Zustand persist와 별개로 'pp-recorder' 키 사용 (대용량 상태 불필요).
 
 ---
 
