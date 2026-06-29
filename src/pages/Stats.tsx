@@ -76,7 +76,7 @@ export default function Stats() {
 
   // 종목별 메달 (시작된 종목만)
   const medalRows = useMemo(() => {
-    const rows: Array<{ tour: string; label: string; gold?: string; silver?: string; bronze: string[] }> = []
+    const rows: Array<{ tour: string; label: string; division: string; gender: string; gold?: string; silver?: string; bronze: string[] }> = []
     for (const t of visibleTours) {
       for (const ev of t.events) {
         const hasResult = ev.matches.some(m => m.result)
@@ -84,6 +84,7 @@ export default function Stats() {
         const { gold, silver, bronze } = getMedalists(ev)
         rows.push({
           tour: t.name, label: ev.label,
+          division: ev.division, gender: ev.gender,
           gold: gold ? nameMap[gold] : undefined,
           silver: silver ? nameMap[silver] : undefined,
           bronze: bronze.map(b => nameMap[b] ?? '').filter(Boolean),
@@ -258,23 +259,49 @@ export default function Stats() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-gray-400 border-b border-gray-100">
-                      <th className="text-left font-medium py-1.5 px-2">대회</th>
                       <th className="text-left font-medium py-1.5 px-2">종목</th>
+                      <th className="text-left font-medium py-1.5 px-2">부문</th>
                       <th className="text-left font-medium py-1.5 px-2">🥇 우승</th>
                       <th className="text-left font-medium py-1.5 px-2">🥈 준우승</th>
                       <th className="text-left font-medium py-1.5 px-2">🥉 3위</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {medalRows.map((r, i) => (
-                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="py-1.5 px-2 text-xs text-gray-500 truncate max-w-[120px]">{r.tour}</td>
-                        <td className="py-1.5 px-2 font-medium text-gray-700">{r.label}</td>
-                        <td className="py-1.5 px-2 font-semibold text-amber-600">{r.gold ?? '—'}</td>
-                        <td className="py-1.5 px-2 text-gray-600">{r.silver ?? '—'}</td>
-                        <td className="py-1.5 px-2 text-gray-500 text-xs">{r.bronze.join(', ') || '—'}</td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      // Group by tournament name, insert tour header rows
+                      const groups: Array<{ tourName: string; rows: typeof medalRows }> = []
+                      for (const r of medalRows) {
+                        const last = groups[groups.length - 1]
+                        if (last && last.tourName === r.tour) { last.rows.push(r) }
+                        else { groups.push({ tourName: r.tour, rows: [r] }) }
+                      }
+                      return groups.map((g, gi) => (
+                        <>
+                          <tr key={`tour-${gi}`} className="bg-gray-50">
+                            <td colSpan={5} className="py-1 px-2 text-[11px] font-semibold text-gray-500">
+                              {g.tourName} <span className="font-normal text-gray-400">({g.rows.length}종목 · 🥇{g.rows.filter(r=>r.gold).length}확정)</span>
+                            </td>
+                          </tr>
+                          {g.rows.map((r, i) => {
+                            const genderCls = r.gender === '남' ? 'bg-blue-50 text-blue-600' : r.gender === '여' ? 'bg-pink-50 text-pink-600' : 'bg-purple-50 text-purple-600'
+                            return (
+                              <tr key={`${gi}-${i}`} className="border-b border-gray-50 hover:bg-gray-50">
+                                <td className="py-1.5 px-2 font-medium text-gray-700">{r.label}</td>
+                                <td className="py-1.5 px-2">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1 rounded">{r.division}</span>
+                                    <span className={`text-[10px] px-1 rounded ${genderCls}`}>{r.gender}</span>
+                                  </div>
+                                </td>
+                                <td className="py-1.5 px-2 font-semibold text-amber-600">{r.gold ?? '—'}</td>
+                                <td className="py-1.5 px-2 text-gray-600">{r.silver ?? '—'}</td>
+                                <td className="py-1.5 px-2 text-gray-500 text-xs">{r.bronze.join(', ') || '—'}</td>
+                              </tr>
+                            )
+                          })}
+                        </>
+                      ))
+                    })()}
                   </tbody>
                 </table>
               </div>
