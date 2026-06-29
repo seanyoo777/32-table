@@ -527,7 +527,18 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className={courtExpanded ? 'flex flex-wrap gap-1 mt-1' : 'flex items-center gap-1.5 overflow-x-auto pb-0.5'}>
-            {courts.map(c => {
+            {(() => {
+              let oldestLiveCourtNo: number | null = null
+              if (liveMatches.length >= 2) {
+                let oldest: { tableNo: number; calledAt: string } | null = null
+                liveMatches.forEach(lm => {
+                  const call = matchCalls.find(mc => mc.matchId === lm.matchId)
+                  if (!call?.calledAt) return
+                  if (!oldest || call.calledAt < oldest.calledAt) oldest = { tableNo: lm.tableNo, calledAt: call.calledAt }
+                })
+                if (oldest) oldestLiveCourtNo = (oldest as { tableNo: number; calledAt: string }).tableNo
+              }
+              return courts.map(c => {
               const cls = c.status === 'live'
                 ? 'border-red-300 bg-red-50'
                 : c.status === 'called'
@@ -538,7 +549,7 @@ export default function DashboardPage() {
               return (
                 <div key={c.no} className="relative flex-shrink-0">
                   <div
-                    className={`rounded-lg border px-2 py-1 min-w-[92px] ${cls} ${isActive ? 'cursor-pointer hover:shadow-md transition-shadow' : c.status === 'free' ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors' : ''} ${c.status === 'free' && callTableNo === c.no ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+                    className={`rounded-lg border px-2 py-1 min-w-[92px] ${cls} ${isActive ? 'cursor-pointer hover:shadow-md transition-shadow' : c.status === 'free' ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors' : ''} ${c.status === 'free' && callTableNo === c.no ? 'ring-2 ring-blue-400 ring-inset' : ''} ${c.status === 'live' && c.no === oldestLiveCourtNo ? 'animate-pulse ring-2 ring-amber-400' : ''}`}
                     onClick={() => {
                       if (c.status === 'free') {
                         setCallTableNo(c.no)
@@ -617,7 +628,8 @@ export default function DashboardPage() {
                   })()}
                 </div>
               )
-            })}
+            })
+            })()}
           </div>
         </div>
       </div>
