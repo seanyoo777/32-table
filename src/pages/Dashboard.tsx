@@ -414,6 +414,21 @@ export default function DashboardPage() {
                 {players.length - checkedIn > 5 && <span className="text-[10px] text-orange-400 px-1 flex-shrink-0 self-center">+{players.length - checkedIn - 5}명</span>}
               </div>
             )}
+            {(() => {
+              const DIVS = ['초등','중등','고등','대학','일반','생활체육'] as const
+              const rows = DIVS.map(d => ({ d, total: players.filter(p => p.division === d).length, done: players.filter(p => p.division === d && p.checkedIn).length })).filter(r => r.total > 0)
+              if (rows.length < 2) return null
+              return (
+                <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5">
+                  {rows.map(({ d, total, done }) => (
+                    <div key={d} className="flex items-center gap-1">
+                      <span className="text-[9px] text-gray-500 w-10 flex-shrink-0">{d}</span>
+                      <span className={`text-[9px] font-semibold flex-shrink-0 ${done === total ? 'text-green-600' : done === 0 ? 'text-gray-400' : 'text-teal-600'}`}>{done}/{total}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         )
       })()}

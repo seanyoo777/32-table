@@ -283,6 +283,25 @@ export default function Rankings() {
     return m
   }, [players, scoreRecords])
 
+  const playerEloDelta = useMemo(() => {
+    const m = new Map<string, number>()
+    players.forEach(p => {
+      const recs = scoreRecords
+        .filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+        .sort((a, b) => (b.recordedAt ?? '').localeCompare(a.recordedAt ?? ''))
+        .slice(0, 3)
+      if (recs.length === 0) return
+      let delta = 0
+      recs.forEach(r => {
+        const isP1 = r.participant1Id === p.id
+        const won = isP1 ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+        delta += won ? 10 : -10
+      })
+      if (delta !== 0) m.set(p.id, delta)
+    })
+    return m
+  }, [players, scoreRecords])
+
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
     .filter(p => !search || p.name.includes(search) || p.school.includes(search))
@@ -831,7 +850,10 @@ export default function Rankings() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex flex-col items-end gap-0.5">
-                        <span className={`text-sm font-bold ${rLabel.color}`}>{p.rating ?? '-'}</span>
+                        <div className="flex items-center gap-1">
+                          <span className={`text-sm font-bold ${rLabel.color}`}>{p.rating ?? '-'}</span>
+                          {(() => { const d = playerEloDelta.get(p.id); if (!d) return null; return <span className={`text-[10px] font-semibold ${d > 0 ? 'text-green-500' : 'text-red-500'}`}>{d > 0 ? `+${d}` : d}</span> })()}
+                        </div>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${rLabel.bg} ${rLabel.color}`}>{rLabel.label}</span>
                       </div>
                     </td>
