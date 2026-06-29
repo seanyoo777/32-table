@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.34 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.37 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,39 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-44. v4.37 — 홈 최근 완료 경기 피드 카드
+
+자동 루프 세션. Home.tsx Col 3에 scoreRecords 최근 5건을 역순으로 보여주는 카드 추가.
+
+### 변경 (Home.tsx)
+- `scoreRecords` 역순 `.slice(0, 5)`를 "최근 완료 경기" 카드로 표시.
+- 각 행: `선수1 스코어:스코어 선수2`, 승자 이름 파란색 강조.
+- `nextPending` 카드 아래 / "명예의 전당" 카드 위에 위치.
+
+---
+
+## 12-43. v4.36 — 점수 CSV 내보내기 세트 상세 컬럼 추가
+
+자동 루프 세션. Dashboard.tsx exportScoreRecordsCSV에 세트별 상세 점수 컬럼 추가.
+
+### 변경 (Dashboard.tsx)
+- 헤더: `세트스코어` → `세트결과,세트상세` 분리.
+- 세트결과: `3-1` 형식(기존 동일).
+- 세트상세: `11-7 11-5 9-11 11-8` 형식 — sets 배열을 공백으로 join.
+
+---
+
+## 12-42. v4.35 — 체크인 미체크인 선수 CSV 내보내기
+
+자동 루프 세션. CheckIn.tsx list 탭에 미체크인 선수만 내보내는 CSV 버튼 추가.
+
+### 변경 (CheckIn.tsx)
+- `exportNotCheckedInCSV()` 함수: notCheckedIn 선수(이름·소속·부문·성별·연락처) 파일 생성.
+- list 탭 버튼 영역에 "미체크인 CSV" 버튼 추가 (notCheckedIn > 0일 때만 표시).
+- 파일명: `미체크인_YYYY-MM-DD.csv`.
 
 ---
 
