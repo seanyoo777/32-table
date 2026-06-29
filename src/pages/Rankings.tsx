@@ -184,6 +184,22 @@ export default function Rankings() {
     return m
   }, [scoreRecords])
 
+  const todayPlayerWinLoss = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const m = new Map<string, { wins: number; losses: number }>()
+    scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).forEach(r => {
+      const p1Won = r.p1Score > r.p2Score
+      const update = (id: string | undefined, won: boolean) => {
+        if (!id) return
+        const cur = m.get(id) ?? { wins: 0, losses: 0 }
+        m.set(id, won ? { ...cur, wins: cur.wins + 1 } : { ...cur, losses: cur.losses + 1 })
+      }
+      update(r.participant1Id, p1Won)
+      update(r.participant2Id, !p1Won)
+    })
+    return m
+  }, [scoreRecords])
+
   const playerTrend = useMemo(() => {
     const m = new Map<string, '↑' | '↓' | '—'>()
     players.forEach(p => {
@@ -713,7 +729,19 @@ export default function Rankings() {
                           className={`font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors ${globalRank === 1 ? 'font-bold text-amber-700' : ''}`}
                         >{globalRank === 1 && <span className="mr-0.5">👑</span>}{highlight(p.name)}</button>
                         {p.checkedIn && <CheckCircle size={11} className="text-green-500 flex-shrink-0" title="체크인 완료" />}
-                        {(todayPlayerMatchCount.get(p.id) ?? 0) > 0 && <span className="text-[9px] px-1 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium flex-shrink-0">오늘 {todayPlayerMatchCount.get(p.id)}경기</span>}
+                        {(() => {
+                          const wl = todayPlayerWinLoss.get(p.id)
+                          if (!wl) return null
+                          const total = wl.wins + wl.losses
+                          if (total === 0) return null
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium flex-shrink-0 flex items-center gap-0.5">
+                              오늘
+                              {wl.wins > 0 && <span className="text-green-600 font-bold">{wl.wins}승</span>}
+                              {wl.losses > 0 && <span className="text-red-500 font-bold">{wl.losses}패</span>}
+                            </span>
+                          )
+                        })()}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-gray-500 max-w-[120px] truncate" title={p.school}>{highlight(p.school)}</td>
