@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.08 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.11 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,31 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-117. v5.11 — 경기일정 슬롯 클릭 상세 팝오버
+
+자동 루프 세션. Schedule.tsx 타임라인 뷰 슬롯 클릭 시 팝오버 추가.
+
+### 변경 (Schedule.tsx)
+- `popoverSlot`, `popoverPos` state + useEffect (click/ESC 닫힘).
+- 단일일차·다일차 뷰 슬롯 div에 onClick 핸들러, cursor-pointer, hover:brightness-95 추가.
+- 팝오버: fixed position, 선수명/코트/시간/완료 상태 표시. 화면 벗어나지 않도록 위치 보정.
+- X 아이콘 lucide-react 추가.
+
+## 12-116. v5.10 — 대시보드 체크인 선수 이름 칩 목록
+
+자동 루프 세션. Dashboard.tsx 체크인 바 아래에 이름 칩 추가.
+
+### 변경 (Dashboard.tsx)
+- 체크인 진행바 아래 가로 스크롤 가능한 teal 칩 목록. 최대 5개 + "+N명".
+
+## 12-115. v5.09 — 홈 전체 대회 완료율 미니 도넛 차트
+
+자동 루프 세션. Home.tsx 대회 상태 칩 행 끝에 SVG 도넛 추가.
+
+### 변경 (Home.tsx)
+- 모든 대회의 doneM/totalM 합산 완료율 도넛(R=12, 28×28).
+- 진행=indigo, 중반=amber, 완료=green 색상 단계.
 
 ## 12-114. v5.08 — 통계 포인트 TOP3 선수 카드
 
