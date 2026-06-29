@@ -70,6 +70,7 @@ export default function DashboardPage() {
   const [editingCallId, setEditingCallId] = useState<string | null>(null)
   const [editCallTable, setEditCallTable] = useState(1)
   const [copiedCallId, setCopiedCallId] = useState<string | null>(null)
+  const [flashAckCallId, setFlashAckCallId] = useState<string | null>(null)
   const [liveEventFilter, setLiveEventFilter] = useState<string | null>(null)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
@@ -1070,9 +1071,13 @@ export default function DashboardPage() {
                           className="text-gray-400 hover:text-blue-500 p-0.5 flex-shrink-0" title="클립보드 복사">
                           {copiedCallId === c.id ? <CheckCircle size={11} className="text-green-500" /> : <span className="text-[11px]">⎘</span>}
                         </button>
-                        <button onClick={() => acknowledgeMatchCall(c.id)}
-                          className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200 flex items-center gap-0.5">
-                          <BellOff size={10} /> 확인
+                        <button onClick={() => {
+                            if (flashAckCallId === c.id) return
+                            setFlashAckCallId(c.id)
+                            setTimeout(() => { acknowledgeMatchCall(c.id); setFlashAckCallId(null) }, 500)
+                          }}
+                          className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${flashAckCallId === c.id ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                          <BellOff size={10} /> {flashAckCallId === c.id ? '확인됨!' : '확인'}
                         </button>
                       </>
                     ) : (
