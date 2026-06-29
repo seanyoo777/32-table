@@ -1126,7 +1126,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     setUndoSlots(plan.slots)
     if (undoTimer) clearTimeout(undoTimer)
     setUndoTimer(setTimeout(() => setUndoSlots(null), 5000))
-    updateSchedule(plan.id, { slots: moveScheduleSlot(plan.slots, slotId, patch, buffer) })
+    const moved = moveScheduleSlot(plan.slots, slotId, patch, buffer)
+    updateSchedule(plan.id, { slots: moved.map(s => s.id === slotId ? { ...s, updatedAt: new Date().toISOString() } : s) })
   }
   function handleUndo() {
     if (!undoSlots) return
@@ -1613,6 +1614,11 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             </div>
             {completedMatchSet.has(`${popoverSlot.eventId}-${popoverSlot.matchNo}`) && (
               <div className="text-center text-green-600 font-bold text-[10px] pt-1">✓ 완료된 경기</div>
+            )}
+            {popoverSlot.updatedAt && (
+              <div className="text-center pt-1">
+                <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full">수정됨 {new Date(popoverSlot.updatedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
             )}
           </div>
           {(() => {

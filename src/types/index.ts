@@ -197,6 +197,7 @@ export interface ScheduleSlot {
   round?: string
   day?: number
   type?: 'match' | 'break' | 'ceremony' | 'opening'
+  updatedAt?: string
 }
 
 export interface SchedulePlan {
