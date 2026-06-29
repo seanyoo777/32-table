@@ -431,6 +431,8 @@ export default function Home() {
                   .map(t => {
                     const totalM = t.events.reduce((s, e) => s + e.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length, 0)
                     const doneM = t.events.reduce((s, e) => s + e.matches.filter(m => m.result).length, 0)
+                    const pctM = totalM > 0 ? Math.round(doneM / totalM * 100) : 0
+                    const barColor = pctM >= 67 ? 'bg-green-500' : pctM >= 34 ? 'bg-yellow-400' : totalM > 0 ? 'bg-red-400' : 'bg-gray-300'
                     return (
                       <div key={t.id}
                         className="border border-gray-100 rounded-lg p-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -447,10 +449,10 @@ export default function Home() {
                         </div>
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
                           <span>{t.date}</span>
-                          <span>{totalM > 0 ? Math.round(doneM / totalM * 100) : 0}%</span>
+                          <span className="font-medium">{doneM}/{totalM} <span className="text-[10px]">({pctM}%)</span></span>
                         </div>
-                        <div className="h-1 bg-gray-100 rounded-full">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${totalM > 0 ? doneM / totalM * 100 : 0}%` }} />
+                        <div className="h-1.5 bg-gray-100 rounded-full">
+                          <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pctM}%` }} />
                         </div>
                       </div>
                     )
