@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { Plus, Search, Trash2, X, Trophy, Users, TrendingUp, Edit2, Upload, Download, AlertCircle, BarChart2, Zap, CheckCircle } from 'lucide-react'
 import type { Player, Pair, Division, Gender, Tournament, ScoreRecord } from '../types'
@@ -81,6 +81,7 @@ function parseCSV(text: string): ImportRow[] {
 }
 
 export default function Rankings() {
+  const navigate = useNavigate()
   const { players, pairs, teams, tournaments, scoreRecords, addPlayer, updatePlayer, deletePlayer, addPlayerPoints, addPair, deletePair, importPlayers, addTeam, deleteTeam } = useStore()
   const [tab, setTab] = useState<'singles' | 'doubles' | 'teams'>('singles')
   const [rankView, setRankView] = useState<RankView>('통합')
@@ -751,6 +752,25 @@ export default function Rankings() {
           ))}
         </div>
       )}
+
+      {/* 오늘 첫 경기 대진 rose 칩 */}
+      {tab === 'singles' && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayFirst = scoreRecords
+          .filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+          .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))[0]
+        if (!todayFirst) return null
+        const p1name = players.find(p => p.id === todayFirst.participant1Id)?.name ?? pairs.find(p => p.id === todayFirst.participant1Id)?.name ?? '?'
+        const p2name = players.find(p => p.id === todayFirst.participant2Id)?.name ?? pairs.find(p => p.id === todayFirst.participant2Id)?.name ?? '?'
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-rose-500 font-semibold flex-shrink-0">오늘 첫 경기</span>
+            <button onClick={() => navigate('/score')} className="text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-1.5 py-0.5 rounded-full font-medium hover:bg-rose-100 transition-colors">
+              {p1name} vs {p2name}
+            </button>
+          </div>
+        )
+      })()}
 
       {/* 오늘 승률 75%+ 선수 수 lime 칩 */}
       {tab === 'singles' && (() => {
