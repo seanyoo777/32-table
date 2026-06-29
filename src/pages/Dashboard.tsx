@@ -740,6 +740,15 @@ export default function DashboardPage() {
                 </span>
               )
             })()}
+            {(() => {
+              const recent5min = scoreRecords.filter(r => r.recordedAt && (now.getTime() - new Date(r.recordedAt).getTime()) < 5 * 60 * 1000).length
+              if (recent5min < 1) return null
+              return (
+                <span className="text-[10px] bg-sky-100 text-sky-700 border border-sky-300 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 animate-pulse">
+                  ⚡ {recent5min}경기 완료
+                </span>
+              )
+            })()}
             <button onClick={() => setCourtExpanded(v => !v)}
               className="ml-1 text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 bg-gray-50 flex-shrink-0">
               {courtExpanded ? '접기 ▲' : '전체 ▼'}
