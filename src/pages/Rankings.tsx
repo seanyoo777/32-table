@@ -751,6 +751,40 @@ export default function Rankings() {
         )
       })()}
 
+      {/* 승률 분포 히스토그램 */}
+      {tab === 'singles' && (() => {
+        const eligible = players.filter(p => (p.wins + p.losses) >= 3)
+        if (eligible.length < 5) return null
+        const WR_BINS = [
+          { label: '0-10%', min: 0, max: 0.1, color: '#f87171' },
+          { label: '10-30%', min: 0.1, max: 0.3, color: '#fb923c' },
+          { label: '30-50%', min: 0.3, max: 0.5, color: '#facc15' },
+          { label: '50-70%', min: 0.5, max: 0.7, color: '#4ade80' },
+          { label: '70-90%', min: 0.7, max: 0.9, color: '#34d399' },
+          { label: '90%+', min: 0.9, max: 1.01, color: '#6366f1' },
+        ]
+        const counts = WR_BINS.map(b => ({ ...b, n: eligible.filter(p => { const wr = p.wins / (p.wins + p.losses); return wr >= b.min && wr < b.max }).length }))
+        const maxN = Math.max(...counts.map(b => b.n), 1)
+        return (
+          <div className="card py-2">
+            <div className="text-[10px] text-gray-400 mb-2 font-medium">승률 분포</div>
+            <div className="flex items-end gap-1 h-10">
+              {counts.map(b => (
+                <div key={b.label} className="flex-1 flex flex-col items-center gap-0.5">
+                  <div className="w-full rounded-t transition-all" style={{ height: `${Math.max(b.n / maxN * 32, b.n > 0 ? 4 : 0)}px`, background: b.color }} title={`${b.label}: ${b.n}명`} />
+                  {b.n > 0 && <span className="text-[9px] text-gray-500 font-semibold">{b.n}</span>}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-1 mt-0.5">
+              {counts.map(b => (
+                <div key={b.label} className="flex-1 text-center text-[8px] text-gray-400 truncate">{b.label}</div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Rank view selector — singles only */}
       {tab === 'singles' && (
         <div className="card space-y-3 py-3">
