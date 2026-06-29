@@ -93,6 +93,7 @@ export default function Rankings() {
   const [addWin, setAddWin] = useState(true)
   const [editModal, setEditModal] = useState<Player | null>(null)
   const [statsModal, setStatsModal] = useState<Player | null>(null)
+  const [pairStatsModal, setPairStatsModal] = useState<Pair | null>(null)
   const [importModal, setImportModal] = useState(false)
   const [importRows, setImportRows] = useState<ImportRow[]>([])
   const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null)
@@ -573,7 +574,8 @@ export default function Rankings() {
                       <span className="text-gray-300 mx-1">/</span>
                       <span className="text-red-500">{p.losses}패</span>
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 px-4 text-center flex items-center justify-center gap-1">
+                      <button onClick={() => setPairStatsModal(p)} className="text-gray-400 hover:text-indigo-600 p-1" title="페어 전적 보기"><BarChart2 size={13} /></button>
                       <button onClick={() => deletePair(p.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={13} /></button>
                     </td>
                   </tr>
@@ -907,6 +909,16 @@ export default function Rankings() {
           scoreRecords={scoreRecords}
           pMap={Object.fromEntries(players.map(p => [p.id, p.name]))}
           onClose={() => setStatsModal(null)}
+        />
+      )}
+
+      {pairStatsModal && (
+        <PairStatsModal
+          pair={pairStatsModal}
+          tournaments={tournaments}
+          scoreRecords={scoreRecords}
+          pMap={Object.fromEntries([...players.map(p => [p.id, p.name]), ...pairs.map(p => [p.id, p.name])])}
+          onClose={() => setPairStatsModal(null)}
         />
       )}
 
@@ -1267,6 +1279,147 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: 
                     <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>
                       {isWin ? '승' : '패'}
                     </span>
+                    <span className="flex-1 font-medium truncate">vs {oppName}</span>
+                    <span className="text-xs font-medium">{myScore} - {oppScore}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0">{new Date(r.recordedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {tourMatches.length === 0 && recentRecords.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-6">아직 경기 기록이 없습니다</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PairStatsModal({ pair, tournaments, scoreRecords, pMap, onClose }: {
+  pair: Pair
+  tournaments: Tournament[]
+  scoreRecords: ScoreRecord[]
+  pMap: Record<string, string>
+  onClose: () => void
+}) {
+  const pairRecords = scoreRecords.filter(r => r.participant1Id === pair.id || r.participant2Id === pair.id)
+  const recentRecords = [...pairRecords].reverse().slice(0, 20)
+
+  const tourMatches = tournaments.flatMap(t =>
+    t.events.flatMap(ev =>
+      ev.matches
+        .filter(m => m.result && !m.isBye && (m.participant1Id === pair.id || m.participant2Id === pair.id))
+        .map(m => ({ match: m, tournamentName: t.name, eventLabel: ev.label }))
+    )
+  ).reverse().slice(0, 20)
+
+  function handleExportCSV() {
+    const rows: string[] = ['﻿유형,상대,결과,점수,대회/종목,날짜']
+    tourMatches.forEach(({ match, tournamentName, eventLabel }) => {
+      const oppId = match.participant1Id === pair.id ? match.participant2Id! : match.participant1Id!
+      const oppName = pMap[oppId] ?? '?'
+      const isWin = match.result?.winnerId === pair.id
+      const score = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
+      rows.push(`대회,"${oppName}",${isWin ? '승' : '패'},"${score}","${tournamentName} ${eventLabel}",`)
+    })
+    recentRecords.forEach(r => {
+      const isP1 = r.participant1Id === pair.id
+      const oppId = isP1 ? r.participant2Id : r.participant1Id
+      const oppName = pMap[oppId] ?? '?'
+      const myScore = isP1 ? r.p1Score : r.p2Score
+      const oppScore = isP1 ? r.p2Score : r.p1Score
+      const date = new Date(r.recordedAt).toLocaleDateString('ko-KR')
+      rows.push(`점수기록,"${oppName}",${myScore > oppScore ? '승' : '패'},${myScore}-${oppScore},,${date}`)
+    })
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `${pair.name}_전적_${new Date().toISOString().split('T')[0]}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800 flex items-center gap-2"><BarChart2 size={16} /> {pair.name} 전적</h3>
+          <div className="flex items-center gap-2">
+            {(tourMatches.length > 0 || recentRecords.length > 0) && (
+              <button onClick={handleExportCSV} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
+                <Download size={12} /> CSV
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl font-bold">
+              {pair.name[0]}
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-lg">{pair.name}</div>
+              <div className="text-sm text-gray-500">{pair.school} · {pair.division} · {pair.gender === '남' ? '남복' : pair.gender === '여' ? '여복' : '혼복'}</div>
+            </div>
+            <div className="text-right">
+              <div className="font-bold text-blue-600 text-lg">{pair.points.toLocaleString()}P</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mt-4 text-center">
+            <div className="bg-white rounded-lg p-2">
+              <div className="font-bold text-green-600 text-lg">{pair.wins}</div>
+              <div className="text-xs text-gray-400">승</div>
+            </div>
+            <div className="bg-white rounded-lg p-2">
+              <div className="font-bold text-red-500 text-lg">{pair.losses}</div>
+              <div className="text-xs text-gray-400">패</div>
+            </div>
+            <div className="bg-white rounded-lg p-2">
+              <div className="font-bold text-gray-700 text-lg">{pair.wins + pair.losses > 0 ? Math.round(pair.wins / (pair.wins + pair.losses) * 100) : 0}%</div>
+              <div className="text-xs text-gray-400">승률</div>
+            </div>
+          </div>
+        </div>
+
+        {tourMatches.length > 0 && (
+          <div className="mb-4">
+            <h4 className="font-semibold text-sm text-gray-700 mb-2">대회 경기 기록</h4>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {tourMatches.map(({ match, tournamentName, eventLabel }, idx) => {
+                const oppId = match.participant1Id === pair.id ? match.participant2Id! : match.participant1Id!
+                const oppName = pMap[oppId] ?? '?'
+                const isWin = match.result?.winnerId === pair.id
+                const setStr = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
+                return (
+                  <div key={idx} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isWin ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                    <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>{isWin ? '승' : '패'}</span>
+                    <span className="flex-1 font-medium truncate">vs {oppName}</span>
+                    <span className="text-xs text-gray-400 truncate">{tournamentName} {eventLabel}</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">{setStr}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {recentRecords.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-sm text-gray-700 mb-2">점수 기록</h4>
+            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              {recentRecords.map(r => {
+                const isP1 = r.participant1Id === pair.id
+                const oppId = isP1 ? r.participant2Id : r.participant1Id
+                const oppName = pMap[oppId] ?? '?'
+                const myScore = isP1 ? r.p1Score : r.p2Score
+                const oppScore = isP1 ? r.p2Score : r.p1Score
+                const isWin = myScore > oppScore
+                return (
+                  <div key={r.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isWin ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                    <span className={`font-bold text-xs px-2 py-0.5 rounded flex-shrink-0 ${isWin ? 'bg-green-500 text-white' : 'bg-red-400 text-white'}`}>{isWin ? '승' : '패'}</span>
                     <span className="flex-1 font-medium truncate">vs {oppName}</span>
                     <span className="text-xs font-medium">{myScore} - {oppScore}</span>
                     <span className="text-xs text-gray-400 flex-shrink-0">{new Date(r.recordedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
