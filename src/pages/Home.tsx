@@ -181,18 +181,18 @@ export default function Home() {
                 미체크인 {players.filter(p => !p.checkedIn).length} {showUnchecked ? '▲' : '▼'}
               </button>
               {showUnchecked && (
-                <div className="absolute top-full right-0 mt-1 z-30 bg-white border border-orange-200 rounded-xl shadow-lg p-2 min-w-[140px]"
+                <div className="absolute top-full right-0 mt-1 z-30 bg-white border border-orange-200 rounded-xl shadow-lg p-2 min-w-[160px] max-w-[220px]"
                   onClick={e => e.stopPropagation()}>
-                  {players.filter(p => !p.checkedIn).slice(0, 5).map(p => (
-                    <div key={p.id} className="text-xs text-gray-700 py-0.5 px-1 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                      <span className="truncate">{p.name}</span>
-                      <span className="text-gray-400 text-[10px] flex-shrink-0">{p.division}</span>
-                    </div>
-                  ))}
-                  {players.filter(p => !p.checkedIn).length > 5 && (
-                    <div className="text-[10px] text-gray-400 px-1 pt-1">+{players.filter(p => !p.checkedIn).length - 5}명 더</div>
-                  )}
+                  <div className="text-[10px] text-orange-500 font-bold px-1 mb-1">미체크인 전체 {players.filter(p => !p.checkedIn).length}명</div>
+                  <div className="max-h-[180px] overflow-y-auto space-y-0.5">
+                    {players.filter(p => !p.checkedIn).map(p => (
+                      <div key={p.id} className="text-xs text-gray-700 py-0.5 px-1 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                        <span className="truncate flex-1">{p.name}</span>
+                        <span className="text-gray-400 text-[10px] flex-shrink-0">{p.division}</span>
+                      </div>
+                    ))}
+                  </div>
                   <button onClick={() => { setShowUnchecked(false); navigate('/checkin') }}
                     className="mt-1.5 w-full text-[10px] bg-orange-500 text-white rounded-lg py-1 font-medium">
                     체크인 관리 →
