@@ -224,6 +224,20 @@ export default function Stats() {
     })
   }, [scoreRecords])
 
+  // 요일별 경기 분포
+  const dayOfWeekCounts = useMemo(() => {
+    const labels = ['월', '화', '수', '목', '금', '토', '일']
+    const counts = [0, 0, 0, 0, 0, 0, 0]
+    scoreRecords.forEach(r => {
+      if (!r.recordedAt) return
+      const d = new Date(r.recordedAt)
+      const dow = (d.getDay() + 6) % 7  // 0=월 … 6=일
+      counts[dow]++
+    })
+    const todayDow = (new Date().getDay() + 6) % 7
+    return labels.map((label, i) => ({ label, count: counts[i], isToday: i === todayDow }))
+  }, [scoreRecords])
+
   const completedTours = tournaments.filter(t => t.status === 'completed').length
   const totalMedalEvents = medalRows.filter(r => r.gold).length
 
@@ -845,6 +859,32 @@ export default function Stats() {
               </div>
             </section>
           )}
+
+          {/* 요일별 경기 분포 */}
+          {scoreRecords.length >= 5 && (() => {
+            const maxCount = Math.max(...dayOfWeekCounts.map(d => d.count), 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Activity size={14} className="text-violet-500" /> 요일별 경기 분포
+                </h2>
+                <div className="space-y-2">
+                  {dayOfWeekCounts.map(({ label, count, isToday }) => {
+                    const pct = Math.round(count / maxCount * 100)
+                    return (
+                      <div key={label} className="flex items-center gap-3">
+                        <div className={`w-6 text-xs font-bold flex-shrink-0 text-center ${isToday ? 'text-indigo-600' : 'text-gray-500'}`}>{label}</div>
+                        <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${isToday ? 'bg-indigo-500' : 'bg-violet-300'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className={`w-10 text-xs font-semibold text-right flex-shrink-0 ${isToday ? 'text-indigo-700' : 'text-gray-500'}`}>{count}건</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })()}
 
           {/* 종목별 평균 세트 수 */}
           {eventSetStats.length > 0 && (
