@@ -1584,6 +1584,45 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
+        {/* 대회별 종목 순위 */}
+        {tourMatches.length > 0 && (() => {
+          const groups = new Map<string, { tourName: string; evLabel: string }>()
+          tourMatches.forEach(({ tournamentName, eventLabel }) => {
+            const k = `${tournamentName}||${eventLabel}`
+            if (!groups.has(k)) groups.set(k, { tourName: tournamentName, evLabel: eventLabel })
+          })
+          const rankings: { tourName: string; evLabel: string; rank: number; total: number; wins: number }[] = []
+          groups.forEach(({ tourName, evLabel }) => {
+            const t = tournaments.find(t => t.name === tourName)
+            if (!t) return
+            const ev = t.events.find(ev => ev.label === evLabel)
+            if (!ev) return
+            const real = ev.matches.filter(m => m.result && !m.isBye && m.participant1Id && m.participant2Id)
+            if (real.length === 0) return
+            const winMap = new Map<string, number>()
+            real.forEach(m => { if (m.result?.winnerId) winMap.set(m.result.winnerId, (winMap.get(m.result.winnerId) ?? 0) + 1) })
+            const participants = new Set([...real.map(m => m.participant1Id!), ...real.map(m => m.participant2Id!)])
+            const myWins = winMap.get(player.id) ?? 0
+            const rank = [...participants].filter(pid => (winMap.get(pid) ?? 0) > myWins).length + 1
+            rankings.push({ tourName, evLabel, rank, total: participants.size, wins: myWins })
+          })
+          if (rankings.length === 0) return null
+          return (
+            <div className="mb-4">
+              <h4 className="font-semibold text-sm text-gray-700 mb-2">대회별 종목 순위</h4>
+              <div className="space-y-1.5">
+                {rankings.map((r, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100 text-xs">
+                    <span className={`font-bold px-2 py-0.5 rounded flex-shrink-0 ${r.rank === 1 ? 'bg-yellow-400 text-white' : r.rank <= 3 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{r.rank}위</span>
+                    <span className="flex-1 truncate text-gray-700">{r.tourName} · {r.evLabel}</span>
+                    <span className="text-gray-400 flex-shrink-0">{r.wins}승 · {r.total}명</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Tournament match history — grouped by event */}
         {tourMatches.length > 0 && (() => {
           const grouped: { key: string; tourName: string; evLabel: string; items: typeof tourMatches }[] = []
