@@ -1251,19 +1251,22 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         )
       })()}
 
-      {/* 종목 타입 색상 범례 */}
+      {/* 종목 타입 색상 범례 + 슬롯 수 통계 */}
       {(() => {
         const usedTypes = [...new Set(filteredSlots.map(s => s.type && s.type !== 'match' ? s.type : s.eventType).filter(Boolean))]
         if (usedTypes.length < 2) return null
         return (
           <div className="flex-shrink-0 bg-gray-50 border-b border-gray-100 px-4 py-1.5 flex items-center gap-2 flex-wrap no-print">
             <span className="text-[10px] text-gray-400 font-medium">종목</span>
-            {usedTypes.map(t => (
-              <span key={t} className="flex items-center gap-1 text-[10px] text-gray-600">
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${eventColors[t] ?? 'bg-gray-400'}`} />
-                {t}
-              </span>
-            ))}
+            {usedTypes.map(t => {
+              const cnt = filteredSlots.filter(s => (s.type && s.type !== 'match' ? s.type : s.eventType) === t).length
+              return (
+                <span key={t} className="flex items-center gap-1 text-[10px] text-gray-600">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${eventColors[t] ?? 'bg-gray-400'}`} />
+                  {t}<span className="text-gray-400 ml-0.5">({cnt})</span>
+                </span>
+              )
+            })}
           </div>
         )
       })()}
