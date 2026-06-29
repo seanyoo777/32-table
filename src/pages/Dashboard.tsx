@@ -73,6 +73,7 @@ export default function DashboardPage() {
   const [flashAckCallId, setFlashAckCallId] = useState<string | null>(null)
   const [liveEventFilter, setLiveEventFilter] = useState<string | null>(null)
   const [showCallHistory, setShowCallHistory] = useState(false)
+  const [dismissPendingBanner, setDismissPendingBanner] = useState(false)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
   useEffect(() => {
@@ -473,6 +474,18 @@ export default function DashboardPage() {
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* 미완료 경기 경보 배너 */}
+      {!dismissPendingBanner && pendingMatches.length >= 10 && (
+        <div className="flex-shrink-0 px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+          <span className="text-amber-600 flex-shrink-0">⚠</span>
+          <span className="text-xs font-semibold text-amber-800 flex-shrink-0">미완료 {pendingMatches.length}경기 남음</span>
+          <button onClick={() => navigate('/tournament')}
+            className="text-xs text-amber-600 hover:text-amber-800 underline flex-shrink-0">대진표 →</button>
+          <button onClick={() => setDismissPendingBanner(true)}
+            className="ml-auto text-amber-400 hover:text-amber-600 flex-shrink-0">✕</button>
         </div>
       )}
 
