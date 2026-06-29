@@ -762,6 +762,32 @@ function ManualEntry() {
                 </span>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayCount = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).length
+              if (todayCount < 1) return null
+              const days: string[] = []
+              for (let i = 1; i <= 7; i++) {
+                const d = new Date(); d.setDate(d.getDate() - i)
+                days.push(d.toISOString().split('T')[0])
+              }
+              const dayCounts = days.map(d => scoreRecords.filter(r => r.recordedAt?.startsWith(d)).length)
+              const hasData = dayCounts.some(c => c > 0)
+              if (!hasData) return null
+              const avg = dayCounts.reduce((s, c) => s + c, 0) / 7
+              const maxVal = Math.max(todayCount, avg, 1)
+              const todayPct = Math.round(todayCount / maxVal * 100)
+              const avgPct = Math.round(avg / maxVal * 100)
+              return (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="relative h-3.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full transition-all" style={{ width: `${todayPct}%` }} />
+                    <div className="absolute inset-y-0 top-0 w-px bg-orange-400 opacity-80" style={{ left: `${avgPct}%` }} />
+                  </div>
+                  <span className="text-[10px] text-gray-500 whitespace-nowrap">오늘 {todayCount} / 평균 {avg.toFixed(1)}</span>
+                </div>
+              )
+            })()}
             {recUnverifiedCount > 0 && (
               <button onClick={() => { setRecUnverifiedOnly(v => !v); setRecPage(0) }}
                 className={`text-xs px-2 py-1 rounded-lg font-medium flex-shrink-0 transition-colors ${recUnverifiedOnly ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
