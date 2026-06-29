@@ -294,7 +294,15 @@ export default function DashboardPage() {
               <DashCard icon="🏓" label="진행중 대회" value={activeTournaments.length} color="border-blue-200 bg-blue-50" />
               <DashCard icon="⏳" label="대기중 경기" value={pendingMatches.length} color="border-yellow-200 bg-yellow-50" sub={avgMatchMin && pendingMatches.length > 0 ? `약 ${pendingMatches.length * avgMatchMin}분` : undefined} />
               <DashCard icon="✅" label="완료 경기" value={completedMatches.length} color="border-green-200 bg-green-50" sub={todayRecords > 0 ? `오늘 ${todayRecords}건` : undefined} />
-              <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" />
+              <DashCard icon="🔴" label="실시간 스코어" value={liveMatches.length} color="border-red-200 bg-red-50" sub={(() => {
+                if (liveMatches.length === 0) return undefined
+                const elapseds = liveMatches.map(lm => {
+                  const call = matchCalls.find(c => c.matchId === lm.matchId)
+                  return call ? Math.floor((now.getTime() - new Date(call.calledAt).getTime()) / 60000) : null
+                }).filter((x): x is number => x !== null)
+                if (elapseds.length === 0) return undefined
+                return `평균 ${Math.round(elapseds.reduce((s, n) => s + n, 0) / elapseds.length)}분`
+              })()} />
               <DashCard icon="📋" label="오늘 기록" value={todayRecords} color="border-purple-200 bg-purple-50" sub={todayStreakStr} />
               {(() => {
                 const R = 11, circ = 2 * Math.PI * R
