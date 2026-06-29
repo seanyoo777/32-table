@@ -700,7 +700,7 @@ export default function Rankings() {
                       if (e.key === 'ArrowDown') { e.preventDefault(); const next = pagedPlayers[i + 1]; if (next) { setSelectedRow(next.id); (e.currentTarget.nextElementSibling as HTMLElement)?.focus() } }
                       if (e.key === 'ArrowUp') { e.preventDefault(); const prev = pagedPlayers[i - 1]; if (prev) { setSelectedRow(prev.id); (e.currentTarget.previousElementSibling as HTMLElement)?.focus() } }
                     }}
-                    className={`border-b last:border-0 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300 ${selectedRow === p.id ? 'bg-blue-50' : globalRank <= 3 ? 'bg-yellow-50/20' : anyChecked && !p.checkedIn ? 'bg-orange-50' : ''}`}>
+                    className={`border-b last:border-0 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300 ${selectedRow === p.id ? 'bg-blue-50' : globalRank === 1 ? 'bg-amber-50 ring-1 ring-amber-300 ring-inset' : globalRank <= 3 ? 'bg-yellow-50/20' : anyChecked && !p.checkedIn ? 'bg-orange-50' : ''}`}>
                     <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
@@ -710,8 +710,8 @@ export default function Rankings() {
                         }
                         <button
                           onClick={() => setStatsModal(p)}
-                          className="font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors"
-                        >{highlight(p.name)}</button>
+                          className={`font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors ${globalRank === 1 ? 'font-bold text-amber-700' : ''}`}
+                        >{globalRank === 1 && <span className="mr-0.5">👑</span>}{highlight(p.name)}</button>
                         {p.checkedIn && <CheckCircle size={11} className="text-green-500 flex-shrink-0" title="체크인 완료" />}
                         {(todayPlayerMatchCount.get(p.id) ?? 0) > 0 && <span className="text-[9px] px-1 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium flex-shrink-0">오늘 {todayPlayerMatchCount.get(p.id)}경기</span>}
                       </div>
