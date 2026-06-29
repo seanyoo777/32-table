@@ -1491,12 +1491,16 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             byDayTime ? (
               /* 다일차 전체 보기: 일차별 분리 테이블 */
               <div className="space-y-4">
-                {byDayTime.map(({ day, label, date, courts, rows }) => (
-                  <div key={day} className="schedule-day-section">
-                    <div className="schedule-day-header sticky top-0 z-20 flex items-center gap-3 bg-purple-700 text-white px-4 py-2 rounded-t-lg">
+                {byDayTime.map(({ day, label, date, courts, rows }) => {
+                  const todayISO = new Date().toISOString().split('T')[0]
+                  const isToday = date === todayISO
+                  return (
+                  <div key={day} className={`schedule-day-section ${isToday ? 'ring-2 ring-blue-400 rounded-t-lg' : ''}`}>
+                    <div className={`schedule-day-header sticky top-0 z-20 flex items-center gap-3 px-4 py-2 rounded-t-lg ${isToday ? 'bg-blue-600' : 'bg-purple-700'} text-white`}>
                       <span className="font-bold text-sm">{label}</span>
-                      {date && <span className="text-purple-200 text-xs">{date}</span>}
-                      <span className="text-purple-200 text-xs ml-auto">{rows.reduce((s, r) => s + r.slots.length, 0)}경기</span>
+                      {date && <span className={`text-xs ${isToday ? 'text-blue-200' : 'text-purple-200'}`}>{date}</span>}
+                      {isToday && <span className="text-[10px] bg-white text-blue-700 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">오늘</span>}
+                      <span className={`text-xs ml-auto ${isToday ? 'text-blue-200' : 'text-purple-200'}`}>{rows.reduce((s, r) => s + r.slots.length, 0)}경기</span>
                     </div>
                     <table className="text-sm border-collapse w-full">
                       <thead>
@@ -1546,7 +1550,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       </tbody>
                     </table>
                   </div>
-                ))}
+                )
+              })}
               </div>
             ) : (
             <table className="text-sm border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
