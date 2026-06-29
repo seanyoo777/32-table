@@ -1016,11 +1016,13 @@ export default function Home() {
                   const n1 = pMap[r.participant1Id] ?? '?'
                   const n2 = pMap[r.participant2Id] ?? '?'
                   const isP1Win = r.p1Score > r.p2Score
+                  const evLabel = tournaments.find(t => t.id === r.tournamentId)?.events.find(e => e.id === r.eventId)?.label
                   return (
                     <div key={r.id} className="flex items-center gap-1.5 text-xs bg-gray-50 rounded px-2 py-1">
                       <span className={`truncate flex-1 text-right ${isP1Win ? 'font-semibold text-blue-600' : 'text-gray-400'}`}>{n1}</span>
                       <span className="font-bold text-gray-600 flex-shrink-0 tabular-nums">{r.p1Score}:{r.p2Score}</span>
                       <span className={`truncate flex-1 ${!isP1Win ? 'font-semibold text-blue-600' : 'text-gray-400'}`}>{n2}</span>
+                      {evLabel && <span className="text-[9px] bg-gray-200 text-gray-500 px-1 py-0.5 rounded flex-shrink-0">{evLabel}</span>}
                     </div>
                   )
                 })}

@@ -865,6 +865,47 @@ function ManualEntry() {
                   </div>
                 )
               })()}
+              {(() => {
+                const matchupMap = new Map<string, { a: string; b: string; aWins: number; bWins: number }>()
+                filteredRecords.forEach(r => {
+                  const id1 = r.participant1Id, id2 = r.participant2Id
+                  if (!id1 || !id2) return
+                  const key = [id1, id2].sort().join('|')
+                  const cur = matchupMap.get(key) ?? { a: id1 < id2 ? id1 : id2, b: id1 < id2 ? id2 : id1, aWins: 0, bWins: 0 }
+                  const p1Won = r.p1Score > r.p2Score
+                  const aIsP1 = id1 === cur.a
+                  matchupMap.set(key, aIsP1
+                    ? { ...cur, aWins: cur.aWins + (p1Won ? 1 : 0), bWins: cur.bWins + (p1Won ? 0 : 1) }
+                    : { ...cur, aWins: cur.aWins + (p1Won ? 0 : 1), bWins: cur.bWins + (p1Won ? 1 : 0) })
+                })
+                const matchups = [...matchupMap.values()]
+                  .map(m => ({ ...m, total: m.aWins + m.bWins, aName: pMap[m.a]?.name ?? '?', bName: pMap[m.b]?.name ?? '?' }))
+                  .filter(m => m.total >= 1)
+                  .sort((a, b) => b.total - a.total)
+                  .slice(0, 5)
+                const uniqueOpponents = new Set(filteredRecords.flatMap(r => [r.participant1Id, r.participant2Id].filter(Boolean))).size
+                if (uniqueOpponents < 2 || matchups.length < 1) return null
+                return (
+                  <div className="mb-3">
+                    <span className="text-[10px] text-gray-400 block mb-1">상대별 전적 (상위 {matchups.length}매치)</span>
+                    <div className="space-y-1">
+                      {matchups.map((m, i) => {
+                        const aRate = m.total > 0 ? Math.round(m.aWins / m.total * 100) : 0
+                        return (
+                          <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                            <span className={`font-semibold truncate max-w-[60px] ${m.aWins >= m.bWins ? 'text-green-600' : 'text-gray-400'}`}>{m.aName}</span>
+                            <span className="text-green-600 font-bold flex-shrink-0">{m.aWins}</span>
+                            <span className="text-gray-300 flex-shrink-0">:</span>
+                            <span className="text-red-400 font-bold flex-shrink-0">{m.bWins}</span>
+                            <span className={`font-semibold truncate max-w-[60px] ${m.bWins > m.aWins ? 'text-green-600' : 'text-gray-400'}`}>{m.bName}</span>
+                            <span className="text-gray-400 ml-auto flex-shrink-0">{m.total}경기</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
               {filteredRecords.length >= 2 && (
                 <div className="mb-2">
                   <button

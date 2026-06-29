@@ -1610,6 +1610,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                           onDragEnd={() => { setDraggingSlotId(null); setDragOverCourt(null) }}
                         >
                           <div className="flex items-center gap-1.5 mb-0.5">
+                            {courtSlots.length >= 3 && <span className="text-[9px] text-gray-400 bg-gray-100 rounded-full w-4 h-4 flex items-center justify-center font-bold flex-shrink-0">{si + 1}</span>}
                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
                             <span className="text-[10px] text-gray-400">~{formatTime12h(slot.endTime)}</span>
