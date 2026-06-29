@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.14 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.16 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,29 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-23. v4.16 — 통계 탭 체크인 현황 분석
+
+자동 루프 세션. 통계·리포트 페이지 하단에 체크인 분석 섹션 추가.
+
+### 체크인 현황 분석 (Stats.tsx)
+- 전체 체크인 진행률 바 + N/Total명(%) 표시.
+- 부문별(초등~생활체육) 가로 막대 — 각 부문 색상 일치, checked/total(%) 수치.
+- "미체크인 CSV" 버튼 — 미체크인 선수 이름·소속·부문·성별·레이팅 CSV 내보내기.
+- `checkInStats` useMemo, `exportUncheckedCSV()` 함수 추가.
+
+---
+
+## 12-22. v4.15 — 대시보드 현장등록 선수 뱃지
+
+자동 루프 세션. 대기경기 행에 현장 신규등록 선수 뱃지 표시.
+
+### 현장등록 선수 식별 (Dashboard.tsx)
+- `walkinIds`: `players.school === '현장등록'` 인 선수 ID Set.
+- 대기경기 행에서 participant1/2가 walkinIds 포함 시 주황 "현장" 뱃지 표시.
+- 기존 "충돌" · "미체크인" · "호출됨" 뱃지 순서로 삽입.
 
 ---
 
