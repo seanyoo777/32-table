@@ -1429,6 +1429,26 @@ export default function Rankings() {
                   </span>
                 )
               })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+              if (todayRecs.length < 2) return null
+              const winPairIds = new Set<string>()
+              pairs.forEach(p => {
+                const won = todayRecs.some(r => {
+                  const p1Match = r.participant1Id === p.id || r.participant1Id === p.player1Id || r.participant1Id === p.player2Id
+                  const p2Match = r.participant2Id === p.id || r.participant2Id === p.player1Id || r.participant2Id === p.player2Id
+                  return (p1Match && (r.p1Score ?? 0) > (r.p2Score ?? 0)) || (p2Match && (r.p2Score ?? 0) > (r.p1Score ?? 0))
+                })
+                if (won) winPairIds.add(p.id)
+              })
+              if (winPairIds.size === 0) return null
+              return (
+                <span className="text-[10px] bg-emerald-100 text-emerald-700 border border-emerald-300 px-1.5 py-0.5 rounded-full font-medium">
+                  오늘 승리 페어 {winPairIds.size}팀
+                </span>
+              )
+            })()}
             </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
