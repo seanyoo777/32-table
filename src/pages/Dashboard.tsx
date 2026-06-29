@@ -766,6 +766,23 @@ export default function DashboardPage() {
                 </span>
               )
             })()}
+            {(() => {
+              const todayISO = now.toISOString().split('T')[0]
+              const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO))
+              if (todayCalls.length < 3) return null
+              const nameCount = new Map<string, number>()
+              todayCalls.forEach(c => {
+                if (c.participant1Name) nameCount.set(c.participant1Name, (nameCount.get(c.participant1Name) ?? 0) + 1)
+                if (c.participant2Name) nameCount.set(c.participant2Name, (nameCount.get(c.participant2Name) ?? 0) + 1)
+              })
+              const topEntry = [...nameCount.entries()].sort((a, b) => b[1] - a[1])[0]
+              if (!topEntry || topEntry[1] < 2) return null
+              return (
+                <span className="text-[10px] bg-indigo-100 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  {topEntry[0]} {topEntry[1]}회 호출
+                </span>
+              )
+            })()}
             {liveMatches.length >= 1 && (() => {
               const maxElapsed = liveMatches.map(lm => {
                 const call = matchCalls.find(c => c.matchId === lm.matchId)
