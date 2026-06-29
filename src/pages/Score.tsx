@@ -385,6 +385,7 @@ function ManualEntry() {
   const [winnerOnly, setWinnerOnly] = useState(false)
   const [recTournamentId, setRecTournamentId] = useState('')
   const [recPage, setRecPage] = useState(0)
+  const [recPeriod, setRecPeriod] = useState<'all' | 'today' | '7d' | '30d'>('all')
   const REC_PAGE_SIZE = 12
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set())
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -434,10 +435,19 @@ function ManualEntry() {
     return acc
   }, [])
 
-  // 최근 입력 기록: 검색 + 미확인 필터 + 대회 필터 + 페이지네이션
+  // 최근 입력 기록: 검색 + 미확인 필터 + 대회 필터 + 기간 필터 + 페이지네이션
   const filteredRecords = [...scoreRecords].reverse().filter(r => {
     if (recUnverifiedOnly && r.verified) return false
     if (recTournamentId && r.tournamentId !== recTournamentId) return false
+    if (recPeriod !== 'all') {
+      const now = new Date()
+      const cutoff = recPeriod === 'today'
+        ? new Date(now.toISOString().slice(0, 10))
+        : recPeriod === '7d'
+        ? new Date(now.getTime() - 7 * 86400000)
+        : new Date(now.getTime() - 30 * 86400000)
+      if (new Date(r.recordedAt) < cutoff) return false
+    }
     if (!recSearch) return true
     const q = recSearch.toLowerCase()
     const n1 = (pMap[r.participant1Id]?.name ?? '').toLowerCase()
@@ -731,6 +741,15 @@ function ManualEntry() {
                     W
                   </button>
                 </div>
+                <select
+                  className="select text-sm flex-shrink-0"
+                  value={recPeriod}
+                  onChange={e => { setRecPeriod(e.target.value as typeof recPeriod); setRecPage(0) }}>
+                  <option value="all">전체 기간</option>
+                  <option value="today">오늘</option>
+                  <option value="7d">최근 7일</option>
+                  <option value="30d">최근 30일</option>
+                </select>
                 {tournaments.length > 0 && (
                   <select
                     className="select text-sm min-w-[120px]"
@@ -741,9 +760,9 @@ function ManualEntry() {
                     {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 )}
-                {(recSearch || recTournamentId || recUnverifiedOnly || winnerOnly) && (
+                {(recSearch || recTournamentId || recUnverifiedOnly || winnerOnly || recPeriod !== 'all') && (
                   <button
-                    onClick={() => { setRecSearch(''); setRecTournamentId(''); setRecUnverifiedOnly(false); setWinnerOnly(false); setRecPage(0) }}
+                    onClick={() => { setRecSearch(''); setRecTournamentId(''); setRecUnverifiedOnly(false); setWinnerOnly(false); setRecPeriod('all'); setRecPage(0) }}
                     className="flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium whitespace-nowrap"
                   >초기화 ✕</button>
                 )}
