@@ -663,6 +663,31 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Call history */}
+          {(() => {
+            const recentCalls = [...matchCalls].filter(c => c.acknowledged).reverse().slice(0, 5)
+            if (recentCalls.length === 0) return null
+            return (
+              <div className="card flex-shrink-0">
+                <h2 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-2">
+                  <Bell size={13} className="text-gray-400" /> 최근 호출 이력
+                  <span className="text-xs text-gray-400 font-normal ml-auto">최근 {recentCalls.length}건</span>
+                </h2>
+                <div className="space-y-1">
+                  {recentCalls.map(c => (
+                    <div key={c.id} className="flex items-center gap-2 text-xs bg-gray-50 rounded px-2 py-1">
+                      <span className="text-gray-400 font-medium flex-shrink-0">{c.tableNo}번대</span>
+                      <span className="flex-1 truncate">{c.participant1Name} vs {c.participant2Name}</span>
+                      <span className="text-gray-300 flex-shrink-0">
+                        {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Recent results */}
           <div className="card flex-1 min-h-0 flex flex-col overflow-hidden">
             <h2 className="font-semibold text-sm text-gray-700 mb-2 flex-shrink-0 flex items-center gap-2">
