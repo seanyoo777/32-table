@@ -264,6 +264,26 @@ export default function Home() {
               </span>
             )
           })()}
+          {(() => {
+            const nowHM = `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`
+            const nowMins = new Date().getHours() * 60 + new Date().getMinutes()
+            const completedSet = new Set(
+              scoreRecords.flatMap(r => r.eventId && r.matchId ? [`${r.eventId}-${r.matchId}`] : [])
+            )
+            const nextSlot = todaySchedules
+              .flatMap(s => s.slots)
+              .filter(sl => sl.startTime && sl.startTime > nowHM && !completedSet.has(`${sl.eventId}-${sl.matchNo}`))
+              .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))[0]
+            if (!nextSlot?.startTime) return null
+            const [sh, sm] = nextSlot.startTime.split(':').map(Number)
+            const remaining = sh * 60 + sm - nowMins
+            if (remaining < 0 || remaining > 60) return null
+            return (
+              <span className="flex-shrink-0 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                다음 {nextSlot.startTime} ({remaining}분 후)
+              </span>
+            )
+          })()}
         </div>
       )}
 
