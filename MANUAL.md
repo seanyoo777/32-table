@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.6 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.9 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,24 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-16. v4.9 — 점수기록 대회별 필터·QR 선수증 선택 인쇄
+
+자동 루프 세션. §2 항목 2개 연속 구현·배포.
+
+### 점수 기록 대회별 필터 (Score.tsx)
+- 직접입력 탭 `최근 입력 기록` 섹션 — 선수명 검색창 옆 대회 드롭다운 추가.
+- `recTournamentId` state, `filteredRecords`에 `r.tournamentId !== recTournamentId` 조건 추가.
+- 4개 대회 옵션 표시 + 전체 대회 선택 확인.
+
+### QR 선수증 선택 인쇄 (CheckIn.tsx)
+- 카드 클릭 개별 선택 + "전체 선택/해제" 버튼.
+- 선택된 카드는 파란 테두리, 체크 마크 표시.
+- 선택 시 인쇄 버튼 "N명 인쇄"로 변경, 미선택 카드에 `no-print` 클래스 → 해당 선수만 인쇄.
+- 선택 없으면 기존대로 전체 인쇄.
+- 검증: 전체 선택 클릭 → "선택 해제" + "80명 인쇄" 버튼 전환 확인.
 
 ---
 
