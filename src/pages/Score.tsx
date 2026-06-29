@@ -719,6 +719,45 @@ function ManualEntry() {
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+              if (todayRecs.length < 3) return null
+              const COLORS = ['#6366f1','#22d3ee','#f59e0b','#34d399','#f87171','#a78bfa']
+              const evCount = new Map<string, number>()
+              todayRecs.forEach(r => {
+                const lbl = tournaments.find(t => t.id === r.tournamentId)?.events.find(e => e.id === r.eventId)?.label ?? '기타'
+                evCount.set(lbl, (evCount.get(lbl) ?? 0) + 1)
+              })
+              if (evCount.size < 2) return null
+              const sliceData = [...evCount.entries()].sort((a, b) => b[1] - a[1]).map(([l, n], i) => ({ l, n, color: COLORS[i % COLORS.length] }))
+              const total = sliceData.reduce((s, d) => s + d.n, 0)
+              let angle = -Math.PI / 2
+              const R = 18, ri = 9, cx = 22, cy = 22
+              const paths = sliceData.map(({ l, n, color }) => {
+                const sweep = (n / total) * 2 * Math.PI
+                const x1 = cx + R * Math.cos(angle), y1 = cy + R * Math.sin(angle)
+                angle += sweep
+                const x2 = cx + R * Math.cos(angle), y2 = cy + R * Math.sin(angle)
+                const large = sweep > Math.PI ? 1 : 0
+                return { l, n, color, path: `M${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} L${cx + ri * Math.cos(angle)},${cy + ri * Math.sin(angle)} A${ri},${ri},0,${large},0,${cx + ri * Math.cos(angle - sweep)},${cy + ri * Math.sin(angle - sweep)} Z` }
+              })
+              return (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <svg width={44} height={44} viewBox="0 0 44 44">
+                    {paths.map((p, i) => <path key={i} d={p.path} fill={p.color} opacity={0.9}><title>{p.l} {p.n}건</title></path>)}
+                  </svg>
+                  <div className="flex flex-wrap gap-x-2 gap-y-0">
+                    {sliceData.slice(0, 4).map(d => (
+                      <span key={d.l} className="flex items-center gap-1 text-[9px] text-gray-500">
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                        {d.l} {d.n}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
               if (todayRecs.length < 5) return null
               const evCount = new Map<string, number>()
               todayRecs.forEach(r => {
