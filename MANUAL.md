@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.58 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.79 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,235 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-86. v4.79 — 경기일정 드래그 실행취소 버튼
+
+자동 루프 세션. Schedule.tsx 슬롯 이동 후 1단계 undo 지원.
+
+### 변경 (Schedule.tsx)
+- `undoSlots`, `undoTimer` state 추가.
+- `handleMoveSlot` 호출 시 이전 slots 캡처 + 5초 setTimeout.
+- 헤더 우측에 `{undoSlots && <button>↩ 실행취소</button>}` 주황 pulse 버튼.
+- 클릭 시 plan.slots 복원, 타이머 5초 경과 시 버튼 자동 숨김.
+
+---
+
+## 12-85. v4.78 — 통계 체크인율 SVG 도넛 차트
+
+자동 루프 세션. Stats.tsx 체크인 현황 섹션에 도넛 차트 추가.
+
+### 변경 (Stats.tsx)
+- 96×96 SVG 도넛: r=36, teal 아크 (체크인), gray 배경 원.
+- strokeDasharray로 비율 계산, strokeDashoffset으로 12시 방향 시작.
+- 중앙 N% + "체크인율" 텍스트. 범례(체크인/미체크인/전체) 인라인.
+- 기존 선형 진행 바 차트는 유지.
+
+---
+
+## 12-84. v4.77 — 대시보드 LIVE 장기경기 강조
+
+자동 루프 세션. Dashboard.tsx LIVE 경기 목록에 최장 경과 경기 강조 표시.
+
+### 변경 (Dashboard.tsx)
+- liveMatches 전처리: 각 경기의 elapsed 분 계산, maxElapsed 산출.
+- 60분 이상 & 최장 경과 경기: border-red-500 + ring + "장기경기" 빨간 배지 + animate-pulse.
+- 기존 15분+ 노란 경과시간 칩은 유지.
+
+---
+
+## 12-83. v4.76 — 홈 D-Day 카운트다운 칩
+
+자동 루프 세션. Home.tsx 상태 칩 옆 예정 대회 D-Day 칩 추가.
+
+### 변경 (Home.tsx)
+- draft/upcoming 대회 중 가장 가까운 date 기준 D-N 계산.
+- "D-Day" (당일) / "D-N" (N일 전) 인디고 rounded-full 칩 표시.
+- date 미설정 또는 이미 지난 경우 칩 숨김.
+
+---
+
+## 12-82. v4.75 — 경기일정 부문 색상 범례
+
+자동 루프 세션. Schedule.tsx 일정 상세 뷰에 부문 색상 범례 추가.
+
+### 변경 (Schedule.tsx)
+- 통계 바와 충돌 경고 패널 사이에 `부문 색상 범례` 행 삽입.
+- 현재 filteredSlots에 2개 이상 division이 있을 때만 표시.
+- divColors 팔레트 사용 (초등=노랑, 중등=초록, 고등=파랑, 대학=보라, 일반=회색, 생활체육=주황).
+- `no-print` 클래스로 인쇄 시 제외.
+
+---
+
+## 12-81. v4.74 — 랭킹 선수 모달 승률 추이 SVG 차트
+
+자동 루프 세션. Rankings.tsx PlayerStatsModal에 승률 추이 인라인 SVG 추가.
+
+### 변경 (Rankings.tsx)
+- tourMatches + recentRecords 통합 → 최근 10경기 역순(시간순) 누적 승률 계산.
+- SVG (260×50 viewBox) 선 그래프: 점 승=green-500, 패=red-400, 선=indigo-500.
+- 50% 점선 기준선 + 현재 승률 % 라벨. 2경기 미만 시 숨김.
+
+---
+
+## 12-80. v4.73 — 대시보드 대기경기 일괄 코트배정
+
+자동 루프 세션. Dashboard.tsx 다중선택 경기에 같은 코트번호 한 번에 배정.
+
+### 변경 (Dashboard.tsx)
+- `bulkTableNo` state + `bulkAssignTable()` 함수 추가.
+- 체크박스 선택 시 코트번호 input + "N개 코트배정" 파란 버튼 표시.
+- 배정 후 선택 초기화, 각 경기의 `rowTableNos`에 반영.
+
+---
+
+## 12-79. v4.72 — 체크인 QR 스캔 음향 피드백
+
+자동 루프 세션. CheckIn.tsx QR 스캔 성공/실패 시 Web Audio API 비프음 추가.
+
+### 변경 (CheckIn.tsx)
+- `soundEnabled` state (기본 true) + `playBeep(type)` 함수 (AudioContext 기반).
+- 성공: sine 880 Hz, 0.2초. 실패: sawtooth 280 Hz, 0.35초.
+- 스캐너 카드 상단 우측에 🔊/🔇 토글 버튼 배치.
+
+---
+
+## 12-78. v4.71 — 홈 최근 점수 기록 미니 피드
+
+자동 루프 세션. Home.tsx Col-2에 scoreRecords 최근 3건 섹션 추가.
+
+### 변경 (Home.tsx)
+- `scoreRecords.length > 0` 시 "최근 점수 기록" 카드 표시.
+- 최근 3건 역순, 승자 이름 green-600 강조, 스코어 굵게 중앙.
+- "더보기 →" 클릭 시 `/score` 이동.
+
+---
+
+## 12-77. v4.70 — 대시보드 호출 목록 대회별 필터
+
+자동 루프 세션. Dashboard.tsx matchCalls UX 개선.
+
+### 변경 (Dashboard.tsx)
+- `callTourFilter` state 추가.
+- activeTournaments ≥ 2 && matchCalls.length > 0 시 대회 선택 드롭다운 표시.
+- matchCalls 렌더 시 `callTourFilter` 로 필터링.
+
+---
+
+## 12-76. v4.69 — 통계 대진 형식 분포 바 차트 개선
+
+자동 루프 세션. Stats.tsx formatDist 시각화 개선.
+
+### 변경 (Stats.tsx)
+- 기존 뱃지 → 가로 막대 + `N종목` + `%` 텍스트 표시.
+- 내림차순 정렬. teal-500 바, teal-100 배경.
+
+---
+
+## 12-75. v4.68 — 랭킹 검색 결과 없음 안내
+
+자동 루프 세션. Rankings.tsx 빈 상태 UX 개선.
+
+### 변경 (Rankings.tsx)
+- `pagedPlayers.length === 0` 시 search 또는 filterCheckIn 활성이면 "검색 결과가 없습니다" + "필터 초기화" 버튼 표시.
+- 필터 없이 0명이면 기존 "선수가 없습니다" 유지.
+
+---
+
+## 12-74. v4.67 — 대시보드 체크인 현황 미니 바
+
+자동 루프 세션. Dashboard.tsx 체크인 시각화 추가.
+
+### 변경 (Dashboard.tsx)
+- 스탯 카드 아래에 teal 배경 체크인 요약 행 추가.
+- 진행바(teal-500) + `N/M` + `%` + "미체크인 N명" 칩.
+- checkedIn 선수 0명이면 미표시.
+
+---
+
+## 12-73. v4.66 — 홈 오늘 기록 건수 칩
+
+자동 루프 세션. Home.tsx 경기 현황 바 개선.
+
+### 변경 (Home.tsx)
+- 오늘 날짜(`todayISO`) scoreRecords 건수 > 0 시 "오늘 기록 N건" blue pill 칩 추가.
+- 미확인 기록 칩 다음에 위치.
+
+---
+
+## 12-72. v4.65 — 경기일정 CSV 부문 컬럼 추가
+
+자동 루프 세션. Schedule.tsx exportScheduleCSV 개선.
+
+### 변경 (Schedule.tsx)
+- CSV 헤더에 `부문` 컬럼 추가 (코트 다음, 종목 앞).
+- `slot.division ?? ''` 값 출력.
+
+---
+
+## 12-71. v4.64 — 랭킹 선수 모달 종목별 전적 그룹화
+
+자동 루프 세션. Rankings.tsx PlayerStatsModal 개선.
+
+### 변경 (Rankings.tsx)
+- 대회 경기 기록 섹션을 `tournamentName + eventLabel` 키로 그룹화.
+- 각 그룹 상단에 `"대회명 · 종목"` 소제목(10px, gray-400) 표시.
+- 카드 내 중복 대회명/종목 라벨 제거 (소제목으로 대체).
+
+---
+
+## 12-70. v4.63 — 대시보드 코트 셀 클릭 → 호출 카드 하이라이트
+
+자동 루프 세션. Dashboard.tsx 코트 현황 대화형 개선.
+
+### 변경 (Dashboard.tsx)
+- 호출중(called) 코트 셀 클릭 시 `highlightCallId` state 세트, 2.5초 후 auto-clear.
+- matchCall 카드에 `id="call-{id}"` 추가, `highlightCallId === c.id` 시 `ring-2 ring-yellow-300 bg-yellow-50` 스타일.
+- `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` 로 카드 자동 스크롤.
+
+---
+
+## 12-69. v4.62 — 홈 대회 상태별 요약 칩
+
+자동 루프 세션. Home.tsx 상단 대회 현황 칩 추가.
+
+### 변경 (Home.tsx)
+- tournaments.filter 로 진행중/예정/완료 카운트 산출.
+- 각 상태 칩(pill 버튼) 클릭 시 `/tournament` 이동.
+- 해당 상태 0개이면 칩 미표시.
+
+---
+
+## 12-68. v4.61 — 통계 대회별 참가자 수 가로 막대 차트
+
+자동 루프 세션. Stats.tsx에 새 섹션 추가.
+
+### 변경 (Stats.tsx)
+- `tournaments` 참가자 수 내림차순 최대 5개 가로 바 차트 섹션 추가.
+- 완료(gray-400) / 진행중(blue-500) / 예정(blue-200) 상태별 바 색 구분.
+- 대회명 8자 초과 말줄임, 우측 참가자 수 숫자 표시.
+
+---
+
+## 12-67. v4.60 — 랭킹 선수 CSV 체크인·승률 컬럼 추가
+
+자동 루프 세션. Rankings.tsx exportCSV 개선.
+
+### 변경 (Rankings.tsx)
+- CSV 헤더에 `체크인`(O/X), `승률`(%) 컬럼 추가 (레이팅·승·패는 기존 유지).
+- 순서: 이름·학교·부문·성별·체크인·포인트·승·패·승률·Elo등급·등록번호·연락처·사진URL.
+
+---
+
+## 12-66. v4.59 — 대시보드 미응답 호출 강조
+
+자동 루프 세션. Dashboard.tsx 경기 호출 5분 경과 미응답 시각화.
+
+### 변경 (Dashboard.tsx)
+- matchCalls.reverse().map 콜백에 `isOverdue = !acknowledged && callElapsed >= 5` 추가.
+- 미응답 카드: `bg-red-50 border-red-400 animate-pulse`, 번호 스팬 `bg-red-500`.
+- `⚠ 미응답` 배지(빨간 pill) + 경과분 표시 `bg-red-100 text-red-600`.
 
 ---
 
