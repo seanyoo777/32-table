@@ -188,8 +188,8 @@ export default function LiveBoardPage() {
                     <span className="text-xs font-bold text-orange-400 bg-orange-900/50 px-2 py-0.5 rounded">
                       {c.tableNo}번대 입장
                     </span>
-                    <span className="text-[10px] text-gray-500">
-                      {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    <span className={`text-[10px] font-semibold ${Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000) >= 10 ? 'text-red-400' : 'text-gray-400'}`}>
+                      {Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000)}분 경과
                     </span>
                   </div>
                   <div className="text-[10px] text-gray-400 mb-1">{c.eventLabel}</div>

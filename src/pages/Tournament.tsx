@@ -146,7 +146,14 @@ export default function TournamentPage() {
                     <h3 className="font-semibold text-gray-800">{t.name}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">{t.date}{t.venue ? ` · ${t.venue}` : ''}</p>
                   </div>
-                  <StatusBadge status={t.status} />
+                  <div className="flex items-center gap-1.5">
+                    {totalMatches > 0 && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pct === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {pct === 100 ? '완료' : `${pct}%`}
+                      </span>
+                    )}
+                    <StatusBadge status={t.status} />
+                  </div>
                 </div>
                 {/* Events */}
                 <div className="flex flex-wrap gap-1 my-2">

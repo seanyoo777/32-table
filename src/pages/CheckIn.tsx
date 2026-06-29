@@ -106,6 +106,25 @@ export default function CheckInPage() {
         </div>
       </div>
 
+      {/* Check-in progress bar */}
+      {players.length > 0 && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>체크인 진행률</span>
+            <span className="font-medium text-gray-700">
+              {checkedIn.length}/{players.length}명
+              {notCheckedIn.length > 0 && <span className="text-orange-500 ml-1">· 미체크인 {notCheckedIn.length}명</span>}
+            </span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${checkedIn.length === players.length ? 'bg-green-500' : 'bg-blue-500'}`}
+              style={{ width: `${Math.round(checkedIn.length / players.length * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
         {tabs.map(({ id, label, icon: Icon }) => (
