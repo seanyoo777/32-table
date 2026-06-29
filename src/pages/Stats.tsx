@@ -915,6 +915,34 @@ export default function Stats() {
             )
           })()}
 
+          {/* 세트 수 분포 히스토그램 */}
+          {(() => {
+            const withSets = scoreRecords.filter(r => r.sets && r.sets.length > 0)
+            if (withSets.length < 5) return null
+            const bins = [1, 2, 3, 4, 5].map(n => ({ n, count: withSets.filter(r => r.sets!.length === n).length }))
+            const maxN = Math.max(...bins.map(b => b.count), 1)
+            const total = withSets.length
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <BarChart3 size={14} className="text-rose-500" /> 세트 수 분포
+                </h2>
+                <div className="space-y-1.5">
+                  {bins.filter(b => b.count > 0).map(({ n, count }) => (
+                    <div key={n} className="flex items-center gap-2">
+                      <span className="text-[11px] text-gray-500 w-10 flex-shrink-0">{n}세트</span>
+                      <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-rose-400 rounded-full transition-all" style={{ width: `${Math.round(count / maxN * 100)}%` }} />
+                      </div>
+                      <span className="text-[11px] font-bold text-rose-700 w-6 text-right flex-shrink-0">{count}</span>
+                      <span className="text-[10px] text-gray-400 w-8 text-right flex-shrink-0">{Math.round(count / total * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
