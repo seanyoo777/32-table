@@ -143,7 +143,6 @@ export default function Rankings() {
   }, [filterTournamentId, tournaments])
 
   const filteredPlayers = useMemo(() => {
-    setPage(1)
     let list = [...players]
     if (tournamentParticipantIds) list = list.filter(p => tournamentParticipantIds.has(p.id))
     if (rankView === '남자') list = list.filter(p => p.gender === '남')
@@ -413,7 +412,7 @@ export default function Rankings() {
             {/* 통합 그룹 */}
             <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
               {(['통합', '남자', '여자'] as const).map(v => (
-                <button key={v} onClick={() => { setRankView(v); setSubGender('all') }}
+                <button key={v} onClick={() => { setRankView(v); setSubGender('all'); setPage(1) }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${rankView === v ? 'bg-white shadow-sm text-blue-700 font-bold' : 'text-gray-500 hover:text-gray-700'}`}>
                   {v === '통합' ? '🏆 통합' : v === '남자' ? '👨 남자' : '👩 여자'}
                 </button>
@@ -421,7 +420,7 @@ export default function Rankings() {
             </div>
             {/* 부문별 */}
             {DIVISIONS.map(div => (
-              <button key={div} onClick={() => { setRankView(div); setSubGender('all') }}
+              <button key={div} onClick={() => { setRankView(div); setSubGender('all'); setPage(1) }}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors whitespace-nowrap ${rankView === div ? divBorder[div] : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
                 {div}
               </button>
@@ -853,7 +852,7 @@ export default function Rankings() {
           const topF = [...females].sort((a, b) => b.points - a.points)[0]
           const isActive = rankView === div
           return (
-            <div key={div} onClick={() => { setTab('singles'); setRankView(div); setSubGender('all') }}
+            <div key={div} onClick={() => { setTab('singles'); setRankView(div); setSubGender('all'); setPage(1) }}
               className={`card text-center py-3 cursor-pointer transition-all hover:shadow-md border-2 ${isActive ? divBorder[div] : 'border-transparent'}`}>
               <span className={`badge ${divColors[div]} mb-2`}>{div}</span>
               <div className="text-xl font-bold text-gray-700">{dp.length}</div>
