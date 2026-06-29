@@ -612,6 +612,32 @@ export default function Rankings() {
         )}
       </div>
 
+      {/* 오늘 첫 경기 선수 칩 */}
+      {tab === 'singles' && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+        if (todayRecs.length < 3) return null
+        const todayParticipated = new Map<string, number>()
+        todayRecs.forEach(r => {
+          if (r.participant1Id) todayParticipated.set(r.participant1Id, (todayParticipated.get(r.participant1Id) ?? 0) + 1)
+          if (r.participant2Id) todayParticipated.set(r.participant2Id, (todayParticipated.get(r.participant2Id) ?? 0) + 1)
+        })
+        const firstGamers = players.filter(p => {
+          const todayGames = todayParticipated.get(p.id) ?? 0
+          return todayGames > 0 && (p.wins + p.losses) === todayGames
+        })
+        if (firstGamers.length === 0) return null
+        return (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-green-600 font-semibold flex-shrink-0">첫 경기 {firstGamers.length}명</span>
+            {firstGamers.slice(0, 5).map(p => (
+              <span key={p.id} className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">{p.name}</span>
+            ))}
+            {firstGamers.length > 5 && <span className="text-[10px] text-gray-400">+{firstGamers.length - 5}</span>}
+          </div>
+        )
+      })()}
+
       {/* 부문 퀵 필터 — singles only */}
       {tab === 'singles' && (() => {
         const divCounts = DIVISIONS.map(d => ({ d, n: players.filter(p => p.division === d).length })).filter(x => x.n > 0)
