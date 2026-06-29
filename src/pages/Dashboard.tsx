@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [callTourFilter, setCallTourFilter] = useState('')
   const [bulkTableNo, setBulkTableNo] = useState(1)
   const [pendingSort, setPendingSort] = useState<'round' | 'points' | 'event'>('round')
+  const [courtExpanded, setCourtExpanded] = useState(false)
 
   function toggleSelectMatch(key: string) {
     setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
@@ -327,7 +328,7 @@ export default function DashboardPage() {
 
       {/* 코트 현황판 */}
       <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-100">
-        <div className="flex items-center gap-2">
+        <div className={courtExpanded ? 'flex flex-col gap-1.5' : 'flex items-center gap-2'}>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xs font-semibold text-gray-600">코트 현황</span>
             <span className="text-[10px] text-gray-400 flex items-center gap-1.5">
@@ -335,15 +336,19 @@ export default function DashboardPage() {
               {calledCourts > 0 && <span className="text-orange-500 font-semibold">호출 {calledCourts}</span>}
               <span>빈 {freeCourts}/{courts.length}</span>
             </span>
-            {freeCourts > 0 && freeCourts <= 6 && (
+            {freeCourts > 0 && freeCourts <= 6 && !courtExpanded && (
               <div className="flex items-center gap-1">
                 {courts.filter(c => c.status === 'free').map(c => (
                   <span key={c.no} className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">{c.no}번</span>
                 ))}
               </div>
             )}
+            <button onClick={() => setCourtExpanded(v => !v)}
+              className="ml-1 text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 bg-gray-50 flex-shrink-0">
+              {courtExpanded ? '접기 ▲' : '전체 ▼'}
+            </button>
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <div className={courtExpanded ? 'flex flex-wrap gap-1 mt-1' : 'flex items-center gap-1.5 overflow-x-auto pb-0.5'}>
             {courts.map(c => {
               const cls = c.status === 'live'
                 ? 'border-red-300 bg-red-50'
