@@ -1012,6 +1012,23 @@ export default function DashboardPage() {
               </div>
             )
           })()}
+          {filteredPendingMatches.length >= 2 && pendingCalls.length >= 1 && (() => {
+            const pendingAvg = Math.round(filteredPendingMatches.reduce((s, m) => s + (pointMap[m.participant1Id ?? ''] ?? 0) + (pointMap[m.participant2Id ?? ''] ?? 0), 0) / filteredPendingMatches.length)
+            const calledPts = pendingCalls.map(c => {
+              const m = allMatches.find(am => am.id === c.matchId)
+              if (!m) return 0
+              return (pointMap[m.participant1Id ?? ''] ?? 0) + (pointMap[m.participant2Id ?? ''] ?? 0)
+            }).filter(n => n > 0)
+            if (calledPts.length === 0 || pendingAvg === 0) return null
+            const calledAvg = Math.round(calledPts.reduce((s, n) => s + n, 0) / calledPts.length)
+            return (
+              <div className="mt-1 px-2.5 py-1.5 bg-gray-50 rounded-lg text-[10px] text-gray-500 flex items-center gap-2 flex-shrink-0">
+                <span>대기 <span className="font-semibold text-gray-700">{pendingAvg}pt</span></span>
+                <span className="text-gray-300">vs</span>
+                <span>호출 <span className="font-semibold text-orange-600">{calledAvg}pt</span></span>
+              </div>
+            )
+          })()}
           {avgMatchMin && filteredPendingMatches.length >= 2 && (() => {
             const totalMin = filteredPendingMatches.length * avgMatchMin
             const etaMs = now.getTime() + totalMin * 60000
