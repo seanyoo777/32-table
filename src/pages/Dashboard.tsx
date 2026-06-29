@@ -450,20 +450,27 @@ export default function DashboardPage() {
               <div className="flex-1 flex items-center justify-center text-sm text-gray-300">진행중 없음</div>
             ) : (
               <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
-                {liveMatches.map(lm => {
+                {(() => {
+                  const withElapsed = liveMatches.map(lm => {
+                    const relatedCall = matchCalls.find(c => c.matchId === lm.matchId)
+                    const elapsed = relatedCall ? Math.floor((now.getTime() - new Date(relatedCall.calledAt).getTime()) / 60000) : null
+                    return { lm, elapsed }
+                  })
+                  const maxElapsed = Math.max(...withElapsed.map(x => x.elapsed ?? 0))
+                  return withElapsed.map(({ lm, elapsed: liveElapsed }) => {
+                  const isLongest = liveElapsed !== null && liveElapsed >= 60 && liveElapsed === maxElapsed
                   const p1 = pMap[lm.participant1Id]
                   const p2 = pMap[lm.participant2Id]
                   const sets1 = lm.completedSets.filter(([a, b]) => a > b).length
                   const sets2 = lm.completedSets.filter(([a, b]) => b > a).length
-                  const relatedCall = matchCalls.find(c => c.matchId === lm.matchId)
-                  const liveElapsed = relatedCall ? Math.floor((now.getTime() - new Date(relatedCall.calledAt).getTime()) / 60000) : null
                   return (
                     <div key={lm.matchId}
-                      className="border-2 border-red-200 rounded-xl p-3 bg-red-50 cursor-pointer hover:shadow-md"
+                      className={`border-2 rounded-xl p-3 cursor-pointer hover:shadow-md ${isLongest ? 'border-red-500 bg-red-100 ring-1 ring-red-400' : 'border-red-200 bg-red-50'}`}
                       onClick={() => navigate('/score')}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-red-500">탁구대 {lm.tableNo}번</span>
                         <div className="flex items-center gap-1.5">
+                          {isLongest && <span className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold animate-pulse">장기경기</span>}
                           {liveElapsed !== null && (
                             <span className={`text-[10px] font-mono px-1 rounded ${liveElapsed >= 15 ? 'bg-red-200 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
                               {liveElapsed}분
@@ -487,7 +494,8 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   )
-                })}
+                  })
+                })()}
               </div>
             )}
           </div>
