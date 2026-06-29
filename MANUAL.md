@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.19 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.22 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,39 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-29. v4.22 — 점수기록 세트 상세 펼치기/접기
+
+자동 루프 세션. 직접입력 기록 목록에서 기록 행 클릭 시 세트별 점수 펼침.
+
+### 세트 상세 펼치기 (Score.tsx ManualEntry)
+- `expandedRecords: Set<string>` 상태 추가, `toggleExpand(id)` 토글 함수.
+- 세트 데이터 있는 행: 클릭 가능(`cursor-pointer`), ▼/▲ 인디케이터.
+- 펼쳐지면 `N세트 A-B` 칩 + `심판: ...` 표시. 세트 없는 행은 클릭 불가.
+
+---
+
+## 12-28. v4.21 — 체크인 취소 버튼
+
+자동 루프 세션. 체크인 완료 선수 옆에 X 버튼으로 즉시 해제 가능.
+
+### 체크인 취소 (CheckIn.tsx)
+- `uncheckIn(id)` 함수: `updatePlayer(id, { checkedIn: false })`.
+- 수동 검색 목록 "완료" 옆 X 버튼(회색 → hover 빨간).
+- QR 스캔 성공 직후 "취소" 버튼: 실수 스캔 즉시 해제.
+
+---
+
+## 12-27. v4.20 — 홈 대회 카드 클릭 → 상세 바로가기
+
+자동 루프 세션. 홈 진행중/최근 대회 카드 클릭 시 해당 대회 상세 직행.
+
+### 대회 카드 직행 (Home.tsx + Tournament.tsx)
+- Home.tsx: 카드 `onClick` → `navigate('/tournament?open=<id>')`.
+- Tournament.tsx: `const openId = new URLSearchParams(window.location.search).get('open')` 로 초기화.
+- `useState` 초기값: `openId ? 'detail' : 'list'`, `selectedId: openId`.
 
 ---
 
