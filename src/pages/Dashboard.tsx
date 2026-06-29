@@ -169,6 +169,16 @@ export default function DashboardPage() {
     ...players.map(p => [p.id, p.points]),
     ...pairs.map(p => [p.id, Math.max(...[p.player1Id, p.player2Id].map(id => players.find(pl => pl.id === id)?.points ?? 0))]),
   ])
+  const maxDiffMatchId = (() => {
+    if (filteredPendingMatches.length < 3) return null
+    let best: { id: string; diff: number } | null = null
+    filteredPendingMatches.forEach(m => {
+      if (!m.participant1Id || !m.participant2Id) return
+      const diff = Math.abs((pointMap[m.participant1Id] ?? 0) - (pointMap[m.participant2Id] ?? 0))
+      if (diff >= 100 && (!best || diff > best.diff)) best = { id: m.id, diff }
+    })
+    return best?.id ?? null
+  })()
   const sortedPendingMatches = [...filteredPendingMatches].sort((a, b) => {
     if (pendingSort === 'points') {
       const aP = (pointMap[a.participant1Id ?? ''] ?? 0) + (pointMap[a.participant2Id ?? ''] ?? 0)
@@ -923,7 +933,7 @@ export default function DashboardPage() {
                 )
                 return (
                   <div key={mKey}
-                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${hasConflict ? 'bg-red-100 border border-red-300 ring-1 ring-red-200 ring-inset' : 'bg-gray-50'}`}>
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${hasConflict ? 'bg-red-100 border border-red-300 ring-1 ring-red-200 ring-inset' : maxDiffMatchId === m.id ? 'bg-amber-50 ring-1 ring-amber-300' : 'bg-gray-50'}`}>
                     {!alreadyCalled && m.participant1Id && m.participant2Id && (
                       <input
                         type="checkbox"
