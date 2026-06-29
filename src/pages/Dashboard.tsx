@@ -284,14 +284,22 @@ export default function DashboardPage() {
         if (checkedIn === 0) return null
         const pct = Math.round(checkedIn / players.length * 100)
         return (
-          <div className="flex-shrink-0 px-4 py-1.5 bg-teal-50 border-b border-teal-100 flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-teal-600 flex-shrink-0">체크인</span>
-            <div className="flex-1 h-1.5 bg-teal-100 rounded-full overflow-hidden max-w-[100px]">
-              <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+          <div className="flex-shrink-0 px-4 py-1.5 bg-teal-50 border-b border-teal-100">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-teal-600 flex-shrink-0">체크인</span>
+              <div className="flex-1 h-1.5 bg-teal-100 rounded-full overflow-hidden max-w-[100px]">
+                <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-[11px] font-bold text-teal-700">{checkedIn}/{players.length}</span>
+              <span className="text-[10px] text-teal-500">{pct}%</span>
+              {players.length - checkedIn > 0 && <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium ml-auto">미체크인 {players.length - checkedIn}명</span>}
             </div>
-            <span className="text-[11px] font-bold text-teal-700">{checkedIn}/{players.length}</span>
-            <span className="text-[10px] text-teal-500">{pct}%</span>
-            {players.length - checkedIn > 0 && <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium ml-auto">미체크인 {players.length - checkedIn}명</span>}
+            <div className="flex gap-1 mt-1 overflow-x-auto hide-scrollbar">
+              {players.filter(p => p.checkedIn).slice(0, 5).map(p => (
+                <span key={p.id} className="text-[10px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.name}</span>
+              ))}
+              {checkedIn > 5 && <span className="text-[10px] text-teal-400 px-1 flex-shrink-0 self-center">+{checkedIn - 5}명</span>}
+            </div>
           </div>
         )
       })()}
