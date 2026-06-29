@@ -164,6 +164,15 @@ export default function Rankings() {
 
   const totalPages = Math.ceil(filteredPlayers.length / PAGE_SIZE)
   const pagedPlayers = filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const todayPlayerMatchCount = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const m = new Map<string, number>()
+    scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).forEach(r => {
+      if (r.participant1Id) m.set(r.participant1Id, (m.get(r.participant1Id) ?? 0) + 1)
+      if (r.participant2Id) m.set(r.participant2Id, (m.get(r.participant2Id) ?? 0) + 1)
+    })
+    return m
+  }, [scoreRecords])
 
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
@@ -577,6 +586,7 @@ export default function Rankings() {
                           className="font-medium text-left hover:text-blue-600 hover:underline underline-offset-2 transition-colors"
                         >{highlight(p.name)}</button>
                         {p.checkedIn && <CheckCircle size={11} className="text-green-500 flex-shrink-0" title="체크인 완료" />}
+                        {(todayPlayerMatchCount.get(p.id) ?? 0) > 0 && <span className="text-[9px] px-1 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium flex-shrink-0">오늘 {todayPlayerMatchCount.get(p.id)}경기</span>}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-gray-500">{highlight(p.school)}</td>
