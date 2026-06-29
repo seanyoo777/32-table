@@ -593,6 +593,23 @@ export default function Home() {
                         </div>
                       )
                     })()}
+                    {(() => {
+                      const tourRecs = [...scoreRecords.filter(r => r.tournamentId === t.id)].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
+                      if (tourRecs.length === 0) return null
+                      const latest = tourRecs[0]
+                      const winnerId = latest.p1Score > latest.p2Score ? latest.participant1Id : latest.participant2Id
+                      const winnerName = players.find(p => p.id === winnerId)?.name
+                      if (!winnerName) return null
+                      const timeAgo = Math.round((Date.now() - new Date(latest.recordedAt).getTime()) / 60000)
+                      const timeLabel = timeAgo < 1 ? '방금' : timeAgo < 60 ? `${timeAgo}분 전` : `${Math.round(timeAgo/60)}시간 전`
+                      return (
+                        <div className="mt-1.5 flex items-center gap-1 text-[10px] text-gray-400">
+                          <span>최근:</span>
+                          <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">{winnerName}</span>
+                          <span>{timeLabel}</span>
+                        </div>
+                      )
+                    })()}
                     <div className="flex gap-1.5 mt-2">
                       <button onClick={e => { e.stopPropagation(); navigate('/score') }}
                         className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-green-700">
