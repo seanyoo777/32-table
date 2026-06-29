@@ -345,6 +345,30 @@ export default function Home() {
             </div>
           </div>
 
+          {/* 최근 점수 기록 미니 피드 */}
+          {scoreRecords.length > 0 && (
+            <div className="card flex-shrink-0">
+              <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+                <ClipboardList size={14} className="text-red-500" /> 최근 점수 기록
+              </h2>
+              <div className="space-y-1">
+                {[...scoreRecords].reverse().slice(0, 3).map(r => {
+                  const p1Name = pMap[r.participant1Id] ?? '?'
+                  const p2Name = pMap[r.participant2Id] ?? '?'
+                  const isP1Win = r.p1Score > r.p2Score
+                  return (
+                    <div key={r.id} className="flex items-center gap-2 text-xs">
+                      <span className={`font-semibold truncate flex-1 ${isP1Win ? 'text-green-600' : 'text-gray-500'}`}>{p1Name}</span>
+                      <span className="font-bold text-gray-700 tabular-nums flex-shrink-0">{r.p1Score}-{r.p2Score}</span>
+                      <span className={`font-semibold truncate flex-1 text-right ${!isP1Win ? 'text-green-600' : 'text-gray-500'}`}>{p2Name}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <button onClick={() => navigate('/score')} className="mt-2 text-[10px] text-blue-500 hover:text-blue-700 w-full text-right">더보기 →</button>
+            </div>
+          )}
+
           {/* Recent tournaments (scrollable) */}
           <div className="card flex-1 min-h-0 flex flex-col overflow-hidden">
             <h2 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2 flex-shrink-0">
