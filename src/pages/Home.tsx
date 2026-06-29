@@ -809,6 +809,41 @@ export default function Home() {
             )
           })()}
 
+          {/* 오늘 운영 상태 요약 */}
+          {(() => {
+            if (activeTournaments.length === 0 && players.length === 0) return null
+            const ciPct = players.length > 0 ? Math.round(players.filter(p => p.checkedIn).length / players.length * 100) : null
+            const liveN = matchCalls.filter(c => !c.acknowledged).length
+            const pendingEvN = activeTournaments.reduce((s, t) => s + t.events.filter(ev => {
+              const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+              return total > 0 && ev.matches.filter(m => m.result).length < total
+            }).length, 0)
+            return (
+              <div className="flex-shrink-0 flex flex-wrap gap-1.5 px-1">
+                {ciPct !== null && (
+                  <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${ciPct === 100 ? 'bg-green-100 text-green-700' : ciPct >= 50 ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-500'}`}>
+                    체크인 {ciPct}%
+                  </span>
+                )}
+                {liveN > 0 && (
+                  <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-red-100 text-red-600 animate-pulse">
+                    LIVE {liveN}경기
+                  </span>
+                )}
+                {pendingEvN > 0 && (
+                  <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-amber-100 text-amber-700">
+                    미완료 {pendingEvN}종목
+                  </span>
+                )}
+                {pendingEvN === 0 && activeTournaments.length > 0 && (
+                  <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">
+                    전 종목 완료
+                  </span>
+                )}
+              </div>
+            )
+          })()}
+
           <div className="card flex-1 flex flex-col overflow-hidden min-h-0">
             <h2 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2 flex-shrink-0">
               <Award size={14} /> 단식 TOP 랭킹
