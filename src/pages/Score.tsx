@@ -386,6 +386,7 @@ function ManualEntry() {
   const [recTournamentId, setRecTournamentId] = useState('')
   const [recPage, setRecPage] = useState(0)
   const [recPeriod, setRecPeriod] = useState<'all' | 'today' | '7d' | '30d'>('all')
+  const [showRecStats, setShowRecStats] = useState(false)
   const REC_PAGE_SIZE = 12
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set())
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -767,6 +768,49 @@ function ManualEntry() {
                   >초기화 ✕</button>
                 )}
               </div>
+              {filteredRecords.length >= 2 && (
+                <div className="mb-2">
+                  <button
+                    onClick={() => setShowRecStats(v => !v)}
+                    className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${showRecStats ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}
+                  >
+                    {showRecStats ? '▲ 선수별 요약 닫기' : '▼ 선수별 요약 보기'}
+                  </button>
+                  {showRecStats && (() => {
+                    const statMap = new Map<string, { name: string; wins: number; losses: number }>()
+                    filteredRecords.forEach(r => {
+                      const p1Won = r.p1Score > r.p2Score
+                      const addStat = (id: string | undefined, won: boolean) => {
+                        if (!id) return
+                        const name = pMap[id]?.name ?? '?'
+                        const cur = statMap.get(id) ?? { name, wins: 0, losses: 0 }
+                        statMap.set(id, won ? { ...cur, wins: cur.wins + 1 } : { ...cur, losses: cur.losses + 1 })
+                      }
+                      addStat(r.participant1Id, p1Won)
+                      addStat(r.participant2Id, !p1Won)
+                    })
+                    const top5 = [...statMap.entries()]
+                      .map(([id, s]) => ({ id, ...s, total: s.wins + s.losses, rate: s.wins / (s.wins + s.losses) * 100 }))
+                      .filter(s => s.total > 0)
+                      .sort((a, b) => b.wins - a.wins || b.rate - a.rate)
+                      .slice(0, 5)
+                    if (top5.length === 0) return null
+                    return (
+                      <div className="mt-2 space-y-1.5">
+                        {top5.map((s, i) => (
+                          <div key={s.id} className="flex items-center gap-2 text-xs">
+                            <span className="w-4 text-center text-gray-400 font-bold flex-shrink-0">{i + 1}</span>
+                            <span className="flex-1 font-medium text-gray-700 truncate">{s.name}</span>
+                            <span className="text-green-600 font-bold flex-shrink-0">{s.wins}승</span>
+                            <span className="text-red-400 flex-shrink-0">{s.losses}패</span>
+                            <span className="text-gray-400 flex-shrink-0 w-10 text-right">{Math.round(s.rate)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
+              )}
               {filteredRecords.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-6 text-center">
                   <span className="text-3xl">🔍</span>
