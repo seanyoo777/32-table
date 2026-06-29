@@ -691,6 +691,26 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+          {(() => {
+            const evMap = new Map<string, number>()
+            filteredPendingMatches.forEach(m => { if (m.eventLabel) evMap.set(m.eventLabel, (evMap.get(m.eventLabel) ?? 0) + 1) })
+            if (evMap.size < 2) return null
+            const top4 = [...evMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)
+            const maxCnt = top4[0][1]
+            return (
+              <div className="mb-1.5 flex-shrink-0 space-y-0.5">
+                {top4.map(([label, cnt]) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-500 w-16 truncate flex-shrink-0">{label}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-300 rounded-full transition-all" style={{ width: `${Math.round(cnt / maxCnt * 100)}%` }} />
+                    </div>
+                    <span className="text-[9px] text-gray-500 flex-shrink-0 w-4 text-right">{cnt}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
           {sortedPendingMatches.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-300">대기중 없음</div>
           ) : (
