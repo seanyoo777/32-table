@@ -1021,6 +1021,13 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
     return eventColors[slot.eventType] ?? 'bg-gray-400'
   }
 
+  const eventTypeAccent = (eventType?: string) => {
+    if (eventType === '복식') return 'border-t-[3px] border-t-indigo-400'
+    if (eventType === '혼합복식') return 'border-t-[3px] border-t-pink-400'
+    if (eventType === '단식') return 'border-t-[3px] border-t-blue-300'
+    return ''
+  }
+
   function resolveParticipantName(id: string | null, eventType: string): string {
     if (!id || id.startsWith('ko-slot-')) return '미정'
     if (eventType === '복식' || eventType === '혼합복식') {
@@ -1479,7 +1486,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                               return (
                                 <td key={c} className="py-1.5 px-2 border border-gray-100">
                                   {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                                  <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                                  <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${eventTypeAccent(slot.eventType)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                                     onClick={e => { e.stopPropagation(); const px = Math.min(e.clientX + 8, window.innerWidth - 210); const py = Math.min(e.clientY + 8, window.innerHeight - 160); setPopoverPos({ x: px, y: py }); setPopoverSlot(slot) }}>
                                     <div className="flex items-center gap-1 mb-0.5">
                                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
@@ -1530,7 +1537,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       return (
                         <td key={c} className="py-1.5 px-2 border border-gray-100">
                           {(() => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`); return (
-                          <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                          <div className={`rounded p-1.5 border cursor-pointer hover:brightness-95 transition-all ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${eventTypeAccent(slot.eventType)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                             onClick={e => { e.stopPropagation(); const px = Math.min(e.clientX + 8, window.innerWidth - 210); const py = Math.min(e.clientY + 8, window.innerHeight - 160); setPopoverPos({ x: px, y: py }); setPopoverSlot(slot) }}>
                             <div className="flex items-center gap-1 mb-0.5">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
@@ -1613,7 +1620,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                           </div>
                         ) : null}
                         <div
-                          className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                          className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${eventTypeAccent(slot.eventType)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                           draggable={!slot.type || slot.type === 'match'}
                           onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('slotId', slot.id); setDraggingSlotId(slot.id); setEditingSlotId(null) }}
                           onDragEnd={() => { setDraggingSlotId(null); setDragOverCourt(null) }}
