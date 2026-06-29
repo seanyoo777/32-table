@@ -490,6 +490,21 @@ export default function CheckInPage() {
           <div className="text-sm text-gray-500 text-center">
             {checkedIn.length}명 체크인 / {notCheckedIn.length}명 미체크인
           </div>
+          {players.length > 0 && (() => {
+            const divChips = (['초등','중등','고등','대학','일반','생활체육'] as const)
+              .map(div => ({ div, total: players.filter(p => p.division === div).length, done: players.filter(p => p.division === div && p.checkedIn).length }))
+              .filter(x => x.total > 0)
+            if (divChips.length < 2) return null
+            return (
+              <div className="flex gap-1.5 flex-wrap justify-center">
+                {divChips.map(({ div, total, done }) => (
+                  <span key={div} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${done === total ? 'bg-green-100 text-green-700' : done === 0 ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-600'}`}>
+                    {div} {done}/{total}
+                  </span>
+                ))}
+              </div>
+            )
+          })()}
 
           {/* ── 현장등록 선수 ── */}
           {(() => {
