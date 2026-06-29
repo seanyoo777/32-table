@@ -648,17 +648,19 @@ export default function DashboardPage() {
               ) : (
                 [...matchCalls].reverse().map(c => {
                   const callElapsed = Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000)
+                  const isOverdue = !c.acknowledged && callElapsed >= 5
                   return (
                   <div key={c.id}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${c.acknowledged ? 'bg-gray-50 opacity-60' : 'bg-orange-50 border border-orange-200'}`}>
-                    <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'}`}>
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${c.acknowledged ? 'bg-gray-50 opacity-60' : isOverdue ? 'bg-red-50 border border-red-400 animate-pulse' : 'bg-orange-50 border border-orange-200'}`}>
+                    <span className={`font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${c.acknowledged ? 'bg-gray-200 text-gray-500' : isOverdue ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>
                       {c.tableNo}번
                     </span>
                     <span className="flex-1 truncate font-medium">{c.participant1Name} vs {c.participant2Name}</span>
+                    {isOverdue && <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold flex-shrink-0">⚠ 미응답</span>}
                     <span className="text-gray-400 flex-shrink-0 flex items-center gap-1">
                       {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       {!c.acknowledged && (
-                        <span className={`font-mono text-[10px] px-1 rounded ${callElapsed >= 10 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`font-mono text-[10px] px-1 rounded ${callElapsed >= 5 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
                           {callElapsed}분
                         </span>
                       )}
@@ -674,7 +676,8 @@ export default function DashboardPage() {
                       </button>
                     )}
                   </div>
-                )})
+                  )
+                })
               )}
             </div>
           </div>
