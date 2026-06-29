@@ -895,6 +895,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null)  // 인라인 편집 중인 슬롯
   const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null)  // 드래그 중인 슬롯
   const [dragOverCourt, setDragOverCourt] = useState<number | null>(null)   // 드롭 대상 코트
+  const [undoSlots, setUndoSlots] = useState<typeof plan.slots | null>(null)
+  const [undoTimer, setUndoTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [courtFilter, setCourtFilter] = useState<number | null>(null)       // 코트 필터
 
   // 이 일정의 최대 코트 수(인라인 코트 이동 select 범위)
@@ -1081,7 +1083,17 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   // 슬롯 시작시간/코트 인라인 수정 → 영향 코트 재정렬(겹침 자동 해소).
   function handleMoveSlot(slotId: string, patch: { startTime?: string; courtNo?: number }) {
     const buffer = plan.events.find(e => !e.type || e.type === 'match')?.bufferMinutes ?? 0
+    setUndoSlots(plan.slots)
+    if (undoTimer) clearTimeout(undoTimer)
+    setUndoTimer(setTimeout(() => setUndoSlots(null), 5000))
     updateSchedule(plan.id, { slots: moveScheduleSlot(plan.slots, slotId, patch, buffer) })
+  }
+  function handleUndo() {
+    if (!undoSlots) return
+    updateSchedule(plan.id, { slots: undoSlots })
+    setUndoSlots(null)
+    if (undoTimer) clearTimeout(undoTimer)
+    setUndoTimer(null)
   }
 
   return (
@@ -1115,6 +1127,12 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               <option value="">전체 코트</option>
               {allCourtsInView.map(c => <option key={c} value={c}>코트 {c}</option>)}
             </select>
+          )}
+          {undoSlots && (
+            <button onClick={handleUndo}
+              className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100 animate-pulse">
+              ↩ 실행취소
+            </button>
           )}
           <button onClick={() => setViewMode('time')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'time' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>시간순</button>
           <button onClick={() => setViewMode('court')} className={`px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'court' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>코트순</button>
