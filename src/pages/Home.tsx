@@ -890,6 +890,21 @@ export default function Home() {
             )
           })()}
 
+          {/* 오늘 등록 선수 칩 */}
+          {(() => {
+            const todayISO = new Date().toISOString().split('T')[0]
+            const todayPlayers = players.filter(p => p.createdAt?.startsWith(todayISO)).slice(0, 3)
+            if (todayPlayers.length === 0) return null
+            return (
+              <div className="flex-shrink-0 flex flex-wrap gap-1 px-1">
+                <span className="text-[10px] text-gray-400">오늘 등록:</span>
+                {todayPlayers.map(p => (
+                  <span key={p.id} className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-medium">{p.name}</span>
+                ))}
+              </div>
+            )
+          })()}
+
           {/* 오늘 운영 상태 요약 */}
           {(() => {
             if (activeTournaments.length === 0 && players.length === 0) return null
