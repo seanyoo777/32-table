@@ -456,6 +456,20 @@ export default function DashboardPage() {
                 </div>
               )
             })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayCheckedIn = players.filter(p => p.checkedIn)
+              if (todayCheckedIn.length < 2) return null
+              const newToday = todayCheckedIn.filter(p => p.createdAt?.startsWith(todayISO)).length
+              const existing = todayCheckedIn.length - newToday
+              if (newToday === 0 && existing === 0) return null
+              return (
+                <div className="flex items-center gap-1.5 mt-1">
+                  {newToday > 0 && <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-medium">신규 {newToday}명</span>}
+                  {existing > 0 && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">기존 {existing}명</span>}
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
