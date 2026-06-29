@@ -483,17 +483,26 @@ Tournament.tsx 라운드 버튼 재클릭 시 경기목록 ▼/▶ 토글. expan
 ### 2-178. ✅ 점수입력 오늘 기록 요약 칩 바 (완료 v5.68)
 Score.tsx 상단 오늘 N건/검증/미검증 칩. todayISO 기준.
 
-### 2-179. 대시보드 미완료 경기 남은 시간 예측 (v5.69)
-Dashboard.tsx 대기 경기 카드에 "약 N분 소요 예상" 칩 추가.
-평균 경기 시간 = scoreRecords 기반 (완료된 경기 평균), 대기수 × 평균.
+### 2-179. ✅ 대시보드 대기 경기 소요 예측 (완료 v5.69)
+sets×5분 기반 평균 × 대기수 = "약 N분" sub 텍스트. 3건+ 데이터 조건.
 
-### 2-180. 홈 체크인 QR 스캔 안내 팝업 (v5.70)
-Home.tsx 체크인 바 옆에 QR 아이콘 버튼 → QR 스캔 안내 모달 표시.
-선수ID를 URL 파라미터로 받는 QR 링크 생성 방법 안내.
+### 2-180. (스킵) 홈 체크인 QR 스캔 안내 팝업
+사용자 개입 필요 항목. 스킵.
 
-### 2-181. 랭킹 탭 포인트 0 선수 숨기기 토글 (v5.71)
-Rankings.tsx 단식 탭 헤더에 "포인트 없는 선수 숨기기" 토글 체크박스.
-hideZeroPoints 상태, filteredPlayers에 조건 추가.
+### 2-181. ✅ 랭킹 포인트 없는 선수 숨기기 토글 (완료 v5.71)
+hideZeroPoints 체크박스, filteredPlayers p.points>0 필터.
+
+### 2-182. 대시보드 LIVE 경기 평균 진행 시간 표시 (v5.72)
+Dashboard.tsx LIVE 경기 카드 아래에 현재 진행중인 경기의 평균 경과 시간 칩.
+liveMatches calledAt 기준 평균 경과분 계산.
+
+### 2-183. 통계 탭 대회별 경기 완료 속도 비교 (v5.73)
+Stats.tsx 대회별 완료된 경기 수를 시간순으로 나타내는 꺾은선 모사 바 차트.
+scoreRecords를 대회별로 groupBy, 시간대별 누적 완료수.
+
+### 2-184. 경기일정 시간표 출력 최적화 헤더 (v5.74)
+Schedule.tsx 인쇄 시 대회명·날짜·코트 수 표시되는 print-only 헤더 추가.
+@media print CSS, plan.name·plan.slots.courtNo 집계.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

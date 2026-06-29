@@ -1334,6 +1334,18 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
           )}
         </div>
 
+        {/* Print-only header */}
+        <div className="hidden print:block px-4 py-3 border-b border-gray-200 mb-2">
+          <div className="text-lg font-bold text-gray-900">{plan.name}</div>
+          <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-3">
+            <span>코트 {[...new Set(plan.slots.map(s => s.courtNo))].sort().join(', ')}번</span>
+            <span>|</span>
+            <span>슬롯 {plan.slots.length}개</span>
+            <span>|</span>
+            <span>출력일: {new Date().toLocaleDateString('ko-KR')}</span>
+          </div>
+        </div>
+
         {/* Main content */}
         <div className="flex-1 min-w-0 overflow-auto p-3">
           {viewMode === 'time' && (
