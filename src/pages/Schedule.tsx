@@ -1628,12 +1628,14 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                     {courtSlots.length >= 2 && (() => {
                       const doneN = courtSlots.filter(s => completedMatchSet.has(`${s.eventId}-${s.matchNo}`)).length
                       const pct = Math.round(doneN / courtSlots.length * 100)
+                      const barColor = pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-teal-500' : 'bg-gray-300'
+                      const textColor = pct === 100 ? 'text-green-600' : pct >= 50 ? 'text-teal-600' : 'text-gray-400'
                       return (
                         <div className="mb-2">
                           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-400'}`} style={{ width: `${pct}%` }} />
+                            <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
                           </div>
-                          {pct > 0 && <div className="text-right text-[9px] text-gray-400 mt-0.5">{doneN}/{courtSlots.length} ({pct}%)</div>}
+                          {pct > 0 && <div className={`text-right text-[9px] mt-0.5 font-medium ${textColor}`}>{doneN}/{courtSlots.length} ({pct}%)</div>}
                         </div>
                       )
                     })()}
