@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.11 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.14 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,33 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-120. v5.14 — 홈 체크인 전원 완료 강조
+
+자동 루프 세션. Home.tsx 체크인 바 100% 달성 시 시각 강조.
+
+### 변경 (Home.tsx)
+- checkedIn === players.length 시 bg-green-50 border-green-300 animate-pulse.
+- 바 색상 green-500, "전원 체크인!" green 뱃지.
+- IIFE 패턴으로 allChecked 변수 계산.
+
+## 12-119. v5.13 — 랭킹 선수 포인트 분포 히스토그램
+
+자동 루프 세션. Rankings.tsx singles 탭에 히스토그램 추가.
+
+### 변경 (Rankings.tsx)
+- players.length >= 2 & 포인트 분산 있을 때만 렌더링.
+- 5구간 (min~max 균등 분할) 막대, 각 막대 높이 비례.
+- 구간 하한 라벨 + 전체 min/max 표시.
+
+## 12-118. v5.12 — 대시보드 오늘 기록 검증 도넛 카드
+
+자동 루프 세션. Dashboard.tsx 스탯 카드 행 6번째에 도넛 추가.
+
+### 변경 (Dashboard.tsx)
+- grid-cols-5 → grid-cols-6. 6번째 카드: SVG 도넛(R=11).
+- verified=green stroke, unverified=amber stroke. 중앙 % 텍스트.
+- 오늘 기록 0건이면 빈 카드(0) 표시.
 
 ## 12-117. v5.11 — 경기일정 슬롯 클릭 상세 팝오버
 
