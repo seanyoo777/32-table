@@ -1468,6 +1468,51 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )
         })()}
 
+        {/* 종목별 승률 레이더 차트 */}
+        {(() => {
+          const evMap = new Map<string, { wins: number; total: number }>()
+          tourMatches.forEach(({ match, eventLabel }) => {
+            if (!evMap.has(eventLabel)) evMap.set(eventLabel, { wins: 0, total: 0 })
+            const e = evMap.get(eventLabel)!
+            e.total++
+            if (match.result?.winnerId === player.id) e.wins++
+          })
+          const events = Array.from(evMap.entries()).map(([label, { wins, total }]) => ({
+            label, pct: total > 0 ? Math.round(wins / total * 100) : 0
+          }))
+          if (events.length < 3) return null
+          const cx = 130, cy = 100, r = 65
+          const N = events.length
+          const ang = (i: number) => (2 * Math.PI * i / N) - Math.PI / 2
+          const pt = (i: number, s: number) => ({ x: cx + r * s * Math.cos(ang(i)), y: cy + r * s * Math.sin(ang(i)) })
+          const gridPts = (s: number) => events.map((_, i) => { const p = pt(i, s); return `${p.x},${p.y}` }).join(' ')
+          const dataPts = events.map((ev, i) => { const p = pt(i, ev.pct / 100); return `${p.x},${p.y}` }).join(' ')
+          return (
+            <div className="mb-3">
+              <div className="text-[11px] text-gray-400 mb-1">종목별 승률 레이더</div>
+              <svg viewBox="0 0 260 200" width="100%" height={200}>
+                {[0.25, 0.5, 0.75, 1].map(s => (
+                  <polygon key={s} points={gridPts(s)} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                ))}
+                {events.map((_, i) => { const p = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#d1d5db" strokeWidth="0.5" /> })}
+                <polygon points={dataPts} fill="rgba(99,102,241,0.15)" stroke="#6366f1" strokeWidth="1.5" />
+                {events.map((ev, i) => { const p = pt(i, ev.pct / 100); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="#6366f1" /> })}
+                {events.map((ev, i) => {
+                  const p = pt(i, 1.35)
+                  const anchor = p.x < cx - 5 ? 'end' : p.x > cx + 5 ? 'start' : 'middle'
+                  return (
+                    <g key={i}>
+                      <text x={p.x} y={p.y - 3} fontSize="8" textAnchor={anchor} fill="#6b7280">{ev.label}</text>
+                      <text x={p.x} y={p.y + 9} fontSize="8" textAnchor={anchor} fill="#4f46e5" fontWeight="bold">{ev.pct}%</text>
+                    </g>
+                  )
+                })}
+                <text x={cx + 2} y={cy - r * 0.5 - 2} fontSize="7" fill="#9ca3af">50%</text>
+              </svg>
+            </div>
+          )
+        })()}
+
         {/* Tournament match history — grouped by event */}
         {tourMatches.length > 0 && (() => {
           const grouped: { key: string; tourName: string; evLabel: string; items: typeof tourMatches }[] = []
