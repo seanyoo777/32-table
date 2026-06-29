@@ -219,6 +219,19 @@ export default function Rankings() {
     return m
   }, [pairs, scoreRecords])
 
+  const lastMatchDaysAgo = useMemo(() => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    const m = new Map<string, number>()
+    players.forEach(p => {
+      const recs = scoreRecords.filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+      if (recs.length === 0) return
+      const latest = recs.reduce((best, r) => (r.recordedAt ?? '') > (best.recordedAt ?? '') ? r : best)
+      const d = Math.round((todayMs - new Date(latest.recordedAt).setHours(0, 0, 0, 0)) / 86400000)
+      m.set(p.id, d)
+    })
+    return m
+  }, [players, scoreRecords])
+
   const filteredPairs = pairs
     .filter(p => filterPairDiv === 'all' || p.division === filterPairDiv)
     .filter(p => !search || p.name.includes(search) || p.school.includes(search))
@@ -695,6 +708,7 @@ export default function Rankings() {
                           {Math.round(p.wins / (p.wins + p.losses) * 100)}%
                         </span>
                       )}
+                      {(() => { const d = lastMatchDaysAgo.get(p.id); if (d === undefined) return null; return <span className="ml-1 text-[10px] text-gray-400">{d === 0 ? '오늘' : `${d}일 전`}</span> })()}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center gap-1">
