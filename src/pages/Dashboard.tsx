@@ -693,6 +693,27 @@ export default function DashboardPage() {
         )
       })()}
 
+      {/* 오늘 vs 어제 호출 비교 칩 */}
+      {(() => {
+        const todayISO = now.toISOString().split('T')[0]
+        const yestDate = new Date(now); yestDate.setDate(yestDate.getDate() - 1)
+        const yestISO = yestDate.toISOString().split('T')[0]
+        const todayN = matchCalls.filter(c => c.calledAt?.startsWith(todayISO)).length
+        const yestN = matchCalls.filter(c => c.calledAt?.startsWith(yestISO)).length
+        if (todayN < 3) return null
+        const diff = todayN - yestN
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—'
+        const cls = diff > 0 ? 'bg-green-50 text-green-700 border-green-200' : diff < 0 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-gray-50 text-gray-600 border-gray-200'
+        return (
+          <div className="flex-shrink-0 px-4 py-1 bg-white border-b border-gray-50 flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 flex-shrink-0">오늘 호출</span>
+            <span className={`text-[10px] border px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${cls}`}>
+              {todayN}건 {arrow}{Math.abs(diff) > 0 ? Math.abs(diff) : ''} {yestN > 0 ? `(어제 ${yestN})` : ''}
+            </span>
+          </div>
+        )
+      })()}
+
       {/* 코트 현황판 */}
       <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-100">
         <div className={courtExpanded ? 'flex flex-col gap-1.5' : 'flex items-center gap-2'}>
