@@ -511,6 +511,22 @@ export default function DashboardPage() {
               )
             })()}
             {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const recent5 = players
+                .filter(p => p.checkedIn && p.createdAt?.startsWith(todayISO))
+                .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+                .slice(0, 5)
+              if (recent5.length < 3) return null
+              return (
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  <span className="text-[9px] text-gray-400 flex-shrink-0">최근:</span>
+                  {recent5.map(p => (
+                    <span key={p.id} className="text-[9px] bg-white border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium">{p.name}</span>
+                  ))}
+                </div>
+              )
+            })()}
+            {(() => {
               const ci = players.filter(p => p.checkedIn)
               if (ci.length < 3) return null
               const morning = ci.filter(p => new Date(p.createdAt).getHours() < 12).length
