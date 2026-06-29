@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import { ClipboardList, Check, X, Zap, Keyboard, AlertTriangle } from 'lucide-react'
 import type { ScoreRecord, MatchResult, MatchFormat, LiveMatch } from '../types'
@@ -443,6 +443,25 @@ function ManualEntry() {
   const pagedRecords = filteredRecords.slice(recPageClamped * REC_PAGE_SIZE, (recPageClamped + 1) * REC_PAGE_SIZE)
   const recUnverifiedCount = scoreRecords.filter(r => !r.verified).length
 
+  const tourStats = useMemo(() => {
+    const map: Record<string, { tourName: string; count: number; setTotal: number; recWithSets: number; maxSet: number }> = {}
+    scoreRecords.forEach(r => {
+      if (!r.tournamentId) return
+      if (!map[r.tournamentId]) {
+        const t = tournaments.find(t => t.id === r.tournamentId)
+        map[r.tournamentId] = { tourName: t?.name ?? r.tournamentId, count: 0, setTotal: 0, recWithSets: 0, maxSet: 0 }
+      }
+      const entry = map[r.tournamentId]
+      entry.count++
+      if (r.sets && r.sets.length > 0) {
+        entry.setTotal += r.sets.length
+        entry.recWithSets++
+        r.sets.forEach(([a, b]) => { entry.maxSet = Math.max(entry.maxSet, a, b) })
+      }
+    })
+    return Object.values(map).filter(e => e.count >= 2).sort((a, b) => b.count - a.count)
+  }, [scoreRecords, tournaments])
+
   // suppress unused warning
   void submitted
 
@@ -749,6 +768,28 @@ function ManualEntry() {
             </>
           )}
         </div>
+
+        {tourStats.length > 0 && (
+          <div className="card">
+            <h3 className="font-semibold text-gray-700 mb-2 text-sm">대회별 통계</h3>
+            <div className="space-y-2">
+              {tourStats.map(s => (
+                <div key={s.tourName} className="bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="text-xs font-medium text-gray-700 truncate mb-1">{s.tourName}</div>
+                  <div className="flex gap-3 flex-wrap text-[11px] text-gray-500">
+                    <span>기록 <strong className="text-gray-700">{s.count}</strong>경기</span>
+                    {s.recWithSets > 0 && (
+                      <span>평균 <strong className="text-gray-700">{(s.setTotal / s.recWithSets).toFixed(1)}</strong>세트</span>
+                    )}
+                    {s.maxSet > 0 && (
+                      <span>최다 득점 <strong className="text-gray-700">{s.maxSet}</strong>점</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
