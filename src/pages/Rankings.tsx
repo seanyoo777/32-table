@@ -719,6 +719,39 @@ export default function Rankings() {
         </div>
       )}
 
+      {tab === 'singles' && (() => {
+        const divBar: Record<string, string> = {
+          초등: 'bg-yellow-400', 중등: 'bg-green-400', 고등: 'bg-blue-400',
+          대학: 'bg-purple-400', 일반: 'bg-gray-400', 생활체육: 'bg-orange-400',
+        }
+        const withPts = players.filter(p => p.points > 0)
+        if (withPts.length < 3) return null
+        const divAvg = DIVISIONS.map(div => {
+          const pp = withPts.filter(p => p.division === div)
+          return { div, avg: pp.length > 0 ? Math.round(pp.reduce((s, p) => s + p.points, 0) / pp.length) : 0, cnt: pp.length }
+        }).filter(d => d.cnt > 0)
+        if (divAvg.length < 2) return null
+        const maxAvg = Math.max(...divAvg.map(d => d.avg))
+        return (
+          <div className="card">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <BarChart2 size={13} className="text-indigo-500" /> 부서별 평균 포인트
+            </h3>
+            <div className="space-y-1">
+              {divAvg.map(({ div, avg, cnt }) => (
+                <div key={div} className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-600 w-16 flex-shrink-0">{div} ({cnt})</span>
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${divBar[div] ?? 'bg-gray-400'}`} style={{ width: `${Math.round(avg / maxAvg * 100)}%` }} />
+                  </div>
+                  <span className="text-[11px] text-gray-500 w-12 text-right flex-shrink-0">{avg}pt</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Doubles / Pairs Table */}
       {tab === 'doubles' && (
         <div className="card p-0 overflow-hidden">
