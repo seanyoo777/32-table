@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.16 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.19 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,40 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-26. v4.19 — 점수입력 세트 종료 자동감지
+
+자동 루프 세션. 직접입력 세트 스코어 완성 시 다음 세트 행 자동 추가.
+
+### 세트 완성 자동감지 (Score.tsx ManualEntry)
+- 세트 스코어 입력 필드(a, b) onChange에서 `isValidSetScore(a, b, neededPts)` 검사.
+- 마지막 SET 행이고 유효한 스코어(11점·2점차)가 완성되면 빈 행 자동 추가.
+- 검증: 11-5 입력 → 자동으로 SET2 행 추가(inputs 2→4개).
+
+---
+
+## 12-25. v4.18 — 대시보드 종목 완료 알림 배너
+
+자동 루프 세션. 진행중 대회에서 완료된 종목을 녹색 배너로 표시.
+
+### 종목 완료 알림 (Dashboard.tsx)
+- `completedEvents`: activeTournaments 각 event 중 real matches 전부 result 있는 것 수집.
+- 진행률 요약 바 아래 녹색 "✅ 종목 완료" 배너에 종목명 칩 나열.
+- 검증: 초등 남자 단식·초등 여자 단식 2개 완료 배너 확인.
+
+---
+
+## 12-24. v4.17 — 랭킹 체크인 상태 표시
+
+자동 루프 세션. 랭킹 선수 목록에 체크인 아이콘 + 필터 버튼.
+
+### 체크인 표시 (Rankings.tsx)
+- 선수 이름 옆 초록 `CheckCircle` 아이콘 (체크인 완료 선수만).
+- 검색창 옆 전체/체크인/미체크인 필터 버튼 (체크인 선수 있을 때만 표시).
+- `filterCheckIn` 상태 + `filteredPlayers` useMemo에 조건 추가.
+- 검증: 체크인 필터 클릭 → 5명만 표시, 5개 초록 아이콘 확인.
 
 ---
 
