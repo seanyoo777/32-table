@@ -692,6 +692,20 @@ export default function Home() {
                         ? <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">{pendingEvents}종목 남음</span>
                         : t.events.length > 0 && totalM > 0 && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold">전체 완료</span>
                       }
+                      {t.events.length >= 2 && (() => {
+                        const evRows = t.events.map(ev => {
+                          const evTotal = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                          const evDone = ev.matches.filter(m => m.result).length
+                          return { label: ev.label, pct: evTotal > 0 ? Math.round(evDone / evTotal * 100) : 0 }
+                        }).filter(r => r.pct < 100)
+                        const best = evRows.sort((a, b) => b.pct - a.pct)[0]
+                        if (!best || best.pct < 50) return null
+                        return (
+                          <span className="text-[10px] bg-green-100 text-green-700 border border-green-300 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                            {best.label} {best.pct}%
+                          </span>
+                        )
+                      })()}
                     </div>
                     <div className="h-1 bg-green-200 rounded-full">
                       <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />

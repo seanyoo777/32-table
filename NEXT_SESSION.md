@@ -1254,7 +1254,7 @@ todayPlayerWinStreak (오늘 scoreRecords 기반). 오늘 3건+ 조건.
 Score.tsx 오늘 scoreRecords 기준 세트 승률 상위 3명 노란 칩. p1Score/p2Score를
 세트 합산(단순 합). 오늘 기록 5건+ 조건.
 
-### 2-400. 대시보드 최장 대기 경기 황색 타이머 칩 (v5.284)
+### 2-400. ✅ 대시보드 최장 대기 경기 황색 타이머 칩 (완료 v5.284)
 Dashboard.tsx pendingCalls 중 가장 오래된 calledAt 기준 경과 분을
 황색 chip으로 코트 헤더 옆에 표시. pendingCalls 1건+ && 20분+ 조건.
 
