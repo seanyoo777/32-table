@@ -120,6 +120,7 @@ export default function Rankings() {
   const [mockGenModal, setMockGenModal] = useState(false)
   const [mockGenCount, setMockGenCount] = useState(500)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedRow, setSelectedRow] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 50
   const [pairPage, setPairPage] = useState(1)
@@ -687,7 +688,16 @@ export default function Rankings() {
                   const showGender = rankView === '통합' || isDivView
                   const anyChecked = players.some(pl => pl.checkedIn)
                   return (
-                  <tr key={p.id} className={`border-b last:border-0 hover:bg-gray-50 ${globalRank <= 3 ? 'bg-yellow-50/20' : anyChecked && !p.checkedIn ? 'bg-orange-50' : ''}`}>
+                  <tr key={p.id}
+                    tabIndex={0}
+                    onFocus={() => setSelectedRow(p.id)}
+                    onBlur={() => setSelectedRow(null)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { setStatsModal(p); return }
+                      if (e.key === 'ArrowDown') { e.preventDefault(); const next = pagedPlayers[i + 1]; if (next) { setSelectedRow(next.id); (e.currentTarget.nextElementSibling as HTMLElement)?.focus() } }
+                      if (e.key === 'ArrowUp') { e.preventDefault(); const prev = pagedPlayers[i - 1]; if (prev) { setSelectedRow(prev.id); (e.currentTarget.previousElementSibling as HTMLElement)?.focus() } }
+                    }}
+                    className={`border-b last:border-0 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300 ${selectedRow === p.id ? 'bg-blue-50' : globalRank <= 3 ? 'bg-yellow-50/20' : anyChecked && !p.checkedIn ? 'bg-orange-50' : ''}`}>
                     <td className="py-3 px-4 text-center"><RankIcon rank={globalRank} /></td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">

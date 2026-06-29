@@ -567,6 +567,61 @@ export default function Stats() {
             </section>
           )}
 
+          {/* 부문×성별 체크인 히트맵 */}
+          {checkInStats.total >= 4 && (() => {
+            const GENDERS = ['남', '여'] as const
+            const cells = DIVISIONS.map(div =>
+              GENDERS.map(g => {
+                const total = players.filter(p => p.division === div && p.gender === g).length
+                const checked = players.filter(p => p.division === div && p.gender === g && p.checkedIn).length
+                return { div, g, total, checked, pct: total > 0 ? Math.round(checked / total * 100) : -1 }
+              })
+            )
+            const hasData = cells.flat().some(c => c.total > 0)
+            if (!hasData) return null
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <CheckCircle size={14} className="text-teal-500" /> 부문·성별 체크인 현황
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="text-xs border-collapse w-full">
+                    <thead>
+                      <tr>
+                        <th className="w-16 text-left text-gray-400 font-normal py-1 pr-2" />
+                        {GENDERS.map(g => (
+                          <th key={g} className={`text-center text-[11px] font-semibold py-1 px-2 ${g === '남' ? 'text-blue-600' : 'text-pink-600'}`}>{g}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DIVISIONS.map((div, di) => (
+                        <tr key={div}>
+                          <td className="text-[11px] text-gray-500 pr-2 py-1">{div}</td>
+                          {cells[di].map(c => (
+                            <td key={c.g} className="px-1 py-0.5">
+                              {c.total === 0 ? (
+                                <div className="w-16 h-7 rounded bg-gray-50 flex items-center justify-center text-[9px] text-gray-300">-</div>
+                              ) : (
+                                <div
+                                  className="w-16 h-7 rounded flex items-center justify-center text-[10px] font-bold text-white"
+                                  style={{ backgroundColor: `rgba(20,184,166,${Math.max(0.12, c.pct / 100)})` }}
+                                  title={`${div} ${c.g}: ${c.checked}/${c.total} (${c.pct}%)`}
+                                >
+                                  <span className={c.pct >= 50 ? 'text-white' : 'text-teal-800'}>{c.pct}%</span>
+                                </div>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 종목별 평균 세트 수 */}
           {eventSetStats.length > 0 && (
             <section className="card">

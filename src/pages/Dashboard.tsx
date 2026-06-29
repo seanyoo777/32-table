@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [courtExpanded, setCourtExpanded] = useState(false)
   const [editingCallId, setEditingCallId] = useState<string | null>(null)
   const [editCallTable, setEditCallTable] = useState(1)
+  const [copiedCallId, setCopiedCallId] = useState<string | null>(null)
   const [liveEventFilter, setLiveEventFilter] = useState<string | null>(null)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
@@ -1052,6 +1053,15 @@ export default function DashboardPage() {
                           <button onClick={() => { setEditingCallId(c.id); setEditCallTable(c.tableNo) }}
                             className="text-[10px] text-blue-500 hover:text-blue-700 px-1 flex-shrink-0">코트↕</button>
                         )}
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${c.participant1Name} vs ${c.participant2Name} | ${c.tableNo}번 코트`)
+                            setCopiedCallId(c.id)
+                            setTimeout(() => setCopiedCallId(id => id === c.id ? null : id), 1000)
+                          }}
+                          className="text-gray-400 hover:text-blue-500 p-0.5 flex-shrink-0" title="클립보드 복사">
+                          {copiedCallId === c.id ? <CheckCircle size={11} className="text-green-500" /> : <span className="text-[11px]">⎘</span>}
+                        </button>
                         <button onClick={() => acknowledgeMatchCall(c.id)}
                           className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200 flex items-center gap-0.5">
                           <BellOff size={10} /> 확인
