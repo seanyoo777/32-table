@@ -917,20 +917,29 @@ Rankings.tsx pairTodayMatches useMemo. 승/패 셀에 "오늘 N경기" 칩.
 ### 2-310. ✅ 대시보드 LIVE 총 경과시간 합산 칩 (완료 v5.195)
 Dashboard.tsx LIVE 헤더 ml-auto "총 N분" gray 칩. 2개+ 조건. matchCalls 연동.
 
-### 2-311. 홈 화면 오늘 등록 선수 이름 칩 (v5.196)
-Home.tsx Col3 실시간 시계 카드 아래에 오늘 등록 선수 이름 칩 최대 3명 표시.
-players.createdAt 기준 오늘 등록. 0명이면 숨김. green 칩.
+### 2-311. ✅ 홈 오늘 등록 선수 green 칩 (완료 v5.196)
+Home.tsx 시계 카드 아래 players.createdAt 기준 오늘 등록 선수 최대 3명 green 칩.
 
-### 2-312. 대진표 경기 결과 없는 라운드 행 pulse 강조 (v5.197)
-Tournament.tsx 라운드 버튼 중 participant 모두 배정됐지만 result 없는 경기가 있는 라운드에
-ring-1 ring-amber-300 animate-pulse 추가. 라운드 시작이 명확한 경우만.
+### 2-312. ✅ 대진표 결과 없는 라운드 버튼 amber pulse (완료 v5.197)
+배정 완료 & 결과 0인 라운드 버튼 ring-1 ring-amber-300 animate-pulse. 선택 제외.
 
 ### 2-313. ⏭ 경기일정 코트뷰 미배정 슬롯 수 칩 (이미 구현됨 Schedule.tsx:1590)
-orange "미배정 N" 칩 이미 코트 섹션 헤더에 존재. 스킵.
+orange "미배정 N" 칩 이미 존재. 스킵.
 
-### 2-314. 대시보드 호출 경기 종목 색상 배지 강화 (v5.198)
-Dashboard.tsx matchCall 카드의 eventLabel에 종목 타입 파생 색상 테두리 추가.
-"단식"=blue, "복식"=indigo, "혼합"=pink border-l-2. 현재 기본 회색 대비 개선.
+### 2-314. ✅ 대시보드 호출 카드 종목 타입 border 색 (완료 v5.198)
+단식=blue, 복식=indigo, 혼합=pink border-l-[3px]. 미확인 카드만.
+
+### 2-315. 통계 탭 일자별 체크인 건수 바 차트 (v5.199)
+Stats.tsx 체크인 섹션 아래에 players.createdAt 기준 최근 7일 일별 체크인 수 바 차트.
+오늘=teal, 나머지=gray. 데이터 있는 날만 표시. 2일+ 조건.
+
+### 2-316. 랭킹 선수 모달 최다 상대 전적 하이라이트 (v5.200)
+Rankings.tsx PlayerStatsModal 상대별 전적 행 중 가장 많이 싸운 상대를 amber-50 배경 강조.
+총 경기 수 최대 상대. 2명+ 조건.
+
+### 2-317. 경기일정 헤더 타임라인 진행률 슬라이더 바 (v5.201)
+Schedule.tsx ScheduleDetail Stats 바 하단에 시간대별 경기 밀도를 보여주는 미니 히트맵 바.
+전체 슬롯 startTime 분포를 30분 단위 구간으로 표시. 3슬롯+ 조건.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

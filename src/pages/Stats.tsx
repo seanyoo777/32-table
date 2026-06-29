@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/useStore'
 import {
-  BarChart3, Trophy, Users, Activity, TrendingUp, Medal, Layers, Grid3x3, Printer, Download, CheckCircle,
+  BarChart3, Trophy, Users, Activity, TrendingUp, Medal, Layers, Grid3x3, Printer, Download, CheckCircle, UserPlus,
 } from 'lucide-react'
 import { getMedalists } from '../utils/tournamentScoring'
 import { getRatingLabel, RATING_LABELS } from '../utils/ratingUtils'
@@ -721,6 +721,42 @@ export default function Stats() {
               )}
             </section>
           )}
+
+          {/* 일별 체크인 등록 수 바 차트 */}
+          {(() => {
+            const todayISO = new Date().toISOString().split('T')[0]
+            const days: { date: string; n: number }[] = []
+            for (let i = 6; i >= 0; i--) {
+              const d = new Date(); d.setDate(d.getDate() - i)
+              const iso = d.toISOString().split('T')[0]
+              days.push({ date: iso, n: players.filter(p => p.createdAt?.startsWith(iso)).length })
+            }
+            const activeDays = days.filter(d => d.n > 0)
+            if (activeDays.length < 2) return null
+            const maxN = Math.max(...days.map(d => d.n), 1)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <UserPlus size={14} className="text-teal-500" /> 일별 선수 등록 수 (최근 7일)
+                </h2>
+                <div className="flex items-end gap-1 h-16">
+                  {days.map(({ date, n }) => (
+                    <div key={date} className="flex-1 flex flex-col items-center gap-0.5">
+                      <div className="w-full flex items-end justify-center" style={{ height: '48px' }}>
+                        <div className={`w-full rounded-t transition-all ${date === todayISO ? 'bg-teal-400' : 'bg-gray-300'}`}
+                          style={{ height: `${n > 0 ? Math.max(4, Math.round(n / maxN * 48)) : 0}px` }} />
+                      </div>
+                      <span className="text-[8px] text-gray-400">{n > 0 ? n : ''}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 mt-1 text-[9px] text-gray-300 justify-end">
+                  <span className="w-2 h-2 rounded-sm bg-teal-400 inline-block" /> 오늘
+                  <span className="w-2 h-2 rounded-sm bg-gray-300 inline-block ml-1" /> 이전 날
+                </div>
+              </section>
+            )
+          })()}
 
           {/* 부문×성별 체크인 히트맵 */}
           {checkInStats.total >= 4 && (() => {
