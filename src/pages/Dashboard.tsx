@@ -331,6 +331,14 @@ export default function DashboardPage() {
               ))}
               {checkedIn > 5 && <span className="text-[10px] text-teal-400 px-1 flex-shrink-0 self-center">+{checkedIn - 5}명</span>}
             </div>
+            {players.length - checkedIn > 0 && (
+              <div className="flex gap-1 mt-0.5 overflow-x-auto hide-scrollbar">
+                {players.filter(p => !p.checkedIn).slice(0, 5).map(p => (
+                  <span key={p.id} className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.name}</span>
+                ))}
+                {players.length - checkedIn > 5 && <span className="text-[10px] text-orange-400 px-1 flex-shrink-0 self-center">+{players.length - checkedIn - 5}명</span>}
+              </div>
+            )}
           </div>
         )
       })()}
