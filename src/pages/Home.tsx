@@ -493,6 +493,19 @@ export default function Home() {
                         <div className="text-[10px] text-green-500">+{t.events.length - 6}개 종목 더</div>
                       )}
                     </div>
+                    {players.length > 0 && (() => {
+                      const checkedCount = players.filter(p => p.checkedIn).length
+                      const ciPct = Math.round(checkedCount / players.length * 100)
+                      return (
+                        <div className="mt-2 flex items-center gap-2" onClick={e => { e.stopPropagation(); navigate('/checkin') }}>
+                          <span className="text-[10px] text-teal-600 flex-shrink-0">체크인</span>
+                          <div className="flex-1 h-1.5 bg-teal-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${ciPct}%` }} />
+                          </div>
+                          <span className="text-[10px] text-teal-700 font-medium flex-shrink-0">{checkedCount}/{players.length}</span>
+                        </div>
+                      )
+                    })()}
                     <div className="flex gap-1.5 mt-2">
                       <button onClick={e => { e.stopPropagation(); navigate('/score') }}
                         className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-lg flex items-center gap-1 hover:bg-green-700">
