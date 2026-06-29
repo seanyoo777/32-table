@@ -380,6 +380,29 @@ export default function Home() {
             </div>
           )}
 
+          {scoreRecords.length > 0 && (
+            <div className="card flex-shrink-0">
+              <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+                <ClipboardList size={13} className="text-green-500" /> 최근 완료 경기
+                <span className="text-xs text-gray-400 font-normal ml-auto">{scoreRecords.length}건 누적</span>
+              </h2>
+              <div className="space-y-1">
+                {[...scoreRecords].reverse().slice(0, 5).map(r => {
+                  const n1 = pMap[r.participant1Id] ?? '?'
+                  const n2 = pMap[r.participant2Id] ?? '?'
+                  const isP1Win = r.p1Score > r.p2Score
+                  return (
+                    <div key={r.id} className="flex items-center gap-1.5 text-xs bg-gray-50 rounded px-2 py-1">
+                      <span className={`truncate flex-1 text-right ${isP1Win ? 'font-semibold text-blue-600' : 'text-gray-400'}`}>{n1}</span>
+                      <span className="font-bold text-gray-600 flex-shrink-0 tabular-nums">{r.p1Score}:{r.p2Score}</span>
+                      <span className={`truncate flex-1 ${!isP1Win ? 'font-semibold text-blue-600' : 'text-gray-400'}`}>{n2}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {completedTournaments.length > 0 && (
             <div className="card flex-shrink-0">
               <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
