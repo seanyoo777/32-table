@@ -452,6 +452,25 @@ export default function DashboardPage() {
                 </div>
               )
             })()}
+            {(() => {
+              const todayISO2 = new Date().toISOString().split('T')[0]
+              const todayCi = players.filter(p => p.checkedIn && p.createdAt?.startsWith(todayISO2))
+              if (todayCi.length < 5) return null
+              const hourMap = new Map<number, number>()
+              todayCi.forEach(p => {
+                const h = new Date(p.createdAt!).getHours()
+                hourMap.set(h, (hourMap.get(h) ?? 0) + 1)
+              })
+              if (hourMap.size < 2) return null
+              const [peakH, peakCnt] = [...hourMap.entries()].sort((a, b) => b[1] - a[1])[0]
+              return (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                    피크 {peakH}시 {peakCnt}명
+                  </span>
+                </div>
+              )
+            })()}
             {players.length - checkedIn > 0 && (
               <div className="flex gap-1 mt-0.5 overflow-x-auto hide-scrollbar">
                 {players.filter(p => !p.checkedIn).slice(0, 5).map(p => (
