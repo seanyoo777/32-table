@@ -432,17 +432,26 @@ todaySchedules courtNo Set 기준 전체/활성 코트 수 purple 칩.
 ### 2-163. ✅ Dashboard LIVE 경기 종목 필터 칩 (완료 v5.53)
 종목 2개 이상 시 전체/종목별 필터 칩. liveEventFilter state 추가.
 
-### 2-164. 통계 선수 포인트 분포 히스토그램 (v5.54)
-Stats.tsx 활성 대회 참가 선수들의 포인트 분포 히스토그램.
-100pt 구간별 인라인 가로 막대, 구간 레이블 + 선수 수.
+### 2-164. ✅ 통계 선수 포인트 분포 히스토그램 (완료 v5.54)
+Stats.tsx 100pt 단위 5구간 가로 막대. 3명+ 포인트 있을 때만 표시.
 
-### 2-165. 경기일정 슬롯 검색 필터 (v5.55)
-Schedule.tsx 일정 상세 헤더에 선수명/종목 검색 input 추가.
-일치하는 슬롯만 표시, 검색어 없으면 전체 표시. ✕ 초기화.
+### 2-165. ✅ 경기일정 슬롯 선수·종목 검색 필터 (완료 v5.55)
+Schedule.tsx 헤더 slotSearch input. participant1/2+eventType+division 검색.
 
-### 2-166. 대회 경기 목록 선수 이름 클릭 → 랭킹 이동 (v5.56)
-Tournament.tsx MatchList 경기 행 participant 이름을 클릭 시 /rankings?search=NAME.
-완료/대기 경기 모두 적용.
+### 2-166. ✅ 대회 경기 목록 선수명 클릭 → 랭킹 이동 (완료 v5.56)
+MatchList useNavigate 추가. P1/P2 이름 클릭 → /rankings?search=NAME.
+
+### 2-167. 홈 오늘 일정 슬롯 완료율 미니 바 (v5.57)
+Home.tsx 오늘 일정 요약 섹션에 완료/전체 슬롯 수 + 인라인 진행 바 추가.
+completedMatchSet 기반으로 오늘 슬롯 중 완료된 비율 표시.
+
+### 2-168. 랭킹 복식 페어 포인트 트렌드 화살표 (v5.58)
+Rankings.tsx 복식 페어 목록 행에도 동일한 ↑/↓/— 트렌드 화살표 추가.
+pairTrend useMemo, scoreRecords 기반 최근 3경기.
+
+### 2-169. 대시보드 오늘 완료 경기 스트릭 표시 (v5.59)
+Dashboard.tsx "오늘 N건" 완료 기록 카드 하단에 연속 기록 스트릭 표시.
+scoreRecords 오늘 기록 기준 연속 승리/패배 스트릭.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

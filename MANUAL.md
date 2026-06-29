@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.53 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.56 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,37 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-163. v5.56 — 대회 경기 목록 선수명 랭킹 이동
+
+자동 루프. Tournament.tsx MatchList 선수명 클릭.
+
+### 변경 (Tournament.tsx)
+- `useNavigate` import + MatchList 컴포넌트에 훅 추가.
+- P1/P2 이름 `onClick` + `stopPropagation`. `/rankings?search=NAME` navigate.
+
+---
+
+## 12-162. v5.55 — 경기일정 슬롯 검색 필터
+
+자동 루프. Schedule.tsx 헤더 검색 input.
+
+### 변경 (Schedule.tsx)
+- `slotSearch` state 추가.
+- `filteredSlots` 필터에 검색어 조건 추가.
+- 헤더 input + ✕ 초기화 UI.
+
+---
+
+## 12-161. v5.54 — 통계 선수 포인트 분포 히스토그램
+
+자동 루프. Stats.tsx 포인트 5구간 막대.
+
+### 변경 (Stats.tsx)
+- `players.filter(p => p.points > 0)` 기준 maxPt/bucketSize 계산.
+- 5개 구간 가로 막대 + 구간 레이블 + 명 수.
 
 ---
 
