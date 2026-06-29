@@ -854,7 +854,11 @@ export default function DashboardPage() {
                         className="flex-shrink-0 w-3 h-3"
                       />
                     )}
-                    <span className="text-gray-400 font-medium w-14 truncate flex-shrink-0">{m.eventLabel}</span>
+                    {(() => {
+                      const lbl = m.eventLabel ?? ''
+                      const cls = lbl.includes('혼합') || lbl.includes('혼복') ? 'bg-pink-100 text-pink-700' : lbl.includes('복식') ? 'bg-purple-100 text-purple-700' : lbl.includes('단식') ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+                      return <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded max-w-[60px] truncate flex-shrink-0 ${cls}`} title={lbl}>{lbl.slice(0, 4) || '—'}</span>
+                    })()}
                     <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
                     {hasConflict && (
                       <span className="text-red-600 bg-red-100 border border-red-200 px-1 rounded flex-shrink-0 text-[10px]" title="이 경기의 선수가 이미 다른 경기에 호출되어 있습니다">충돌</span>
