@@ -886,17 +886,29 @@ animate-pulse ring-2 ring-amber-400 테두리 추가. 단일 코트만 강조.
 Schedule.tsx Stats 바에 filteredSlots participant1/participant2 중복 제거 후
 "선수 N명" purple 칩 표시. 1명+ 조건.
 
-### 2-302. 랭킹 복식 페어 모달 개인 Elo 표시 (v5.187)
-Rankings.tsx PairStatsModal에 두 선수(player1Id/player2Id) 각각의 Elo 레이팅
-나란히 indigo 칩으로 표시. 두 선수 모두 찾을 수 있는 경우만 표시.
+### 2-302. ✅ 랭킹 복식 페어 모달 개인 Elo 표시 (완료 v5.187)
+Rankings.tsx PairStatsModal에 두 선수 개인 rating indigo 칩 나란히 표시.
+players prop 추가. 두 선수 모두 찾을 수 있는 경우만 표시.
 
-### 2-303. 점수 기록 탭 종목별 평균 세트 수 미니 표 (v5.188)
-Score.tsx ManualEntry 기록 탭에 종목별 평균 세트 수 미니 gray 표 추가.
-filteredRecords 기준 종목 그룹화. 2종목+ && 5건+ 조건.
+### 2-303. ✅ 점수 기록 탭 종목별 평균 세트 수 미니 표 (완료 v5.188)
+Score.tsx 기록 탭 세트 분포 차트 위에 종목별 평균 세트 수 gray 표 추가.
+filteredRecords 기반 tournaments 이벤트 라벨 조회. 2종목+ && 5건+ 조건.
 
-### 2-304. 홈 LIVE 호출 선수 이름 칩 (v5.189)
-Home.tsx 상태 칩 행에 미확인 matchCall 선수명 teal 칩 최대 3개 표시.
-matchCalls.filter(acknowledged=false) 기준. 클릭 → /dashboard. 호출 1건+ 조건.
+### 2-304. ✅ 홈 LIVE 호출 선수 이름 teal 칩 (완료 v5.189)
+Home.tsx 상태 칩 행에 미확인 matchCall participant1Name teal 칩 최대 3개.
+클릭 → /dashboard. 호출 1건+ 조건.
+
+### 2-305. 대시보드 대기경기 라운드 진행 현황 바 (v5.190)
+Dashboard.tsx 대기경기 목록 상단에 라운드별 잔여 경기 수 가로 바 추가.
+pendingMatches 라운드 그룹화 → 각 라운드 이름 + 건수 + 상대 너비 바. 2라운드+ 조건.
+
+### 2-306. 랭킹 선수 행 레이팅 변화 미니 스파크라인 (v5.191)
+Rankings.tsx 선수 목록 rating 숫자 옆에 최근 5경기 W/L 기반 스파크라인 점 5개.
+승=green, 패=red 점. 5경기 미만이면 있는 만큼만. 1경기+ 조건.
+
+### 2-307. 경기일정 슬롯 카드 종목 색상 좌측 배경 강조 (v5.192)
+Schedule.tsx 타임라인 뷰에서 슬롯 카드 종목(eventType) 기반 좌측 4px border 색 추가.
+단식=blue, 복식=indigo, 혼합=pink. courtCardAccent와 별도로 종목 타입 기준.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

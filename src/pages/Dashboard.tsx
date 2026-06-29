@@ -874,6 +874,26 @@ export default function DashboardPage() {
               </div>
             )
           })()}
+          {(() => {
+            const rdMap = new Map<string, number>()
+            filteredPendingMatches.forEach(m => { const r = m.round ?? '기타'; rdMap.set(r, (rdMap.get(r) ?? 0) + 1) })
+            if (rdMap.size < 2) return null
+            const sorted = [...rdMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)
+            const maxCnt = sorted[0][1]
+            return (
+              <div className="mb-1.5 flex-shrink-0 space-y-0.5">
+                {sorted.map(([rd, cnt]) => (
+                  <div key={rd} className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-400 w-16 truncate flex-shrink-0">{rd}</span>
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-300 rounded-full transition-all" style={{ width: `${Math.round(cnt / maxCnt * 100)}%` }} />
+                    </div>
+                    <span className="text-[9px] text-gray-400 flex-shrink-0 w-4 text-right">{cnt}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
           {sortedPendingMatches.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-300">대기중 없음</div>
           ) : (
