@@ -87,6 +87,10 @@ export default function CheckInPage() {
     players.forEach(p => updatePlayer(p.id, { checkedIn: false }))
   }
 
+  function checkInAll() {
+    players.filter(p => !p.checkedIn).forEach(p => updatePlayer(p.id, { checkedIn: true }))
+  }
+
   function handleWalkin() {
     if (!walkinName.trim()) return
     const newPlayer: Player = {
@@ -152,10 +156,20 @@ export default function CheckInPage() {
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-gray-500">
             <span>체크인 진행률</span>
-            <span className="font-medium text-gray-700">
-              {checkedIn.length}/{players.length}명
-              {notCheckedIn.length > 0 && <span className="text-orange-500 ml-1">· 미체크인 {notCheckedIn.length}명</span>}
-            </span>
+            <div className="flex items-center gap-2">
+              {notCheckedIn.length > 0 && (
+                <button
+                  onClick={() => { if (confirm(`미체크인 ${notCheckedIn.length}명을 전원 체크인 처리합니까?`)) checkInAll() }}
+                  className="text-[11px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 font-medium"
+                >
+                  전원 체크인
+                </button>
+              )}
+              <span className="font-medium text-gray-700">
+                {checkedIn.length}/{players.length}명
+                {notCheckedIn.length > 0 && <span className="text-orange-500 ml-1">· 미체크인 {notCheckedIn.length}명</span>}
+              </span>
+            </div>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
