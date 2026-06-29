@@ -678,6 +678,23 @@ export default function Home() {
                     <div className="h-1 bg-green-200 rounded-full">
                       <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
+                    {/* 미완료 종목별 잔여 경기 컴팩트 칩 */}
+                    {(() => {
+                      const pending = t.events.map(ev => ({
+                        label: ev.label,
+                        rem: ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye && !m.result).length
+                      })).filter(e => e.rem > 0)
+                      if (pending.length < 2) return null
+                      return (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {pending.map(e => (
+                            <span key={e.label} className="text-[9px] bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                              {e.label} {e.rem}
+                            </span>
+                          ))}
+                        </div>
+                      )
+                    })()}
                     {/* 종목별 진행률 */}
                     <div className="mt-2 space-y-1">
                       {t.events.slice(0, 6).map(ev => {
