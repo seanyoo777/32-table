@@ -84,6 +84,7 @@ export default function TournamentPage() {
   const [selectedId, setSelectedId] = useState<string | null>(openId)
   const [tourPage, setTourPage] = useState(0)
   const [tourFilter, setTourFilter] = useState<'all' | 'ongoing' | 'completed' | 'draft'>('all')
+  const [tourSearch, setTourSearch] = useState('')
   const TOUR_PAGE_SIZE = 12
   const selected = tournaments.find(t => t.id === selectedId)
 
@@ -139,10 +140,22 @@ export default function TournamentPage() {
           ]
           const sorted = [...tournaments]
             .filter(t => tourFilter === 'all' || t.status === tourFilter)
+            .filter(t => !tourSearch || t.name.includes(tourSearch))
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
           const totalPages = Math.ceil(sorted.length / TOUR_PAGE_SIZE)
           const paged = sorted.slice(tourPage * TOUR_PAGE_SIZE, (tourPage + 1) * TOUR_PAGE_SIZE)
           return (<>
+        <div className="flex gap-2 mb-2 items-center">
+          <input
+            className="input flex-1 text-sm"
+            placeholder="대회 이름 검색..."
+            value={tourSearch}
+            onChange={e => { setTourSearch(e.target.value); setTourPage(0) }}
+          />
+          {tourSearch && (
+            <button onClick={() => { setTourSearch(''); setTourPage(0) }} className="text-gray-400 hover:text-gray-600 px-2">✕</button>
+          )}
+        </div>
         <div className="flex gap-1.5 flex-wrap mb-3">
           {filterLabels.map(({ key, label }) => (
             <button key={key} onClick={() => { setTourFilter(key); setTourPage(0) }}
