@@ -902,6 +902,22 @@ function ManualEntry() {
               const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
               if (todayRecs.length < 5) return null
+              const close = todayRecs
+                .map(r => ({ r, diff: Math.abs(r.p1Score - r.p2Score) }))
+                .filter(x => x.diff >= 1)
+                .sort((a, b) => a.diff - b.diff)[0]
+              if (!close) return null
+              const getName = (id: string) => players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? '?'
+              return (
+                <span className="text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  박빙 {close.diff}점차 {getName(close.r.participant1Id)} {close.r.p1Score}:{close.r.p2Score}
+                </span>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
+              const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO) && r.participant1Id && r.participant2Id)
+              if (todayRecs.length < 5) return null
               const setWins = new Map<string, { w: number; l: number }>()
               todayRecs.forEach(r => {
                 const upd = (id: string, won: boolean) => {
