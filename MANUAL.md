@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.35 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.38 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,31 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-144. v5.38 — 홈 오늘 시간대별 기록 수 막대 차트
+
+자동 루프. Home.tsx Col-2에 오늘 2시간 단위 12칸 막대 차트.
+
+### 변경 (Home.tsx)
+- BarChart2 아이콘 import 추가.
+- `todayRecs` 기준 2시간 bins(12개), maxCnt 정규화 높이.
+- 현재 시간 bin indigo-500, 나머지 indigo-300, 기록 없음 gray-100.
+- 3건 미만이면 숨김.
+
+## 12-143. v5.37 — 대회 경기 목록 상태별 행 배경
+
+자동 루프. Tournament.tsx MatchList 경기 행 배경색.
+
+### 변경 (Tournament.tsx)
+- 완료(`m.result`): bg-green-50 / 대기(`isPlayable`): bg-blue-50 / 미배정: bg-gray-50.
+
+## 12-142. v5.36 — 체크인 진행률 SVG 도넛 차트
+
+자동 루프. CheckIn.tsx 체크인 바 왼쪽에 30px 도넛 차트.
+
+### 변경 (CheckIn.tsx)
+- IIFE SVG 도넛: R=12, strokeDasharray, rotate(-90). 색상: 100%=green, 50%+=teal, else amber.
+- `%` 중앙 텍스트.
 
 ## 12-141. v5.35 — 경기일정 팝오버 라운드 뱃지
 
