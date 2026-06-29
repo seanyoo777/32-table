@@ -413,10 +413,15 @@ export default function DashboardPage() {
                     {(walkinIds.has(m.participant1Id ?? '') || walkinIds.has(m.participant2Id ?? '')) && (
                       <span className="text-orange-600 bg-orange-50 border border-orange-200 px-1 rounded flex-shrink-0 text-[10px]" title="현장 신규등록 선수">현장</span>
                     )}
+                    {m.tableNo && (
+                      <span className="text-blue-600 bg-blue-50 border border-blue-200 px-1 rounded flex-shrink-0 text-[10px]" title="일정표 배정 코트">
+                        배정 {m.tableNo}번
+                      </span>
+                    )}
                     {alreadyCalled && <span className="text-orange-500 flex-shrink-0 text-[10px]">호출됨</span>}
                     {!alreadyCalled && (() => {
                       const mKey = `${m.tournamentId}-${m.eventId}-${m.id}`
-                      const tNo = rowTableNos[mKey] ?? callTableNo
+                      const tNo = rowTableNos[mKey] ?? m.tableNo ?? callTableNo
                       return (
                         <div className="flex items-center gap-0.5 flex-shrink-0">
                           <input
