@@ -840,6 +840,31 @@ function ManualEntry() {
                   </div>
                 )
               })()}
+              {(() => {
+                const withSets = filteredRecords.filter(r => r.sets && r.sets.length > 0)
+                if (withSets.length < 10) return null
+                const dist = [2, 3, 4, 5].map(n => ({ n, count: withSets.filter(r => r.sets!.length === n).length }))
+                const maxDist = Math.max(...dist.map(d => d.count), 1)
+                return (
+                  <div className="mb-3">
+                    <span className="text-[10px] text-gray-400 block mb-1">세트 수 분포</span>
+                    <div className="space-y-1">
+                      {dist.filter(d => d.count > 0).map(({ n, count }) => {
+                        const pct = Math.round(count / withSets.length * 100)
+                        return (
+                          <div key={n} className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-500 w-8 flex-shrink-0">{n}세트</span>
+                            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-rose-400 rounded-full" style={{ width: `${count / maxDist * 100}%` }} />
+                            </div>
+                            <span className="text-[10px] text-gray-400 w-12 text-right flex-shrink-0">{count}건 {pct}%</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
               {filteredRecords.length >= 2 && (
                 <div className="mb-2">
                   <button

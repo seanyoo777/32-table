@@ -575,16 +575,26 @@ export default function Rankings() {
       )}
 
       {/* Doubles filter */}
-      {tab === 'doubles' && (
-        <div className="flex gap-2 flex-wrap">
-          {(['all', ...DIVISIONS] as const).map(d => (
-            <button key={d} onClick={() => { setFilterPairDiv(d as any); setPairPage(1) }}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${filterPairDiv === d ? (d === 'all' ? 'border-blue-500 bg-blue-50 text-blue-700' : divBorder[d as Division]) : 'border-gray-200 text-gray-500'}`}>
-              {d === 'all' ? '전체' : d}
+      {tab === 'doubles' && (() => {
+        const pairDivCounts = DIVISIONS.map(d => ({ d, n: pairs.filter(p => p.division === d).length })).filter(x => x.n > 0)
+        if (pairDivCounts.length < 2) return null
+        return (
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => { setFilterPairDiv('all'); setPairPage(1) }}
+              className={`text-xs px-2.5 py-1 rounded-lg font-medium border transition-colors ${filterPairDiv === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400'}`}>
+              전체
             </button>
-          ))}
-        </div>
-      )}
+            {pairDivCounts.map(({ d, n }) => (
+              <button key={d}
+                onClick={() => { setFilterPairDiv(filterPairDiv === d ? 'all' : d); setPairPage(1) }}
+                className={`text-xs px-2.5 py-1 rounded-lg font-medium border transition-colors ${filterPairDiv === d ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-400'}`}>
+                {d} <span className="opacity-60">{n}</span>
+              </button>
+            ))}
+          </div>
+        )
+      })()}
       </div>{/* /fixed-top-bar */}
 
       {/* Scrollable content */}

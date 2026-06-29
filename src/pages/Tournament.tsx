@@ -872,11 +872,15 @@ function TournamentDetail({ tournament, pMap, onBack, onStatusChange, onRecord, 
         {tournament.events.map(ev => {
           const done = ev.matches.filter(m => m.result && !m.result.walkedOver).length
           const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+          const pct = total > 0 ? Math.round(done / total * 100) : -1
+          const isActive = !showSummary && activeEventId === ev.id
+          const pctChipColor = pct < 0 ? '' : pct === 100 ? 'bg-green-100 text-green-700' : pct >= 50 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
           return (
             <button key={ev.id} onClick={() => { setActiveEventId(ev.id); setShowSummary(false) }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${!showSummary && activeEventId === ev.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
               {ev.label}
-              <span className={`ml-1.5 text-xs ${!showSummary && activeEventId === ev.id ? 'text-blue-200' : 'text-gray-400'}`}>{done}/{total}</span>
+              <span className={`ml-1.5 text-xs ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>{done}/{total}</span>
+              {pct >= 0 && <span className={`ml-1 text-[10px] px-1 py-0.5 rounded font-semibold ${isActive ? 'bg-blue-500 text-blue-100' : pctChipColor}`}>{pct}%</span>}
             </button>
           )
         })}
