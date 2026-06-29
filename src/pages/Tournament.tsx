@@ -1501,6 +1501,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
               return (
                 <div key={m.id}
                   className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                    m.result?.walkedOver ? 'bg-amber-50 italic' :
                     m.result ? 'bg-green-50' :
                     isPlayable ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer' :
                     'bg-gray-50'
@@ -1548,7 +1549,7 @@ function MatchList({ matches, pMap, onClickMatch, onClearResult, groupMap, tourn
                   {/* Status */}
                   <div className="w-20 flex-shrink-0 text-right flex flex-col items-end gap-0.5">
                     {m.result && !m.result.walkedOver && <span className="text-xs text-green-500">✓완료</span>}
-                    {m.result?.walkedOver && <span className="text-xs text-gray-400">부전승</span>}
+                    {m.result?.walkedOver && <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-semibold not-italic">부전승</span>}
                     {isPlayable && <span className="text-xs text-blue-500">입력 →</span>}
                     {isPlayable && tournamentId && eventId && !matchCalls.some(c => !c.acknowledged && c.matchId === m.id) && (
                       <button
