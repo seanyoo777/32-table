@@ -1423,6 +1423,19 @@ export default function DashboardPage() {
                   </span>
                 )
               })()}
+              {(() => {
+                const pending = pendingCalls.filter(c => c.calledAt)
+                if (pending.length < 1) return null
+                const oldest = [...pending].sort((a, b) => (a.calledAt ?? '').localeCompare(b.calledAt ?? ''))[0]
+                const minAgo = Math.round((now.getTime() - new Date(oldest.calledAt!).getTime()) / 60000)
+                if (minAgo < 30) return null
+                const name = oldest.participant1Name || '?'
+                return (
+                  <span className="text-[10px] bg-orange-100 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                    {minAgo}분 미응답: {name}
+                  </span>
+                )
+              })()}
             </h2>
             {(() => {
               const oldest = [...matchCalls.filter(c => !c.acknowledged && c.calledAt)].sort((a, b) => (a.calledAt ?? '').localeCompare(b.calledAt ?? ''))[0]

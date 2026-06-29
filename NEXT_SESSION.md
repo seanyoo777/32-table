@@ -1402,6 +1402,20 @@ Rankings.tsx 단식 탭 상단 chips 행에 오늘 scoreRecords 기준 p1 vs p2 
 "이름A vs 이름B" 형식의 rose 칩으로 표시. 오늘 첫 경기 1건+ 조건.
 클릭 시 /score 이동.
 
+### 2-435. 대시보드 미응답 호출 최장 선수 이름 orange 칩 (v5.319)
+Dashboard.tsx 경기 호출 섹션 헤더 영역에 pendingCalls 중 calledAt 가장 오래된
+경기의 participant1Name을 orange 칩으로 표시. "N분 미응답: [이름]" 형식.
+pendingCalls 1건+ && 30분+ 조건.
+
+### 2-436. 경기일정 코트뷰 오늘 전체 배정 슬롯 수 purple 칩 (v5.320)
+Schedule.tsx 코트뷰 헤더 Stats 바에 오늘 날짜 기준 배정된(participant1/2 있는)
+슬롯 총 수를 purple 칩으로 표시. "오늘 배정 N경기" 형식.
+오늘 슬롯 2개+ 조건.
+
+### 2-437. 홈 탭 진행 중 대회 완료율 % 인라인 칩 (v5.321)
+Home.tsx 활성 대회 카드 헤더 영역에 doneM/totalM 기반 완료율 %를 색상 칩으로 표시.
+0%=gray, 1~49%=amber, 50~99%=blue, 100%=green. 경기 있는 대회만.
+
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
 
