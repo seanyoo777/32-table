@@ -473,7 +473,7 @@ export default function DashboardPage() {
                             <div className="text-xs font-bold text-gray-800">{call.participant2Name}</div>
                             <div className="flex items-center justify-between mt-1 pt-1 border-t border-gray-100">
                               <span className="text-[10px] text-gray-400">{new Date(call.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 호출</span>
-                              {elapsedMin !== null && <span className={`text-[10px] font-mono px-1 rounded ${elapsedMin >= 10 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>{elapsedMin}분</span>}
+                              {elapsedMin !== null && <span className={`text-[10px] font-mono px-1 rounded ${elapsedMin >= 15 ? 'bg-red-100 text-red-600' : elapsedMin >= 5 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-500'}`}>{elapsedMin}분 경과</span>}
                             </div>
                             <button onClick={() => { acknowledgeMatchCall(call.id); setCourtPopover(null) }}
                               className="w-full mt-1 bg-green-100 text-green-700 text-xs py-1 rounded hover:bg-green-200 flex items-center justify-center gap-1">
@@ -877,8 +877,8 @@ export default function DashboardPage() {
                     <span className="text-gray-400 flex-shrink-0 flex items-center gap-1">
                       {new Date(c.calledAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       {!c.acknowledged && (
-                        <span className={`font-mono text-[10px] px-1 rounded ${callElapsed >= 5 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
-                          {callElapsed}분
+                        <span className={`font-mono text-[10px] px-1 rounded ${callElapsed >= 15 ? 'bg-red-100 text-red-600' : callElapsed >= 5 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-500'}`}>
+                          {callElapsed}분 경과
                         </span>
                       )}
                     </span>
