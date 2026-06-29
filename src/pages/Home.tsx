@@ -749,6 +749,34 @@ export default function Home() {
                       )
                     })()}
                     {(() => {
+                      const ci = players.filter(p => p.checkedIn)
+                      if (ci.length < 3) return null
+                      const morning = ci.filter(p => p.createdAt && new Date(p.createdAt).getHours() < 12).length
+                      const afternoon = ci.filter(p => p.createdAt && (() => { const h = new Date(p.createdAt).getHours(); return h >= 12 && h < 18 })()).length
+                      const evening = ci.filter(p => p.createdAt && new Date(p.createdAt).getHours() >= 18).length
+                      const items = [
+                        { label: '오전', count: morning, color: 'bg-teal-400' },
+                        { label: '오후', count: afternoon, color: 'bg-amber-400' },
+                        { label: '저녁', count: evening, color: 'bg-indigo-400' }
+                      ].filter(i => i.count > 0)
+                      if (items.length < 2) return null
+                      const total = items.reduce((s, i) => s + i.count, 0)
+                      return (
+                        <div className="mt-1">
+                          <div className="flex h-1.5 rounded-full overflow-hidden gap-px">
+                            {items.map(i => (
+                              <div key={i.label} className={`${i.color}`} style={{ width: `${Math.round(i.count / total * 100)}%` }} title={`${i.label} ${i.count}명`} />
+                            ))}
+                          </div>
+                          <div className="flex gap-2 mt-0.5">
+                            {items.map(i => (
+                              <span key={i.label} className="text-[9px] text-gray-500">{i.label} {i.count}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                    {(() => {
                       const tourRecs = [...scoreRecords.filter(r => r.tournamentId === t.id)].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
                       if (tourRecs.length === 0) return null
                       const latest = tourRecs[0]
