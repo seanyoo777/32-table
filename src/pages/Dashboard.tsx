@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [courtExpanded, setCourtExpanded] = useState(false)
   const [editingCallId, setEditingCallId] = useState<string | null>(null)
   const [editCallTable, setEditCallTable] = useState(1)
+  const [liveEventFilter, setLiveEventFilter] = useState<string | null>(null)
 
   // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
   useEffect(() => {
@@ -556,7 +557,29 @@ export default function DashboardPage() {
             ) : (
               <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
                 {(() => {
-                  const withElapsed = liveMatches.map(lm => {
+                  const liveEventLabels = [...new Set(liveMatches.map(lm => {
+                    const t = tournaments.find(t => t.id === lm.tournamentId)
+                    return t?.events.find(ev => ev.id === lm.eventId)?.label ?? lm.eventId
+                  }))]
+                  return liveEventLabels.length >= 2 && (
+                    <div className="flex flex-wrap gap-1 mb-1 flex-shrink-0">
+                      <button onClick={() => setLiveEventFilter(null)}
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full border ${!liveEventFilter ? 'bg-red-100 text-red-600 border-red-300' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}>전체</button>
+                      {liveEventLabels.map(label => (
+                        <button key={label} onClick={() => setLiveEventFilter(liveEventFilter === label ? null : label)}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full border ${liveEventFilter === label ? 'bg-red-100 text-red-600 border-red-300' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}>{label}</button>
+                      ))}
+                    </div>
+                  )
+                })()}
+                {(() => {
+                  const filteredLiveMatches = liveEventFilter
+                    ? liveMatches.filter(lm => {
+                        const t = tournaments.find(t => t.id === lm.tournamentId)
+                        return t?.events.find(ev => ev.id === lm.eventId)?.label === liveEventFilter
+                      })
+                    : liveMatches
+                  const withElapsed = filteredLiveMatches.map(lm => {
                     const relatedCall = matchCalls.find(c => c.matchId === lm.matchId)
                     const elapsed = relatedCall ? Math.floor((now.getTime() - new Date(relatedCall.calledAt).getTime()) / 60000) : null
                     return { lm, elapsed }
