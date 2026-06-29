@@ -28,6 +28,22 @@ export default function CheckInPage() {
   const [showWalkin, setShowWalkin] = useState(false)
   const [walkinName, setWalkinName] = useState('')
   const [walkinSchool, setWalkinSchool] = useState('')
+  const [soundEnabled, setSoundEnabled] = useState(true)
+
+  function playBeep(type: 'success' | 'error') {
+    if (!soundEnabled) return
+    try {
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.type = type === 'success' ? 'sine' : 'sawtooth'
+      osc.frequency.value = type === 'success' ? 880 : 280
+      gain.gain.setValueAtTime(0.3, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (type === 'success' ? 0.2 : 0.35))
+      osc.start(); osc.stop(ctx.currentTime + (type === 'success' ? 0.2 : 0.35))
+    } catch { /* AudioContext unavailable */ }
+  }
   const [walkinDiv, setWalkinDiv] = useState<Division>('일반')
   const [walkinGender, setWalkinGender] = useState<'남' | '여'>('남')
   const [divFilter, setDivFilter] = useState<string>('')
@@ -64,9 +80,11 @@ export default function CheckInPage() {
       updatePlayer(found.id, { checkedIn: true })
       setLastScanned({ ...found, checkedIn: true })
       setScanStatus('success')
+      playBeep('success')
     } else {
       setLastScanned(null)
       setScanStatus('error')
+      playBeep('error')
     }
     setTimeout(() => setScanStatus('idle'), 3000)
   }
@@ -237,6 +255,13 @@ export default function CheckInPage() {
             scanStatus === 'error' ? 'border-red-400 bg-red-50' :
             'border-blue-200 bg-blue-50'
           }`}>
+            <div className="flex justify-end mb-1">
+              <button onClick={() => setSoundEnabled(v => !v)}
+                className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${soundEnabled ? 'bg-blue-100 text-blue-600 border-blue-200' : 'bg-gray-100 text-gray-400 border-gray-200'}`}
+                title="스캔 음향 on/off">
+                {soundEnabled ? '🔊 음향' : '🔇 음소거'}
+              </button>
+            </div>
             <div className="text-center space-y-3 py-4">
               <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center ${
                 scanStatus === 'success' ? 'bg-green-500' :
