@@ -187,6 +187,20 @@ export default function Stats() {
     return rows.sort((a, b) => b.avg - a.avg)
   }, [visibleTours, scoreRecords])
 
+  // 최근 7일 일자별 경기 수
+  const dailyMatchCounts = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() - (6 - i))
+      const key = d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
+      const count = scoreRecords.filter(r => {
+        const rd = new Date(r.createdAt); rd.setHours(0, 0, 0, 0)
+        return rd.getTime() === d.getTime()
+      }).length
+      return { key, count, isToday: i === 6 }
+    })
+  }, [scoreRecords])
+
   const completedTours = tournaments.filter(t => t.status === 'completed').length
   const totalMedalEvents = medalRows.filter(r => r.gold).length
 
@@ -490,6 +504,32 @@ export default function Stats() {
                     <span className="text-sm font-bold text-rose-600 w-10 text-right">{p.rate}%</span>
                   </div>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {/* 최근 7일 경기 수 차트 */}
+          {scoreRecords.length > 0 && (
+            <section className="card">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                <BarChart3 size={14} className="text-indigo-500" /> 최근 7일 경기 수
+              </h2>
+              <div className="flex items-end gap-1.5 h-20">
+                {(() => {
+                  const maxVal = Math.max(...dailyMatchCounts.map(d => d.count), 1)
+                  return dailyMatchCounts.map(d => (
+                    <div key={d.key} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] text-gray-500 leading-none">{d.count > 0 ? d.count : ''}</span>
+                      <div className="w-full flex items-end" style={{ height: 52 }}>
+                        <div
+                          className={`w-full rounded-t-sm transition-all ${d.isToday ? 'bg-indigo-500' : 'bg-indigo-200'}`}
+                          style={{ height: `${Math.max(d.count / maxVal * 100, d.count > 0 ? 8 : 2)}%` }}
+                        />
+                      </div>
+                      <span className={`text-[9px] leading-none ${d.isToday ? 'font-bold text-indigo-600' : 'text-gray-400'}`}>{d.key}</span>
+                    </div>
+                  ))
+                })()}
               </div>
             </section>
           )}
