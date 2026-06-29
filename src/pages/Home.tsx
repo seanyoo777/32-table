@@ -146,20 +146,24 @@ export default function Home() {
       )}
 
       {/* ── 체크인 현황 미니 바 ── */}
-      {players.length > 0 && players.some(p => p.checkedIn) && (
-        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-teal-50 rounded-xl border border-teal-100 text-sm">
-          <span className="text-teal-500 text-xs font-medium flex-shrink-0">체크인</span>
+      {players.length > 0 && players.some(p => p.checkedIn) && (() => {
+        const checkedCount = players.filter(p => p.checkedIn).length
+        const allChecked = checkedCount === players.length
+        return (
+        <div className={`flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-xl border text-sm transition-all ${allChecked ? 'bg-green-50 border-green-300 animate-pulse' : 'bg-teal-50 border-teal-100'}`}>
+          <span className={`text-xs font-medium flex-shrink-0 ${allChecked ? 'text-green-600' : 'text-teal-500'}`}>체크인</span>
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            <div className="flex-1 h-2 bg-teal-100 rounded-full overflow-hidden">
+            <div className={`flex-1 h-2 rounded-full overflow-hidden ${allChecked ? 'bg-green-100' : 'bg-teal-100'}`}>
               <div
-                className="h-full bg-teal-500 rounded-full transition-all"
-                style={{ width: `${Math.round(players.filter(p => p.checkedIn).length / players.length * 100)}%` }}
+                className={`h-full rounded-full transition-all ${allChecked ? 'bg-green-500' : 'bg-teal-500'}`}
+                style={{ width: `${Math.round(checkedCount / players.length * 100)}%` }}
               />
             </div>
-            <span className="text-teal-700 font-semibold flex-shrink-0 text-xs">
-              {players.filter(p => p.checkedIn).length}/{players.length}명
+            <span className={`font-semibold flex-shrink-0 text-xs ${allChecked ? 'text-green-700' : 'text-teal-700'}`}>
+              {checkedCount}/{players.length}명
             </span>
           </div>
+          {allChecked && <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex-shrink-0">전원 체크인!</span>}
           {players.filter(p => !p.checkedIn).length > 0 && (
             <div className="relative flex-shrink-0">
               <button onClick={() => setShowUnchecked(v => !v)}
@@ -188,7 +192,8 @@ export default function Home() {
             </div>
           )}
         </div>
-      )}
+        )
+      })()}
 
       {/* ── 오늘 일정 요약 ── */}
       {todaySlotCount > 0 && (
