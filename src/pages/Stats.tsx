@@ -714,6 +714,48 @@ export default function Stats() {
             )
           })()}
 
+          {/* 종목별 완료율 도넛 그리드 */}
+          {(() => {
+            const activeTours = tournaments.filter(t => t.status === 'ongoing')
+            if (activeTours.length === 0) return null
+            const evItems = activeTours.flatMap(t =>
+              t.events.map(ev => {
+                const total = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                const done = ev.matches.filter(m => m.result).length
+                return { label: ev.label, total, done }
+              }).filter(x => x.total > 0)
+            )
+            if (evItems.length < 3) return null
+            const R = 14, stroke = 4, circ = 2 * Math.PI * R
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <Grid3x3 size={14} className="text-indigo-500" /> 종목별 완료율
+                </h2>
+                <div className="flex flex-wrap gap-4 justify-start">
+                  {evItems.map((ev, i) => {
+                    const pct = Math.round(ev.done / ev.total * 100)
+                    const dash = circ * pct / 100
+                    const color = pct === 100 ? '#22c55e' : pct >= 50 ? '#6366f1' : '#f59e0b'
+                    return (
+                      <div key={i} className="flex flex-col items-center gap-1 min-w-[52px]">
+                        <svg width={36} height={36} viewBox="0 0 36 36">
+                          <circle cx={18} cy={18} r={R} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
+                          <circle cx={18} cy={18} r={R} fill="none" stroke={color} strokeWidth={stroke}
+                            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+                            transform="rotate(-90 18 18)" />
+                          <text x={18} y={22} textAnchor="middle" fontSize={8} fontWeight="bold" fill={color}>{pct}%</text>
+                        </svg>
+                        <span className="text-[10px] text-gray-600 text-center leading-tight max-w-[52px] truncate">{ev.label}</span>
+                        <span className="text-[9px] text-gray-400">{ev.done}/{ev.total}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
