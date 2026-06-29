@@ -308,6 +308,25 @@ export default function Stats() {
             )
           })()}
 
+          {/* 전체 최대 점수차 기록 칩 */}
+          {scoreRecords.length >= 10 && (() => {
+            const best = scoreRecords
+              .filter(r => r.p1Score != null && r.p2Score != null)
+              .map(r => ({ diff: Math.abs(r.p1Score - r.p2Score), r }))
+              .sort((a, b) => b.diff - a.diff)[0]
+            if (!best || best.diff < 3) return null
+            const winnerId = best.r.p1Score > best.r.p2Score ? best.r.participant1Id : best.r.participant2Id
+            const getName = (id: string | undefined) => id ? (players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? '?') : '?'
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-purple-600 font-semibold flex-shrink-0">최대 점수차</span>
+                <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full font-medium">
+                  {getName(winnerId)} {Math.max(best.r.p1Score, best.r.p2Score)}:{Math.min(best.r.p1Score, best.r.p2Score)} ({best.diff}점차)
+                </span>
+              </div>
+            )
+          })()}
+
           {/* 오늘/어제/그제 경기 수 비교 */}
           {(() => {
             const dates = [0, 1, 2].map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0] })
