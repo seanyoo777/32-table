@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.29 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.35 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,32 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-141. v5.35 — 경기일정 팝오버 라운드 뱃지
+
+자동 루프. Schedule.tsx 팝오버 경기번호/라운드 분리, indigo 배지.
+
+## 12-140. v5.34 — 대시보드 LIVE 선수 → 랭킹 검색
+
+자동 루프. Dashboard.tsx LIVE 카드 선수 이름 → `/rankings?search=NAME`.
+Rankings.tsx `useLocation` + `useEffect`로 URL search 파라미터 자동 반영.
+
+## 12-139. v5.33 — 홈 대회 카드 남은 경기 수 칩
+
+자동 루프. Home.tsx 대회 카드 pendingM → orange 칩, 완료 → green "완료" 칩.
+
+## 12-138. v5.32 — 경기일정 인쇄 시 코트 헤더 확대
+
+자동 루프. index.css @media print 코트 카드 h3 18px + 배지 28px.
+
+## 12-137. v5.31 — 대회 경기 목록 세트스코어 칩
+
+자동 루프. Tournament.tsx MatchList 경기 행 스코어 아래에 세트별 점수 칩.
+MatchList 내부 `useStore().scoreRecords` 직접 조회.
+
+## 12-136. v5.30 — 통계 최다 참가 선수 TOP3
+
+자동 루프. Stats.tsx scoreRecords 경기 횟수 상위 3명(3경기+) teal 카드.
 
 ## 12-135. v5.29 — 홈 섹션 빠른 이동 링크
 
