@@ -104,6 +104,15 @@ export default function Stats() {
   }, [players])
   const divMax = Math.max(1, ...Object.values(divDist))
 
+  // 부문별 평균 포인트
+  const divAvgPoints = useMemo(() => {
+    return DIVISIONS.map(div => {
+      const divPlayers = players.filter(p => p.division === div && p.points > 0)
+      const avg = divPlayers.length > 0 ? Math.round(divPlayers.reduce((s, p) => s + p.points, 0) / divPlayers.length) : 0
+      return { div, avg, cnt: divPlayers.length }
+    }).filter(d => d.cnt > 0)
+  }, [players])
+
   // 포인트 TOP 10
   const topPoints = useMemo(
     () => [...players].filter(p => p.points > 0).sort((a, b) => b.points - a.points).slice(0, 10),
@@ -330,6 +339,44 @@ export default function Stats() {
                 ))}
               </div>
             </section>
+
+            {/* 부문별 평균 포인트 */}
+            {divAvgPoints.length >= 2 && (() => {
+              const maxAvg = Math.max(...divAvgPoints.map(d => d.avg), 1)
+              const overallAvg = Math.round(divAvgPoints.reduce((s, d) => s + d.avg * d.cnt, 0) / divAvgPoints.reduce((s, d) => s + d.cnt, 0))
+              const avgPct = overallAvg / maxAvg * 100
+              return (
+                <section className="card">
+                  <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                    <TrendingUp size={14} className="text-green-500" /> 부문별 평균 포인트
+                  </h2>
+                  <div className="space-y-2">
+                    {divAvgPoints.map(({ div, avg, cnt }) => {
+                      const pct = avg / maxAvg * 100
+                      const aboveAvg = avg >= overallAvg
+                      return (
+                        <div key={div} className="flex items-center gap-2 text-xs">
+                          <div className="w-12 text-gray-600 flex-shrink-0 text-right">{div}</div>
+                          <div className="flex-1 relative h-5">
+                            <div className="absolute inset-y-0 left-0 flex items-center">
+                              <div className={`h-3.5 rounded-r transition-all ${aboveAvg ? 'bg-green-400' : 'bg-gray-300'}`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="absolute inset-y-0 flex items-center pointer-events-none" style={{ left: `${avgPct}%` }}>
+                              <div className="w-px h-5 border-l-2 border-dashed border-amber-400 opacity-70" />
+                            </div>
+                          </div>
+                          <div className={`w-16 flex-shrink-0 font-semibold ${aboveAvg ? 'text-green-600' : 'text-gray-400'}`}>{avg.toLocaleString()}P <span className="text-[10px] text-gray-400 font-normal">({cnt}명)</span></div>
+                        </div>
+                      )
+                    })}
+                    <div className="text-[10px] text-amber-600 flex items-center gap-1 mt-1">
+                      <div className="w-4 border-t-2 border-dashed border-amber-400" />
+                      전체 평균 {overallAvg.toLocaleString()}P
+                    </div>
+                  </div>
+                </section>
+              )
+            })()}
 
             {/* 레이팅 등급 분포 */}
             <section className="card">
