@@ -1760,6 +1760,28 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )}
         </div>
 
+        {/* 평균 세트 득점/실점 */}
+        {!editing && (() => {
+          const setRecs = recentRecords.filter(r => r.sets && r.sets.length > 0)
+          if (setRecs.length < 3) return null
+          let mySetPts = 0, oppSetPts = 0, totalSets = 0
+          setRecs.forEach(r => {
+            const isP1 = r.participant1Id === player.id
+            r.sets!.forEach(([a, b]) => { mySetPts += isP1 ? a : b; oppSetPts += isP1 ? b : a; totalSets++ })
+          })
+          const avgMy = totalSets > 0 ? (mySetPts / totalSets).toFixed(1) : '-'
+          const avgOpp = totalSets > 0 ? (oppSetPts / totalSets).toFixed(1) : '-'
+          return (
+            <div className="flex items-center gap-2 mb-3 text-xs">
+              <span className="text-gray-400">평균 세트 득점:</span>
+              <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{avgMy}점</span>
+              <span className="text-gray-300">vs</span>
+              <span className="bg-red-50 text-red-500 px-2 py-0.5 rounded-full font-semibold">{avgOpp}점</span>
+              <span className="text-gray-400 text-[10px]">({totalSets}세트)</span>
+            </div>
+          )
+        })()}
+
         {/* 최근 5경기 상세 목록 */}
         {recentRecords.length > 0 && (() => {
           const recent5 = recentRecords.slice(0, 5)
