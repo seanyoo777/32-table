@@ -239,7 +239,10 @@ export default function Home() {
         const nextSlotMinutes = (hhmm: string) => slotMins(hhmm) - nowMins
         return (
           <div className="flex-shrink-0 space-y-1.5">
-            <div className="text-[10px] font-semibold text-gray-400 px-1">다가오는 경기</div>
+            <div className="flex items-center justify-between px-1">
+              <div className="text-[10px] font-semibold text-gray-400">다가오는 경기</div>
+              <button onClick={() => navigate('/schedule')} className="text-[10px] text-blue-400 hover:text-blue-600">일정 전체 →</button>
+            </div>
             {recentDone.map(sl => (
               <button key={sl.id} onClick={() => navigate('/schedule')}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors text-left opacity-70">
@@ -645,7 +648,8 @@ export default function Home() {
             <div className="card flex-shrink-0">
               <h2 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
                 <ClipboardList size={13} className="text-green-500" /> 최근 완료 경기
-                <span className="text-xs text-gray-400 font-normal ml-auto">{scoreRecords.length}건 누적</span>
+                <span className="text-xs text-gray-400 font-normal">{scoreRecords.length}건 누적</span>
+                <button onClick={() => navigate('/score')} className="text-[10px] text-blue-400 hover:text-blue-600 ml-auto">기록 전체 →</button>
               </h2>
               <div className="space-y-1">
                 {[...scoreRecords].reverse().slice(0, 5).map(r => {
