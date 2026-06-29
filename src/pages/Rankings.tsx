@@ -1344,6 +1344,29 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose, on
           )}
         </div>
 
+        {/* 최근 5경기 W/L 미니 스트릭 */}
+        {(() => {
+          const combined = [
+            ...tourMatches.map(({ match }) => ({ win: match.result?.winnerId === player.id })),
+            ...recentRecords.map(r => { const isP1 = r.participant1Id === player.id; return { win: isP1 ? r.p1Score > r.p2Score : r.p2Score > r.p1Score } }),
+          ].slice(0, 5)
+          if (combined.length === 0) return null
+          let streakCount = 0
+          for (const g of combined) { if (g.win === combined[0].win) streakCount++; else break }
+          const streak = streakCount >= 2 ? `${streakCount}${combined[0].win ? '연승' : '연패'}` : ''
+          return (
+            <div className="flex items-center gap-2 mb-3 -mt-1">
+              <span className="text-[11px] text-gray-400">최근</span>
+              {combined.map((g, i) => (
+                <span key={i} className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold text-white ${g.win ? 'bg-green-500' : 'bg-red-400'}`}>
+                  {g.win ? 'W' : 'L'}
+                </span>
+              ))}
+              {streak && <span className="text-xs font-semibold text-indigo-600 ml-1">{streak}</span>}
+            </div>
+          )
+        })()}
+
         {/* Tournament match history */}
         {tourMatches.length > 0 && (
           <div className="mb-4">
