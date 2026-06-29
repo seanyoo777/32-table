@@ -357,6 +357,25 @@ export default function Stats() {
             )
           })()}
 
+          {/* 최고 합산 점수 경기 칩 */}
+          {scoreRecords.length >= 10 && (() => {
+            const best = scoreRecords
+              .filter(r => r.p1Score != null && r.p2Score != null && r.participant1Id && r.participant2Id)
+              .map(r => ({ total: r.p1Score + r.p2Score, r }))
+              .filter(x => x.total >= 20)
+              .sort((a, b) => b.total - a.total)[0]
+            if (!best) return null
+            const getName = (id: string) => players.find(p => p.id === id)?.name ?? pairs.find(p => p.id === id)?.name ?? '?'
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-violet-600 font-semibold flex-shrink-0">최다 점수 경기</span>
+                <span className="text-[10px] bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">
+                  {getName(best.r.participant1Id)} {best.r.p1Score} : {best.r.p2Score} {getName(best.r.participant2Id)} ({best.total}합계)
+                </span>
+              </div>
+            )
+          })()}
+
           {/* 오늘/어제/그제 경기 수 비교 */}
           {(() => {
             const dates = [0, 1, 2].map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0] })
