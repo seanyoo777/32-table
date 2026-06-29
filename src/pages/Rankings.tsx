@@ -1153,12 +1153,44 @@ function PlayerStatsModal({ player, tournaments, scoreRecords, pMap, onClose }: 
 
   const rLabel = getRatingLabel(player.rating ?? 1000)
 
+  function handleExportCSV() {
+    const rows: string[] = ['﻿유형,상대,결과,점수,대회/종목,날짜']
+    tourMatches.forEach(({ match, tournamentName, eventLabel }) => {
+      const oppId = match.participant1Id === player.id ? match.participant2Id! : match.participant1Id!
+      const oppName = pMap[oppId] ?? '?'
+      const isWin = match.result?.winnerId === player.id
+      const score = match.result?.sets?.map(([a, b]) => `${a}-${b}`).join(' ') ?? `${match.result?.winnerScore ?? 0}-${match.result?.loserScore ?? 0}`
+      rows.push(`대회,"${oppName}",${isWin ? '승' : '패'},"${score}","${tournamentName} ${eventLabel}",`)
+    })
+    recentRecords.forEach(r => {
+      const isP1 = r.participant1Id === player.id
+      const oppId = isP1 ? r.participant2Id : r.participant1Id
+      const oppName = pMap[oppId] ?? '?'
+      const myScore = isP1 ? r.p1Score : r.p2Score
+      const oppScore = isP1 ? r.p2Score : r.p1Score
+      const date = new Date(r.recordedAt).toLocaleDateString('ko-KR')
+      rows.push(`점수기록,"${oppName}",${myScore > oppScore ? '승' : '패'},${myScore}-${oppScore},,${date}`)
+    })
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `${player.name}_전적_${new Date().toISOString().split('T')[0]}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800 flex items-center gap-2"><BarChart2 size={16} /> {player.name} 전적</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+            {(tourMatches.length > 0 || recentRecords.length > 0) && (
+              <button onClick={handleExportCSV} className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
+                <Download size={12} /> CSV
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          </div>
         </div>
 
         {/* Player info */}
