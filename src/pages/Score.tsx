@@ -829,6 +829,21 @@ function ManualEntry() {
             })()}
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
+              const todayWithTime = scoreRecords
+                .filter(r => r.recordedAt?.startsWith(todayISO))
+                .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))
+              if (todayWithTime.length < 3) return null
+              const first = todayWithTime[0]
+              const timeStr = first.recordedAt ? new Date(first.recordedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : null
+              if (!timeStr) return null
+              return (
+                <span className="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  첫 기록 {timeStr}
+                </span>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
               const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
               if (todayRecs.length < 5) return null
               const pairCount = new Map<string, number>()
