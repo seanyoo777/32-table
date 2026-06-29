@@ -253,6 +253,16 @@ export default function Rankings() {
     return m
   }, [pairs, scoreRecords])
 
+  const pairTodayMatches = useMemo(() => {
+    const todayISO = new Date().toISOString().split('T')[0]
+    const m = new Map<string, number>()
+    pairs.forEach(p => {
+      const n = scoreRecords.filter(r => (r.participant1Id === p.id || r.participant2Id === p.id) && r.recordedAt?.startsWith(todayISO)).length
+      if (n > 0) m.set(p.id, n)
+    })
+    return m
+  }, [pairs, scoreRecords])
+
   const playerWinStreak = useMemo(() => {
     const m = new Map<string, number>()
     players.forEach(p => {
@@ -1063,6 +1073,9 @@ export default function Rankings() {
                       )}
                       {pairLastMatchDays.has(p.id) && (
                         <div className="text-[9px] text-gray-400 mt-0.5">{pairLastMatchDays.get(p.id) === 0 ? '오늘' : `${pairLastMatchDays.get(p.id)}일 전`}</div>
+                      )}
+                      {pairTodayMatches.has(p.id) && (
+                        <div className="mt-0.5"><span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">오늘 {pairTodayMatches.get(p.id)}경기</span></div>
                       )}
                     </td>
                     <td className="py-3 px-4 text-center flex items-center justify-center gap-1">
