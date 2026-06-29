@@ -768,6 +768,54 @@ function ManualEntry() {
                   >초기화 ✕</button>
                 )}
               </div>
+              {scoreRecords.length >= 10 && (() => {
+                const today = new Date()
+                const days = Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date(today)
+                  d.setDate(today.getDate() - (6 - i))
+                  return d.toISOString().split('T')[0]
+                })
+                const counts = days.map(d => scoreRecords.filter(r => r.recordedAt?.startsWith(d)).length)
+                const maxCount = Math.max(...counts, 1)
+                const W = 180, H = 34, PAD = 5
+                const cx = (i: number) => PAD + (i / 6) * (W - PAD * 2)
+                const cy = (v: number) => H - PAD - (v / maxCount) * (H - PAD * 2)
+                const nonZeroPoints = counts.map((v, i) => ({ v, i })).filter(p => p.v > 0)
+                const polylinePoints = nonZeroPoints.map(p => `${cx(p.i)},${cy(p.v)}`).join(' ')
+                return (
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="text-[10px] text-gray-400 flex-shrink-0 whitespace-nowrap">7일 추이</span>
+                    <div className="flex-1 min-w-0">
+                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 34 }}>
+                        {nonZeroPoints.length >= 2 && (
+                          <polyline points={polylinePoints} fill="none" stroke="#c7d2fe" strokeWidth="1.5" strokeLinejoin="round" />
+                        )}
+                        {counts.map((v, i) => {
+                          const isToday = i === 6
+                          const x = cx(i)
+                          const y = cy(v)
+                          if (v === 0) {
+                            return <circle key={i} cx={x} cy={H - PAD - (H - PAD * 2) * 0.1} r="2" fill="none" stroke="#d1d5db" strokeWidth="1" strokeDasharray="2,2" />
+                          }
+                          return (
+                            <g key={i}>
+                              <circle cx={x} cy={y} r={isToday ? 3.5 : 2.5} fill={isToday ? '#6366f1' : '#a5b4fc'} />
+                              <text x={x} y={y - 4} textAnchor="middle" fontSize="7" fill={isToday ? '#6366f1' : '#9ca3af'}>{v}</text>
+                            </g>
+                          )
+                        })}
+                      </svg>
+                      <div className="flex justify-between px-1" style={{ marginTop: -2 }}>
+                        {days.map((d, i) => {
+                          const isToday = i === 6
+                          const label = isToday ? '오늘' : `${parseInt(d.split('-')[2])}일`
+                          return <span key={d} className={`text-[8px] ${isToday ? 'text-indigo-500 font-bold' : 'text-gray-300'}`}>{label}</span>
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
               {filteredRecords.length >= 2 && (
                 <div className="mb-2">
                   <button
