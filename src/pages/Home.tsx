@@ -186,19 +186,30 @@ export default function Home() {
       {/* ── 다가오는 경기 슬롯 미리보기 (상위 3개) ── */}
       {todaySlotCount > 0 && (() => {
         const nowHHmm = now.toTimeString().slice(0, 5)
-        const upcoming = todaySchedules
+        const nowMins = now.getHours() * 60 + now.getMinutes()
+        const slotMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
+        const allSlots = todaySchedules
           .flatMap(s => s.slots.map(sl => ({ ...sl, scheduleName: s.name })))
-          .filter(sl => sl.startTime >= nowHHmm && sl.participant1 && sl.participant2)
+          .filter(sl => sl.participant1 && sl.participant2)
           .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.courtNo - b.courtNo)
-          .slice(0, 3)
-        if (upcoming.length === 0) return null
-        const nextSlotMinutes = (hhmm: string) => {
-          const [h, m] = hhmm.split(':').map(Number)
-          return h * 60 + m - (now.getHours() * 60 + now.getMinutes())
-        }
+        const upcoming = allSlots.filter(sl => sl.startTime >= nowHHmm).slice(0, 3)
+        const recentDone = allSlots
+          .filter(sl => sl.startTime < nowHHmm && nowMins - slotMins(sl.startTime) >= 30)
+          .slice(-2)
+        if (upcoming.length === 0 && recentDone.length === 0) return null
+        const nextSlotMinutes = (hhmm: string) => slotMins(hhmm) - nowMins
         return (
           <div className="flex-shrink-0 space-y-1.5">
             <div className="text-[10px] font-semibold text-gray-400 px-1">다가오는 경기</div>
+            {recentDone.map(sl => (
+              <button key={sl.id} onClick={() => navigate('/schedule')}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors text-left opacity-70">
+                <span className="text-xs font-bold text-gray-400 w-10 flex-shrink-0">{sl.startTime}</span>
+                <span className="text-[10px] text-gray-400 w-8 flex-shrink-0">코트{sl.courtNo}</span>
+                <span className="flex-1 text-xs text-gray-500 truncate">{sl.participant1} vs {sl.participant2}</span>
+                <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full flex-shrink-0">완료</span>
+              </button>
+            ))}
             {upcoming.map((sl, idx) => {
               const minsLeft = nextSlotMinutes(sl.startTime)
               const isNext = idx === 0
