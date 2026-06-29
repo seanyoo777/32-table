@@ -159,6 +159,19 @@ export default function Home() {
             })()}
             {(() => {
               const todayISO = new Date().toISOString().split('T')[0]
+              const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO))
+              if (todayCalls.length < 2) return null
+              const calledNames = new Set(todayCalls.flatMap(c => [c.participant1Name, c.participant2Name].filter(Boolean)))
+              const uncheckedCalled = players.filter(p => calledNames.has(p.name) && !p.checkedIn).length
+              if (uncheckedCalled === 0) return null
+              return (
+                <button onClick={() => navigate('/checkin')} className="text-[10px] bg-amber-100 text-amber-700 border border-amber-300 px-2 py-0.5 rounded-full font-medium hover:bg-amber-200 transition-colors">
+                  미체크인 호출 {uncheckedCalled}명
+                </button>
+              )
+            })()}
+            {(() => {
+              const todayISO = new Date().toISOString().split('T')[0]
               const todayDoneN = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).length
               if (todayDoneN === 0) return null
               return (
