@@ -72,6 +72,14 @@ export default function DashboardPage() {
   const pendingCalls = matchCalls.filter(c => !c.acknowledged)
   const unverifiedRecords = scoreRecords.filter(r => !r.verified)
 
+  // 이미 호출된 경기의 참가자 ID 세트 — 대기중 경기 충돌 감지용
+  const calledMatchIds = new Set(pendingCalls.map(c => c.matchId))
+  const calledParticipantIds = new Set<string>(
+    allMatches
+      .filter(m => calledMatchIds.has(m.id))
+      .flatMap(m => [m.participant1Id, m.participant2Id].filter(Boolean) as string[])
+  )
+
   // ── 코트 현황판: 탁구대별 LIVE / 호출 / 빈 코트 ──
   const maxTable = Math.max(8, 0, ...liveMatches.map(m => m.tableNo), ...pendingCalls.map(c => c.tableNo))
   const courts = Array.from({ length: maxTable }, (_, i) => {
@@ -272,6 +280,11 @@ export default function DashboardPage() {
           <h2 className="font-semibold text-sm text-gray-700 mb-2 flex-shrink-0 flex items-center gap-2">
             <Clock size={13} className="text-yellow-500" /> 대기중인 경기
             <span className="text-xs text-gray-400 font-normal">({pendingMatches.length})</span>
+            {pendingMatches.length >= 20 && (
+              <span className="ml-auto text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">
+                ⚠ {pendingMatches.length}경기 적체
+              </span>
+            )}
           </h2>
           {pendingMatches.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-sm text-gray-300">대기중 없음</div>
@@ -281,11 +294,18 @@ export default function DashboardPage() {
                 const p1 = m.participant1Id ? pMap[m.participant1Id] : null
                 const p2 = m.participant2Id ? pMap[m.participant2Id] : null
                 const alreadyCalled = matchCalls.some(c => !c.acknowledged && c.matchId === m.id)
+                const hasConflict = !alreadyCalled && (
+                  (!!m.participant1Id && calledParticipantIds.has(m.participant1Id)) ||
+                  (!!m.participant2Id && calledParticipantIds.has(m.participant2Id))
+                )
                 return (
                   <div key={`${m.tournamentId}-${m.eventId}-${m.id}`}
-                    className="flex items-center gap-2 px-2.5 py-2 bg-gray-50 rounded-lg text-xs">
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${hasConflict ? 'bg-red-50 border border-red-100' : 'bg-gray-50'}`}>
                     <span className="text-gray-400 font-medium w-14 truncate flex-shrink-0">{m.eventLabel}</span>
                     <span className="flex-1 font-medium truncate">{p1?.name ?? '?'} vs {p2?.name ?? '?'}</span>
+                    {hasConflict && (
+                      <span className="text-red-600 bg-red-100 border border-red-200 px-1 rounded flex-shrink-0 text-[10px]" title="이 경기의 선수가 이미 다른 경기에 호출되어 있습니다">충돌</span>
+                    )}
                     {(isUnchecked(m.participant1Id) || isUnchecked(m.participant2Id)) && (
                       <span className="text-amber-600 bg-amber-50 border border-amber-200 px-1 rounded flex-shrink-0 text-[10px]" title="체크인하지 않은 선수가 있습니다">미체크인</span>
                     )}
