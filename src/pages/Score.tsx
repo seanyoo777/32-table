@@ -1102,7 +1102,10 @@ export default function ScorePage() {
   const [mode, setMode] = useState<'live' | 'manual'>('live')
   const { scoreRecords, players, pairs } = useStore()
   const todayISO = new Date().toISOString().slice(0, 10)
+  const yest = new Date(); yest.setDate(yest.getDate() - 1)
+  const yesterdayISO = yest.toISOString().slice(0, 10)
   const todayAll = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === todayISO)
+  const yesterdayAll = scoreRecords.filter(r => r.recordedAt.slice(0, 10) === yesterdayISO)
   const todayVerified = todayAll.filter(r => r.verified).length
   const todayUnver = todayAll.length - todayVerified
   const nameMap = new Map<string, string>([
@@ -1130,6 +1133,9 @@ export default function ScorePage() {
           <span className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full font-semibold">오늘 {todayAll.length}건</span>
           <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full">검증 {todayVerified}건</span>
           {todayUnver > 0 && <span className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium">미검증 {todayUnver}건</span>}
+          {yesterdayAll.length >= 1 && (
+            <span className="bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">어제 {yesterdayAll.length}건</span>
+          )}
         </div>
       )}
       {todayAll.length >= 3 && (() => {
