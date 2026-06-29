@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.99 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.02 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -280,6 +280,25 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
 
 ---
+
+## 12-108. v5.02 — 홈 TOP3 선수 미니 시상대
+
+자동 루프 세션. Home.tsx 단식 TOP 랭킹 섹션 상단에 시상대 추가.
+
+### 변경 (Home.tsx)
+- topPlayers.length >= 3 조건으로만 렌더링.
+- 2위(왼쪽 28px) — 1위(중앙 40px) — 3위(오른쪽 20px) 순으로 단 높이 차이.
+- 각 칸: 이름(truncate) + 포인트 + 메달 이모지(🥈/🥇/🥉).
+- Fragment(<>) 로 시상대+랭킹 목록 묶음.
+
+## 12-107. v5.01 — 라이브보드 경기 호출 마키 배너
+
+자동 루프 세션. LiveBoard.tsx 미확인 호출 항목을 가로 스크롤 배너로 표시.
+
+### 변경 (LiveBoard.tsx)
+- matchCalls.filter(c => !c.acknowledged) 항목을 Bell 아이콘 + 마키 배너로 표시.
+- CSS @keyframes marquee (translateX 0→-50%) 18s linear infinite.
+- 항목 복제로 끊김 없는 무한 루프. 미확인 호출 없으면 숨김.
 
 ## 12-106. v4.99 — 대시보드 시간대별 경기 기록 막대 차트
 

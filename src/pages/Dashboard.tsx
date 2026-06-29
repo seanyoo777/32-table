@@ -67,6 +67,14 @@ export default function DashboardPage() {
   const [pendingSort, setPendingSort] = useState<'round' | 'points' | 'event'>('round')
   const [courtExpanded, setCourtExpanded] = useState(false)
 
+  // 경기 선택 시 첫 번째 빈 코트를 callTableNo에 자동 제안
+  useEffect(() => {
+    if (!callMatchKey) return
+    const firstFree = courts.find(c => c.status === 'free')?.no
+    if (firstFree) setCallTableNo(firstFree)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callMatchKey])
+
   function toggleSelectMatch(key: string) {
     setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
   }
