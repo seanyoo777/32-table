@@ -453,17 +453,29 @@ pairTrend useMemo, scoreRecords 기반 최근 3경기.
 Dashboard.tsx "오늘 N건" 완료 기록 카드 하단에 연속 기록 스트릭 표시.
 scoreRecords 오늘 기록 기준 연속 승리/패배 스트릭.
 
-### 2-170. 랭킹 탭 선수 검색 URL 파라미터 유지 (v5.60)
+### 2-170. ✅ 랭킹 탭 선수 검색 URL 파라미터 유지 (완료 v5.60)
 Rankings.tsx 검색창의 search 파라미터를 URL query(`?search=NAME`)로 동기화.
 페이지 새로고침/공유해도 검색 상태 유지. useSearchParams 사용.
 
-### 2-171. 대시보드 종목별 완료율 미니 테이블 (v5.61)
-Dashboard.tsx 하단에 종목별 경기 완료율을 간단한 행 테이블로 표시.
-evLabel | N/M경기 | ██████░░ 바 형식. activeTournaments 기반.
+### 2-171. ✅ 대시보드 종목별 완료율 미니 테이블 (완료 v5.61)
+Dashboard.tsx 종목별 진행률 섹션을 table 구조로 변환.
+evLabel | N/M | ████░░░░ | % 컬럼. 100%=green, 진행=blue.
 
-### 2-172. 일정 페이지 코트별 색상 구분 (v5.62)
-Schedule.tsx 슬롯 카드 배경/테두리를 코트번호별 다른 색으로 구분.
-코트 1=blue, 2=green, 3=amber, 4=rose, 5+=purple. 컬러 배열 매핑.
+### 2-172. ✅ 일정 페이지 코트별 색상 구분 (완료 v5.62)
+Schedule.tsx 슬롯 카드에 courtCardAccent() 좌측 테두리 색 추가.
+코트 1=blue, 2=green, 3=amber, 4=rose, 5+=purple. 3가지 뷰 모두 적용.
+
+### 2-173. 대시보드 선수별 오늘 경기 수 상위 바 (v5.63)
+Dashboard.tsx "오늘 기록" 섹션 아래에 오늘 경기 횟수 상위 3선수 인라인 바.
+todayRecs 기준 participant1Id/2Id 빈도 집계, 이름+횟수+가로 바.
+
+### 2-174. 홈 대회 카운트다운 칩 (v5.64)
+Home.tsx 각 activeTournament 헤더에 대회 시작일까지 D-N 칩 표시.
+tournament.startDate 기준, D-day=당일 초록, D-N=파랑, 경과=회색.
+
+### 2-175. 랭킹 탭 부서별 포인트 분포 미니 차트 (v5.65)
+Rankings.tsx 단식 탭 하단에 부서별(division) 평균 포인트 가로 바.
+divColors 기반 색상. players.filter(p => p.points > 0) 기준.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.

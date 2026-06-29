@@ -321,6 +321,30 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+            {todayRecs.length >= 2 && (() => {
+              const freq = new Map<string, number>()
+              todayRecs.forEach(r => {
+                freq.set(r.participant1Id, (freq.get(r.participant1Id) ?? 0) + 1)
+                freq.set(r.participant2Id, (freq.get(r.participant2Id) ?? 0) + 1)
+              })
+              const top3 = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+              if (top3.length === 0 || top3[0][1] < 2) return null
+              const maxN = top3[0][1]
+              return (
+                <div className="flex-shrink-0 px-4 py-1.5 bg-white border-b border-gray-50 flex items-center gap-3">
+                  <span className="text-[10px] text-gray-400 flex-shrink-0">오늘 최다</span>
+                  {top3.map(([id, n]) => (
+                    <div key={id} className="flex items-center gap-1 flex-1 min-w-0">
+                      <span className="text-[11px] font-medium text-gray-700 truncate flex-shrink-0 max-w-[60px]">{pMap[id]?.name ?? '?'}</span>
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${Math.round(n / maxN * 100)}%` }} />
+                      </div>
+                      <span className="text-[10px] text-indigo-600 font-bold flex-shrink-0">{n}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
           </>
         )
       })()}

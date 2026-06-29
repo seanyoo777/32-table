@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.59 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.62 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,37 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-169. v5.62 — 일정 슬롯 카드 코트별 색상
+
+자동 루프. Schedule.tsx courtCardAccent().
+
+### 변경 (Schedule.tsx)
+- `courtCardAccent(c)` 함수: 코트 1=blue, 2=green, 3=amber, 4=rose, 5+=purple 좌측 테두리.
+- 타임라인·코트뷰·다일차뷰 3가지 슬롯 카드 div에 모두 추가.
+
+---
+
+## 12-168. v5.61 — 대시보드 종목별 완료율 미니 테이블
+
+자동 루프. Dashboard.tsx 종목별 진행률 섹션.
+
+### 변경 (Dashboard.tsx)
+- div 행 구조 → `<table>` 4컬럼(종목명 | N/M | ████░░ 블록 바 | %).
+- 완료 100%=green, 진행중=blue. 최대 12종목.
+
+---
+
+## 12-167. v5.60 — 랭킹 검색 URL 동기화
+
+자동 루프. Rankings.tsx useSearchParams.
+
+### 변경 (Rankings.tsx)
+- `useSearchParams` import, `search` state → URL query param 동기화.
+- `setSearch()` 래퍼: URL replace 모드로 push.
+- `useLocation`, `useEffect`, `useState('')` 제거.
 
 ---
 
