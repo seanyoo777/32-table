@@ -564,6 +564,35 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* 활성 대회 첫 번째 종목별 완료율 미니 바 */}
+      {activeTournaments.length > 0 && (() => {
+        const t = activeTournaments[0]
+        const evRows = t.events.map(ev => ({
+          label: ev.label,
+          total: ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length,
+          done: ev.matches.filter(m => m.result).length
+        })).filter(r => r.total > 0)
+        if (evRows.length < 2 || evRows.every(r => r.done === 0)) return null
+        return (
+          <div className="flex-shrink-0 px-4 py-2 bg-white border-b border-gray-50">
+            <div className="space-y-1">
+              {evRows.map(r => {
+                const pct = Math.round(r.done / r.total * 100)
+                return (
+                  <div key={r.label} className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-500 w-16 flex-shrink-0 truncate">{r.label}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-400'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className={`text-[10px] font-bold w-8 text-right flex-shrink-0 ${pct === 100 ? 'text-green-600' : 'text-blue-600'}`}>{pct}%</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* 오늘 코트 활용률 칩 */}
       {activeTournaments.length > 0 && (() => {
         const todayISO = new Date().toISOString().split('T')[0]
