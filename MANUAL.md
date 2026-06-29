@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v4.87 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v4.90 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,34 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-97. v4.90 — 랭킹 복식 페어 모달 PDF 버튼
+
+자동 루프 세션. Rankings.tsx PairStatsModal에 PDF 버튼 추가.
+
+### 변경 (Rankings.tsx)
+- `handlePrint()` 함수 + `id="pair-stats-modal-inner"` 추가.
+- `@media print` CSS로 pair modal만 인쇄 영역 지정.
+- CSV 버튼 옆 PDF 버튼, `no-print` 클래스.
+
+---
+
+## 12-96. v4.89 — (2-99 ⏭ 이미 구현됨)
+
+Dashboard.tsx CSV 내보내기 버튼이 기존에 구현되어 있어 스킵.
+
+---
+
+## 12-95. v4.88 — 홈 대회 카드 진행률 미니 바
+
+자동 루프 세션. Home.tsx 대회 목록 카드 진행률 바 개선.
+
+### 변경 (Home.tsx)
+- 텍스트: `pct%` → `doneM/totalM (pct%)` 형식으로 변경.
+- 바 두께: `h-1` → `h-1.5` (더 잘 보임).
+- 동적 색상: `pct >= 67% → bg-green-500`, `≥ 34% → bg-yellow-400`, `> 0% → bg-red-400`, `= 0% → bg-gray-300`.
 
 ---
 
