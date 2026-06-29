@@ -941,21 +941,29 @@ export default function Stats() {
           {/* 요일별 경기 분포 */}
           {scoreRecords.length >= 5 && (() => {
             const maxCount = Math.max(...dayOfWeekCounts.map(d => d.count), 1)
+            const activeDays = dayOfWeekCounts.filter(d => d.count > 0)
+            const avgCount = activeDays.length > 0 ? activeDays.reduce((s, d) => s + d.count, 0) / activeDays.length : 0
+            const avgPct = Math.round(avgCount / maxCount * 100)
             return (
               <section className="card">
                 <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
                   <Activity size={14} className="text-violet-500" /> 요일별 경기 분포
+                  {avgCount > 0 && <span className="ml-auto text-[10px] text-gray-400 font-normal">평균 {avgCount.toFixed(1)}건</span>}
                 </h2>
                 <div className="space-y-2">
                   {dayOfWeekCounts.map(({ label, count, isToday }) => {
                     const pct = Math.round(count / maxCount * 100)
+                    const aboveAvg = count > avgCount && avgCount > 0
                     return (
                       <div key={label} className="flex items-center gap-3">
                         <div className={`w-6 text-xs font-bold flex-shrink-0 text-center ${isToday ? 'text-indigo-600' : 'text-gray-500'}`}>{label}</div>
-                        <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${isToday ? 'bg-indigo-500' : 'bg-violet-300'}`} style={{ width: `${pct}%` }} />
+                        <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden relative">
+                          <div className={`h-full rounded-full transition-all ${isToday || aboveAvg ? 'bg-indigo-500' : 'bg-violet-300'}`} style={{ width: `${pct}%` }} />
+                          {avgPct > 0 && avgPct < 100 && (
+                            <div className="absolute top-0 h-full border-l border-dashed border-gray-400 opacity-60" style={{ left: `${avgPct}%` }} />
+                          )}
                         </div>
-                        <div className={`w-10 text-xs font-semibold text-right flex-shrink-0 ${isToday ? 'text-indigo-700' : 'text-gray-500'}`}>{count}건</div>
+                        <div className={`w-10 text-xs font-semibold text-right flex-shrink-0 ${isToday || aboveAvg ? 'text-indigo-700' : 'text-gray-500'}`}>{count}건</div>
                       </div>
                     )
                   })}
