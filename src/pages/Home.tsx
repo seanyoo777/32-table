@@ -27,6 +27,8 @@ export default function Home() {
     { label: '대회·대진표', desc: '토너먼트·리그', icon: TableProperties, color: 'border-blue-200 bg-blue-50 text-blue-700', to: '/tournament' },
     { label: '경기일정표', desc: '코트별 자동배치', icon: Calendar, color: 'border-purple-200 bg-purple-50 text-purple-700', to: '/schedule' },
     { label: '점수 입력', desc: '결과→포인트 반영', icon: ClipboardList, color: 'border-red-200 bg-red-50 text-red-700', to: '/score' },
+    { label: '운영 대시보드', desc: 'LIVE·경기 호출', icon: LayoutDashboard, color: 'border-orange-200 bg-orange-50 text-orange-700', to: '/dashboard' },
+    { label: 'QR 체크인', desc: '선수 출석 확인', icon: QrCode, color: 'border-indigo-200 bg-indigo-50 text-indigo-700', to: '/checkin' },
   ]
 
   const divColors: Record<string, string> = {
@@ -57,46 +59,22 @@ export default function Home() {
 
         {/* ── Col 1: Quick Actions + Active Tournaments ── */}
         <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
-          {/* Quick links 2×2 */}
-          <div className="grid grid-cols-2 gap-2 flex-shrink-0">
-            {quickLinks.map(({ label, desc, icon: Icon, color, to }) => (
-              <button key={to} onClick={() => navigate(to)}
-                className={`border-2 rounded-xl p-3 text-left hover:shadow-md transition-shadow cursor-pointer bg-white ${color}`}>
-                <Icon size={17} className="mb-1.5" />
-                <div className="font-semibold text-xs leading-tight">{label}</div>
-                <div className="text-xs opacity-60 mt-0.5 leading-tight">{desc}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* Day-of buttons */}
+          {/* Quick links 3×2 */}
           {(() => {
             const pendingCalls = matchCalls.filter(c => !c.acknowledged).length
             return (
-              <div className="grid grid-cols-2 gap-2 flex-shrink-0">
-                <button onClick={() => navigate('/dashboard')}
-                  className="border-2 border-orange-200 bg-orange-50 text-orange-700 rounded-xl p-3 text-center hover:shadow-md transition-shadow relative">
-                  <LayoutDashboard size={17} className="mx-auto mb-1" />
-                  <div className="font-semibold text-xs">대시보드</div>
-                  {pendingCalls > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{pendingCalls}</span>
-                  )}
-                </button>
-                <button onClick={() => navigate('/checkin')}
-                  className="border-2 border-indigo-200 bg-indigo-50 text-indigo-700 rounded-xl p-3 text-center hover:shadow-md transition-shadow">
-                  <QrCode size={17} className="mx-auto mb-1" />
-                  <div className="font-semibold text-xs">체크인</div>
-                </button>
-                <button onClick={() => navigate('/score')}
-                  className="border-2 border-red-200 bg-red-50 text-red-700 rounded-xl p-3 text-center hover:shadow-md transition-shadow">
-                  <Zap size={17} className="mx-auto mb-1" />
-                  <div className="font-semibold text-xs">점수입력</div>
-                </button>
-                <button onClick={() => navigate('/liveboard')}
-                  className="border-2 border-gray-200 bg-gray-50 text-gray-700 rounded-xl p-3 text-center hover:shadow-md transition-shadow">
-                  <Monitor size={17} className="mx-auto mb-1" />
-                  <div className="font-semibold text-xs">라이브</div>
-                </button>
+              <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+                {quickLinks.map(({ label, desc, icon: Icon, color, to }) => {
+                  const badge = to === '/dashboard' && pendingCalls > 0 ? pendingCalls : null
+                  return (
+                    <button key={to} onClick={() => navigate(to)} className={`relative border-2 rounded-xl p-2.5 text-left hover:shadow-md transition-shadow cursor-pointer bg-white ${color}`}>
+                      {badge && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{badge}</span>}
+                      <Icon size={16} className="mb-1" />
+                      <div className="font-semibold text-[11px] leading-tight">{label}</div>
+                      <div className="text-[10px] opacity-60 mt-0.5 leading-tight">{desc}</div>
+                    </button>
+                  )
+                })}
               </div>
             )
           })()}
