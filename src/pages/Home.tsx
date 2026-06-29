@@ -722,11 +722,20 @@ export default function Home() {
                       if (!winnerName) return null
                       const timeAgo = Math.round((Date.now() - new Date(latest.recordedAt).getTime()) / 60000)
                       const timeLabel = timeAgo < 1 ? '방금' : timeAgo < 60 ? `${timeAgo}분 전` : `${Math.round(timeAgo/60)}시간 전`
+                      const todayISO = new Date().toISOString().slice(0, 10)
+                      const todayTourRecs = tourRecs.filter(r => r.recordedAt?.startsWith(todayISO))
+                      const todayPlayers = new Set<string>()
+                      todayTourRecs.forEach(r => { if (r.participant1Id) todayPlayers.add(r.participant1Id); if (r.participant2Id) todayPlayers.add(r.participant2Id) })
                       return (
-                        <div className="mt-1.5 flex items-center gap-1 text-[10px] text-gray-400">
-                          <span>최근:</span>
-                          <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">{winnerName}</span>
-                          <span>{timeLabel}</span>
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-gray-400">최근:</span>
+                          <span className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-full font-medium">{winnerName}</span>
+                          <span className="text-[10px] text-gray-400">{timeLabel}</span>
+                          {todayPlayers.size >= 2 && (
+                            <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded-full font-medium ml-auto flex-shrink-0">
+                              오늘 {todayPlayers.size}명 참가
+                            </span>
+                          )}
                         </div>
                       )
                     })()}
