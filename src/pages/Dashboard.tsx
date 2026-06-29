@@ -682,6 +682,15 @@ export default function DashboardPage() {
               {liveMatches.length > 0 && (
                 <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>
               )}
+              {liveMatches.length >= 2 && (() => {
+                let totalMin = 0
+                liveMatches.forEach(lm => {
+                  const call = matchCalls.find(mc => mc.matchId === lm.matchId)
+                  if (call?.calledAt) totalMin += Math.floor((now.getTime() - new Date(call.calledAt).getTime()) / 60000)
+                })
+                if (totalMin <= 0) return null
+                return <span className="ml-auto text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">총 {totalMin}분</span>
+              })()}
             </h2>
             {liveMatches.length === 0 ? (
               <div className="flex-1 flex items-center justify-center text-sm text-gray-300">진행중 없음</div>
