@@ -9,7 +9,7 @@ export default function Home() {
   const [now, setNow] = useState(new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t) }, [])
   const [showUnchecked, setShowUnchecked] = useState(false)
-  type Memo = { text: string; color: string }
+  type Memo = { text: string; color: string; pinned?: boolean }
   const memoColors: Record<string, { dot: string; bg: string; border: string }> = {
     gray: { dot: 'bg-gray-400', bg: 'bg-gray-50', border: 'border-gray-200' },
     red: { dot: 'bg-red-400', bg: 'bg-red-50', border: 'border-red-200' },
@@ -23,6 +23,7 @@ export default function Home() {
   useEffect(() => { localStorage.setItem('pingpong-memos', JSON.stringify(memos)) }, [memos])
   function addMemo() { if (!memoInput.trim()) return; setMemos(m => [{ text: memoInput.trim(), color: memoColor }, ...m]); setMemoInput('') }
   function deleteMemo(i: number) { setMemos(m => m.filter((_, idx) => idx !== i)) }
+  function togglePin(i: number) { setMemos(m => { const next = m.map((memo, idx) => idx === i ? { ...memo, pinned: !memo.pinned } : memo); return [...next.filter(x => x.pinned), ...next.filter(x => !x.pinned)] }) }
 
   const activeTournaments = tournaments.filter(t => t.status === 'ongoing')
   const allActiveMatches = activeTournaments.flatMap(t => t.events.flatMap(ev => ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye)))
@@ -687,9 +688,10 @@ export default function Home() {
                 {memos.map((m, i) => {
                   const c = memoColors[m.color] ?? memoColors.gray
                   return (
-                  <div key={i} className={`flex items-start gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 ${c.bg} ${c.border}`}>
+                  <div key={i} className={`flex items-start gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 ${c.bg} ${c.border} ${m.pinned ? 'ring-1 ring-amber-300' : ''}`}>
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${c.dot}`} />
-                    <span className="flex-1 text-gray-700 break-all">{m.text}</span>
+                    <span className="flex-1 text-gray-700 break-all">{m.pinned && <span className="text-amber-400 mr-0.5">📌</span>}{m.text}</span>
+                    <button onClick={() => togglePin(i)} className={`flex-shrink-0 mt-0.5 text-[10px] ${m.pinned ? 'text-amber-400' : 'text-gray-300 hover:text-amber-400'}`}>📌</button>
                     <button onClick={() => deleteMemo(i)} className="text-gray-300 hover:text-red-400 flex-shrink-0 mt-0.5">✕</button>
                   </div>
                   )
