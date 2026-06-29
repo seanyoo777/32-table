@@ -499,6 +499,29 @@ export default function Home() {
                   <p className="text-sm">선수가 없습니다</p>
                 </div>
               ) : (
+                <>
+                {topPlayers.length >= 3 && (
+                  <div className="flex items-end justify-center gap-1 mb-3 px-2 flex-shrink-0">
+                    {/* 2위 */}
+                    <div className="flex flex-col items-center flex-1">
+                      <div className="text-[10px] font-bold text-gray-600 truncate w-full text-center">{topPlayers[1].name}</div>
+                      <div className="text-[10px] text-gray-400">{topPlayers[1].points.toLocaleString()}P</div>
+                      <div className="w-full bg-gray-200 rounded-t-md mt-1 flex items-center justify-center text-sm font-black text-gray-500" style={{ height: '28px' }}>🥈</div>
+                    </div>
+                    {/* 1위 */}
+                    <div className="flex flex-col items-center flex-1">
+                      <div className="text-[10px] font-bold text-gray-800 truncate w-full text-center">{topPlayers[0].name}</div>
+                      <div className="text-[10px] text-blue-600 font-semibold">{topPlayers[0].points.toLocaleString()}P</div>
+                      <div className="w-full bg-yellow-200 rounded-t-md mt-1 flex items-center justify-center text-sm font-black text-yellow-700" style={{ height: '40px' }}>🥇</div>
+                    </div>
+                    {/* 3위 */}
+                    <div className="flex flex-col items-center flex-1">
+                      <div className="text-[10px] font-bold text-gray-600 truncate w-full text-center">{topPlayers[2].name}</div>
+                      <div className="text-[10px] text-gray-400">{topPlayers[2].points.toLocaleString()}P</div>
+                      <div className="w-full bg-orange-100 rounded-t-md mt-1 flex items-center justify-center text-sm font-black text-orange-600" style={{ height: '20px' }}>🥉</div>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-0.5">
                   {topPlayers.map((p, i) => (
                     <div key={p.id} className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-0">
@@ -523,6 +546,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                </>
               )}
             </div>
             <button onClick={() => navigate('/rankings')}
