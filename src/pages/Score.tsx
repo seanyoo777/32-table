@@ -373,7 +373,7 @@ function LiveScoreboard({ onClose }: { onClose: () => void }) {
 
 // ── Manual Entry ─────────────────────────────────────────
 function ManualEntry() {
-  const { players, pairs, tournaments, scoreRecords, addScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
+  const { players, pairs, tournaments, scoreRecords, addScoreRecord, updateScoreRecord, verifyScoreRecord, removeScoreRecord, recordMatchResult } = useStore()
   const [submitted, setSubmitted] = useState(false)
   const [sel, setSel] = useState({ tournamentId: '', eventId: '', matchId: '' })
   const [recorder, setRecorder] = useState('')
@@ -385,6 +385,10 @@ function ManualEntry() {
   const [recPage, setRecPage] = useState(0)
   const REC_PAGE_SIZE = 12
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set())
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editP1, setEditP1] = useState('')
+  const [editP2, setEditP2] = useState('')
+
   function toggleExpand(id: string) {
     setExpandedRecords(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
@@ -715,8 +719,26 @@ function ManualEntry() {
                     const isP1Win = r.p1Score > r.p2Score
                     const hasSets = r.sets && r.sets.length > 0
                     const isExpanded = expandedRecords.has(r.id)
+                    const isEditing = editingId === r.id
                     return (
                       <div key={r.id} className="bg-gray-50 rounded-lg text-sm overflow-hidden">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 p-2">
+                            <span className="text-xs text-gray-500 truncate flex-1">{n1}</span>
+                            <input type="number" min={0} value={editP1}
+                              onChange={e => setEditP1(e.target.value)}
+                              className="w-10 text-center border border-blue-300 rounded px-1 py-0.5 text-xs font-bold" />
+                            <span className="text-gray-300">-</span>
+                            <input type="number" min={0} value={editP2}
+                              onChange={e => setEditP2(e.target.value)}
+                              className="w-10 text-center border border-red-300 rounded px-1 py-0.5 text-xs font-bold" />
+                            <span className="text-xs text-gray-500 truncate flex-1 text-right">{n2}</span>
+                            <button onClick={e => { e.stopPropagation(); const p1 = Number(editP1); const p2 = Number(editP2); if (p1 === p2) return; updateScoreRecord(r.id, { p1Score: p1, p2Score: p2 }); setEditingId(null) }}
+                              className="text-[11px] bg-blue-600 text-white px-2 py-0.5 rounded flex-shrink-0">저장</button>
+                            <button onClick={() => setEditingId(null)}
+                              className="text-[11px] text-gray-400 hover:text-gray-600 px-1 flex-shrink-0"><X size={11} /></button>
+                          </div>
+                        ) : (
                         <div
                           className={`flex items-center gap-2 p-2 ${hasSets ? 'cursor-pointer hover:bg-gray-100' : ''}`}
                           onClick={hasSets ? () => toggleExpand(r.id) : undefined}
@@ -732,11 +754,17 @@ function ManualEntry() {
                             : <Check size={12} className="text-green-500 flex-shrink-0" />
                           }
                           <button
+                            onClick={e => { e.stopPropagation(); setEditingId(r.id); setEditP1(String(r.p1Score)); setEditP2(String(r.p2Score)) }}
+                            className="text-[11px] text-blue-400 hover:text-blue-600 px-1 flex-shrink-0"
+                            title="점수 수정"
+                          ><Keyboard size={11} /></button>
+                          <button
                             onClick={e => { e.stopPropagation(); if (window.confirm('이 기록을 삭제하시겠습니까?')) removeScoreRecord(r.id) }}
                             className="text-xs text-red-400 hover:text-red-600 px-1.5 py-0.5 rounded flex-shrink-0"
                             title="기록 삭제"
                           ><X size={11} /></button>
                         </div>
+                        )}
                         {hasSets && isExpanded && (
                           <div className="px-2 pb-2 border-t border-gray-100">
                             <div className="flex gap-1 justify-center flex-wrap pt-1.5">

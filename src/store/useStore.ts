@@ -83,6 +83,7 @@ interface StoreState {
 
   // Score Records
   addScoreRecord: (r: ScoreRecord) => void
+  updateScoreRecord: (id: string, data: Partial<ScoreRecord>) => void
   verifyScoreRecord: (id: string) => void
   removeScoreRecord: (id: string) => void
 
@@ -306,6 +307,9 @@ export const useStore = create<StoreState>()(
       addScoreRecord: (r) => set((s) => ({ scoreRecords: [...s.scoreRecords, r] })),
       verifyScoreRecord: (id) => set((s) => ({
         scoreRecords: s.scoreRecords.map(r => r.id === id ? { ...r, verified: true } : r)
+      })),
+      updateScoreRecord: (id, data) => set((s) => ({
+        scoreRecords: s.scoreRecords.map(r => r.id === id ? { ...r, ...data } : r)
       })),
       removeScoreRecord: (id) => set((s) => ({ scoreRecords: s.scoreRecords.filter(r => r.id !== id) })),
 
