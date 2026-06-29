@@ -1258,6 +1258,17 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
             </span>
           )
         })()}
+        {filteredSlots.length > 0 && (() => {
+          const doneCount = filteredSlots.filter(s => completedMatchSet.has(`${s.eventId}-${s.matchNo}`)).length
+          if (doneCount === 0 && completedMatchSet.size === 0) return null
+          const total = filteredSlots.length
+          const pct = Math.round(doneCount / total * 100)
+          return (
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${pct === 100 ? 'bg-green-100 text-green-700' : doneCount > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+              완료 {doneCount}/{total} ({pct}%)
+            </span>
+          )
+        })()}
         {conflicts.length === 0 ? (
           <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 충돌 없음
