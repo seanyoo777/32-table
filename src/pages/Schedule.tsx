@@ -1200,6 +1200,15 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
               ↩ 실행취소
             </button>
           )}
+          <button
+            onClick={() => {
+              const sorted = [...plan.slots].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.courtNo - b.courtNo)
+              updateSchedule(plan.id, { slots: sorted })
+            }}
+            className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1"
+            title="모든 슬롯을 시작 시간 오름차순으로 정렬">
+            ↕ 정렬
+          </button>
           <div className="flex items-center gap-0.5 flex-shrink-0">
             <button onClick={() => handleBulkShift(-bulkShiftMin)}
               className="text-xs px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 font-mono">-{bulkShiftMin}분</button>
