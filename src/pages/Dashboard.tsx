@@ -92,6 +92,8 @@ export default function DashboardPage() {
     return { no, status: 'free' as const, label: '대기' }
   })
   const freeCourts = courts.filter(c => c.status === 'free').length
+  const liveCourts = courts.filter(c => c.status === 'live').length
+  const calledCourts = courts.filter(c => c.status === 'called').length
 
   const formatTime = (d: Date) =>
     `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`
@@ -182,7 +184,11 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xs font-semibold text-gray-600">코트 현황</span>
-            <span className="text-[10px] text-gray-400">빈 {freeCourts}/{courts.length}</span>
+            <span className="text-[10px] text-gray-400 flex items-center gap-1.5">
+              {liveCourts > 0 && <span className="text-red-500 font-semibold">LIVE {liveCourts}</span>}
+              {calledCourts > 0 && <span className="text-orange-500 font-semibold">호출 {calledCourts}</span>}
+              <span>빈 {freeCourts}/{courts.length}</span>
+            </span>
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
             {courts.map(c => {

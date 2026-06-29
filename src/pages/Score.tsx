@@ -385,6 +385,13 @@ function ManualEntry() {
   const [recPage, setRecPage] = useState(0)
   const REC_PAGE_SIZE = 12
 
+  useEffect(() => {
+    if (!sel.tournamentId) {
+      const ongoing = tournaments.find(t => t.status === 'ongoing')
+      if (ongoing) setSel(s => ({ ...s, tournamentId: ongoing.id }))
+    }
+  }, [tournaments])
+
   const pMap = Object.fromEntries([
     ...players.map(p => [p.id, { name: p.name, school: p.school }]),
     ...pairs.map(p => [p.id, { name: p.name, school: p.school }]),
