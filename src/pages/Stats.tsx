@@ -1493,6 +1493,40 @@ export default function Stats() {
             )
           })()}
 
+          {/* 대회별 평균 세트 수 바 차트 */}
+          {(() => {
+            const tourSetMap = new Map<string, { sum: number; count: number; name: string }>()
+            scoreRecords.forEach(r => {
+              if (!r.sets || r.sets.length < 1) return
+              if (!tourSetMap.has(r.tournamentId)) {
+                const name = tournaments.find(t => t.id === r.tournamentId)?.name ?? r.tournamentId.slice(0, 8)
+                tourSetMap.set(r.tournamentId, { sum: 0, count: 0, name })
+              }
+              const entry = tourSetMap.get(r.tournamentId)!
+              entry.sum += r.sets.length
+              entry.count++
+            })
+            const rows = [...tourSetMap.values()].filter(e => e.count >= 1).map(e => ({ name: e.name, avg: +(e.sum / e.count).toFixed(1) })).sort((a, b) => b.avg - a.avg)
+            if (rows.length < 2 || scoreRecords.filter(r => r.sets?.length).length < 5) return null
+            const maxAvg = rows[0].avg
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm mb-3">대회별 평균 세트 수</h2>
+                <div className="space-y-1.5">
+                  {rows.map(r => (
+                    <div key={r.name} className="flex items-center gap-2">
+                      <span className="text-[11px] text-gray-500 flex-shrink-0 truncate" style={{ width: '80px' }} title={r.name}>{r.name}</span>
+                      <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-sky-400 rounded-full transition-all" style={{ width: `${Math.round(r.avg / maxAvg * 100)}%` }} />
+                      </div>
+                      <span className="text-[11px] font-bold text-sky-700 w-10 text-right flex-shrink-0">{r.avg}세트</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+
           {/* 오늘 승률 구간 분포 파이 */}
           {(() => {
             const todayISO = new Date().toISOString().slice(0, 10)
