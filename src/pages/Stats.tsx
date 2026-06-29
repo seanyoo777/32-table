@@ -508,6 +508,38 @@ export default function Stats() {
             </section>
           )}
 
+          {/* 대회별 참가자 수 차트 */}
+          {tournaments.length > 0 && (
+            <section className="card">
+              <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                <Users size={14} className="text-blue-500" /> 대회별 참가자 수
+              </h2>
+              {(() => {
+                const rows = [...tournaments]
+                  .sort((a, b) => b.participants.length - a.participants.length)
+                  .slice(0, 5)
+                  .map(t => ({ name: t.name.length > 8 ? t.name.slice(0, 8) + '…' : t.name, count: t.participants.length, status: t.status }))
+                const maxVal = Math.max(...rows.map(r => r.count), 1)
+                return (
+                  <div className="space-y-2">
+                    {rows.map((r, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-[10px] text-gray-500 w-20 flex-shrink-0 truncate">{r.name}</span>
+                        <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${r.status === 'completed' ? 'bg-gray-400' : r.status === 'ongoing' ? 'bg-blue-500' : 'bg-blue-200'}`}
+                            style={{ width: `${Math.max(r.count / maxVal * 100, r.count > 0 ? 6 : 0)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-600 w-6 text-right flex-shrink-0">{r.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+            </section>
+          )}
+
           {/* 최근 7일 경기 수 차트 */}
           {scoreRecords.length > 0 && (
             <section className="card">
