@@ -280,6 +280,22 @@ export default function Rankings() {
     return m
   }, [players, scoreRecords])
 
+  const playerBestStreak = useMemo(() => {
+    const m = new Map<string, number>()
+    players.forEach(p => {
+      const recs = scoreRecords
+        .filter(r => r.participant1Id === p.id || r.participant2Id === p.id)
+        .sort((a, b) => (a.recordedAt ?? '').localeCompare(b.recordedAt ?? ''))
+      let best = 0, cur = 0
+      recs.forEach(r => {
+        const won = r.participant1Id === p.id ? r.p1Score > r.p2Score : r.p2Score > r.p1Score
+        if (won) { cur++; if (cur > best) best = cur } else cur = 0
+      })
+      if (best >= 5) m.set(p.id, best)
+    })
+    return m
+  }, [players, scoreRecords])
+
   const lastMatchDaysAgo = useMemo(() => {
     const todayMs = new Date().setHours(0, 0, 0, 0)
     const m = new Map<string, number>()
@@ -863,6 +879,15 @@ export default function Rankings() {
                           return (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold flex-shrink-0">
                               🔥{streak}연승
+                            </span>
+                          )
+                        })()}
+                        {(() => {
+                          const best = playerBestStreak.get(p.id)
+                          if (!best) return null
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-300 font-bold flex-shrink-0">
+                              🏆{best}연승최고
                             </span>
                           )
                         })()}
