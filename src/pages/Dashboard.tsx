@@ -967,6 +967,21 @@ export default function DashboardPage() {
                 {activeTournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             )}
+            {(() => {
+              const todayStr = now.toISOString().slice(0, 10)
+              const todayCalls = matchCalls.filter(c => c.calledAt.slice(0, 10) === todayStr)
+              if (todayCalls.length === 0) return null
+              const confirmed = todayCalls.filter(c => c.acknowledged).length
+              return (
+                <div className="flex gap-1.5 mb-1.5">
+                  <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">오늘 {todayCalls.length}건</span>
+                  <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">확인 {confirmed}건</span>
+                  {todayCalls.length - confirmed > 0 && (
+                    <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">미확인 {todayCalls.length - confirmed}건</span>
+                  )}
+                </div>
+              )
+            })()}
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {matchCalls.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-2">호출 없음</p>

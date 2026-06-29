@@ -510,17 +510,35 @@ groupBySchool 체크박스. 학교 헤더 행 + 소속 선수 인덴트 행.
 ### 2-187. ✅ 홈 최근 완료 경기 3건 인라인 (완료 v5.77)
 scoreRecords 역순 3건 green 칩 행. 승자+점수.
 
-### 2-188. 대시보드 종목별 대기 경기 수 바 (v5.78)
-Dashboard.tsx 대기 경기 섹션 상단에 종목별 대기 경기 수 인라인 바 추가.
-activeTournaments.events 기준, 완료 안 된 경기 수 집계.
+### 2-188. (스킵) 대시보드 종목별 대기 경기 수 바
+v5.46의 top-4 events 바와 중복. 스킵.
 
-### 2-189. 통계 탭 선수 승률 TOP 5 상세 카드 (v5.79)
-Stats.tsx 승률 TOP 5 섹션에 각 선수 클릭 시 상세 팝업(전적·포인트·부서).
-useState playerDetail, 간단한 인라인 팝업.
+### 2-189. ✅ 통계 승률 TOP5 클릭 상세 팝업 (완료 v5.79)
+winRateDetailId 토글. 학교/부서/포인트/Elo/성별 인라인 상세.
 
-### 2-190. 일정 탭 종목별 색상 범례 표시 (v5.80)
-Schedule.tsx 뷰 전환 버튼 옆에 현재 일정에 존재하는 종목 색상 범례 칩 표시.
-eventColors 기반, filteredSlots에 있는 고유 종목들만.
+### 2-190. ✅ 일정 종목별 색상 범례 (완료 v5.80)
+filteredSlots 고유 종목 타입 dot+이름 범례 행. 2종목+ 시 표시.
+
+### 2-191. ✅ 대시보드 체크인 미완료 선수 클릭 → 체크인 이동 (완료 v5.81)
+Dashboard.tsx 미체크인 선수 orange 칩 클릭 시 `/checkin` 페이지로 navigate.
+
+### 2-192. ⏭ 랭킹 탭 Elo 레이팅 컬러 뱃지 (이미 구현됨 Rankings.tsx:685-686)
+rLabel.color/bg 이미 사용 중. 스킵.
+
+### 2-193. ⏭ 홈 다음 예정 경기 카운트다운 (이미 구현됨 Home.tsx:348-352)
+2-91(v4.81)에서 구현됨. upcoming[0] isNext 칩 이미 존재. 스킵.
+
+### 2-194. 대시보드 오늘 호출 통계 칩 (v5.82)
+Dashboard.tsx 경기 호출 섹션 상단에 오늘 matchCalls 총 건수/확인 건수 칩 추가.
+todayISO 기준 calledAt 필터, "오늘 N건 · 확인 M건" 인라인 gray/green 칩.
+
+### 2-195. 홈 활성 대회 체크인 진행바 (v5.83)
+Home.tsx activeTournaments 카드에 checkedInIds.size / players.length 체크인 진행바.
+N/M + % + 인라인 teal 바. 선수 0명이면 숨김.
+
+### 2-196. 랭킹 선수 행 마지막 경기 날짜 표시 (v5.84)
+Rankings.tsx 단식 선수 목록 행에 해당 선수의 마지막 경기 날짜 "N일 전" gray 칩 추가.
+scoreRecords 기반 participant1Id/2Id 매칭. 1경기 이상인 선수만 표시.
 
 ### 2-137. ✅ 점수 기록 탭 빈 상태 개선 (완료 v5.27)
 Score.tsx 검색 결과 0건 시 🔍 아이콘 + 안내 + 필터 초기화 버튼.
