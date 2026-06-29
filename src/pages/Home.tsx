@@ -12,6 +12,13 @@ export default function Home() {
   const doneTotal = allActiveMatches.filter(m => !!m.result).length
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
 
+  const todayISO = new Date().toISOString().split('T')[0]
+  const todaySchedules = schedules.filter(s => s.date === todayISO)
+  const todaySlotCount = todaySchedules.reduce((n, s) => n + s.slots.length, 0)
+  const todayFirstStart = todaySchedules.length > 0
+    ? todaySchedules.flatMap(s => s.slots.map(sl => sl.startTime)).sort()[0]
+    : null
+
   const divisionCounts = players.reduce((acc, p) => {
     acc[p.division] = (acc[p.division] || 0) + 1
     return acc
@@ -71,6 +78,16 @@ export default function Home() {
               미확인 호출 {matchCalls.filter(c => !c.acknowledged).length}
             </span>
           )}
+        </div>
+      )}
+
+      {/* ── 오늘 일정 요약 ── */}
+      {todaySlotCount > 0 && (
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-xl border border-purple-100 text-sm">
+          <span className="text-purple-400 text-xs font-medium flex-shrink-0">📅 오늘 일정</span>
+          <span className="text-purple-700 font-semibold">{todaySlotCount}경기 슬롯</span>
+          {todayFirstStart && <span className="text-purple-500 text-xs">· 첫 경기 {todayFirstStart}</span>}
+          <span className="text-purple-400 text-xs ml-auto">{todaySchedules.map(s => s.name).join(', ')}</span>
         </div>
       )}
 

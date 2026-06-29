@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [callMatchKey, setCallMatchKey] = useState('')
   const [callSearch, setCallSearch] = useState('')
   const [courtPopover, setCourtPopover] = useState<number | null>(null)
+  const [rowTableNos, setRowTableNos] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -386,29 +387,42 @@ export default function DashboardPage() {
                       <span className="text-amber-600 bg-amber-50 border border-amber-200 px-1 rounded flex-shrink-0 text-[10px]" title="체크인하지 않은 선수가 있습니다">미체크인</span>
                     )}
                     {alreadyCalled && <span className="text-orange-500 flex-shrink-0 text-[10px]">호출됨</span>}
-                    {!alreadyCalled && (
-                      <button
-                        onClick={() => {
-                          if (!m.participant1Id || !m.participant2Id) return
-                          const call: MatchCall = {
-                            id: genId(), matchId: m.id, tournamentId: m.tournamentId,
-                            eventId: m.eventId, tableNo: callTableNo,
-                            participant1Name: pMap[m.participant1Id]?.name ?? '?',
-                            participant2Name: pMap[m.participant2Id]?.name ?? '?',
-                            eventLabel: m.eventLabel, calledAt: new Date().toISOString(), acknowledged: false,
-                          }
-                          addMatchCall(call)
-                          if ('Notification' in window && Notification.permission === 'granted') {
-                            new Notification(`🏓 경기 호출 — ${callTableNo}번대`, {
-                              body: `${call.participant1Name} vs ${call.participant2Name}`,
-                              icon: '/favicon.ico',
-                            })
-                          }
-                        }}
-                        className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded hover:bg-orange-200 flex-shrink-0">
-                        <Bell size={9} className="inline mr-0.5" />호출
-                      </button>
-                    )}
+                    {!alreadyCalled && (() => {
+                      const mKey = `${m.tournamentId}-${m.eventId}-${m.id}`
+                      const tNo = rowTableNos[mKey] ?? callTableNo
+                      return (
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <input
+                            type="number" min={1} max={30} value={tNo}
+                            onChange={e => setRowTableNos(prev => ({ ...prev, [mKey]: Number(e.target.value) || 1 }))}
+                            onClick={e => e.stopPropagation()}
+                            className="w-8 text-xs text-center border border-gray-200 rounded px-0.5 py-0.5 bg-white"
+                            title="코트 번호"
+                          />
+                          <button
+                            onClick={() => {
+                              if (!m.participant1Id || !m.participant2Id) return
+                              const call: MatchCall = {
+                                id: genId(), matchId: m.id, tournamentId: m.tournamentId,
+                                eventId: m.eventId, tableNo: tNo,
+                                participant1Name: pMap[m.participant1Id]?.name ?? '?',
+                                participant2Name: pMap[m.participant2Id]?.name ?? '?',
+                                eventLabel: m.eventLabel, calledAt: new Date().toISOString(), acknowledged: false,
+                              }
+                              addMatchCall(call)
+                              if ('Notification' in window && Notification.permission === 'granted') {
+                                new Notification(`🏓 경기 호출 — ${tNo}번대`, {
+                                  body: `${call.participant1Name} vs ${call.participant2Name}`,
+                                  icon: '/favicon.ico',
+                                })
+                              }
+                            }}
+                            className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded hover:bg-orange-200">
+                            <Bell size={9} className="inline mr-0.5" />호출
+                          </button>
+                        </div>
+                      )
+                    })()}
                     <button onClick={() => navigate('/score')}
                       className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-200 flex-shrink-0">
                       입력
