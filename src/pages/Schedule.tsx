@@ -917,6 +917,22 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
   const filteredTimes = [...new Set(filteredSlots.map(s => s.startTime))].sort()
   const byTime = filteredTimes.map(t => ({ time: t, slots: filteredSlots.filter(s => s.startTime === t) }))
 
+  // 다일차 전체 보기: 일차별 섹션(인쇄 헤더용)
+  const byDayTime = hasMultipleDays && activeDay === null
+    ? days.map(day => {
+        const dc = plan.days?.find(d => d.day === day)
+        const daySlots = plan.slots.filter(s => (s.day ?? 1) === day)
+        const times = [...new Set(daySlots.map(s => s.startTime))].sort()
+        return {
+          day,
+          label: dc?.label ?? `${day}일차`,
+          date: dc?.date ?? '',
+          courts: [...new Set(daySlots.map(s => s.courtNo))].sort(),
+          rows: times.map(t => ({ time: t, slots: daySlots.filter(s => s.startTime === t) })),
+        }
+      })
+    : null
+
   // 일정 충돌 감지 (선수 동시간대 중복배정 / 연속경기 휴식부족)
   const { conflicts, conflictSlotIds } = useMemo(() => detectScheduleConflicts(filteredSlots), [filteredSlots])
   const overlapCount = conflicts.filter(c => c.type === 'overlap').length
@@ -1195,6 +1211,62 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
         {/* Main content */}
         <div className="flex-1 min-w-0 overflow-auto p-3">
           {viewMode === 'time' && (
+            byDayTime ? (
+              /* 다일차 전체 보기: 일차별 분리 테이블 */
+              <div className="space-y-4">
+                {byDayTime.map(({ day, label, date, courts, rows }) => (
+                  <div key={day} className="schedule-day-section">
+                    <div className="schedule-day-header sticky top-0 z-20 flex items-center gap-3 bg-purple-700 text-white px-4 py-2 rounded-t-lg">
+                      <span className="font-bold text-sm">{label}</span>
+                      {date && <span className="text-purple-200 text-xs">{date}</span>}
+                      <span className="text-purple-200 text-xs ml-auto">{rows.reduce((s, r) => s + r.slots.length, 0)}경기</span>
+                    </div>
+                    <table className="text-sm border-collapse w-full">
+                      <thead>
+                        <tr>
+                          <th className="py-2 px-3 text-left font-semibold text-gray-600 w-24 border border-gray-200 bg-gray-100 whitespace-nowrap">시간</th>
+                          {courts.map(c => (
+                            <th key={c} className="py-2 px-2 text-center font-semibold text-gray-600 min-w-[120px] border border-gray-200 bg-gray-100 whitespace-nowrap">코트 {c}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(({ time, slots }) => (
+                          <tr key={time}>
+                            <td className="py-2 px-3 font-mono text-xs text-blue-700 font-semibold align-top border border-gray-200 whitespace-nowrap bg-blue-50">{formatTime12h(time)}</td>
+                            {courts.map(c => {
+                              const slot = slots.find(s => s.courtNo === c)
+                              if (!slot) return <td key={c} className="py-2 px-2 border border-gray-100 bg-white" />
+                              return (
+                                <td key={c} className="py-1.5 px-2 border border-gray-100">
+                                  <div className={`rounded p-1.5 border ${divColors[slot.division]} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : ''}`}>
+                                    <div className="flex items-center gap-1 mb-0.5">
+                                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
+                                      <span className="font-semibold text-[11px]">{slot.division} {slot.eventType}</span>
+                                      <span className="text-[10px] text-gray-400 ml-auto">#{slot.matchNo}</span>
+                                    </div>
+                                    {slot.participant1 && slot.participant2 ? (
+                                      <div className="mt-0.5 space-y-0.5">
+                                        <div className="text-[12px] font-bold text-gray-800 truncate">{slot.participant1}</div>
+                                        <div className="text-[10px] text-gray-400 text-center leading-none">vs</div>
+                                        <div className="text-[12px] font-bold text-gray-800 truncate">{slot.participant2}</div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-[10px] text-gray-400 mt-0.5">{slot.gender} · 미배정</div>
+                                    )}
+                                    <div className="text-[10px] text-gray-400 mt-0.5">{formatTime12h(slot.startTime)}~{formatTime12h(slot.endTime)}</div>
+                                  </div>
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <table className="text-sm border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
               <thead className="sticky top-0 z-10">
                 <tr>
@@ -1237,6 +1309,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                 ))}
               </tbody>
             </table>
+            )
           )}
 
           {viewMode === 'court' && (

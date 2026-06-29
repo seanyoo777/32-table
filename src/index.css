@@ -176,4 +176,8 @@ html, body, #root {
   .court-print { display: block !important; }
   .court-print > * { break-inside: avoid; break-after: page; margin-bottom: 0 !important; }
   .court-print > *:last-child { break-after: auto; }
+  /* 다일차 인쇄: 일차 헤더 강조 + 일차마다 새 페이지 */
+  .schedule-day-section { break-before: page; break-inside: avoid-page; }
+  .schedule-day-section:first-child { break-before: auto; }
+  .schedule-day-header { background: #4f46e5 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-radius: 0 !important; padding: 6px 12px !important; font-size: 13px !important; }
 }
