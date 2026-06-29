@@ -367,6 +367,10 @@ export default function Home() {
                 const pendingM = totalM - doneM
                 const pct = totalM > 0 ? Math.round(doneM / totalM * 100) : 0
                 const tourCalls = matchCalls.filter(c => c.tournamentId === t.id && !c.acknowledged).length
+                const pendingEvents = t.events.filter(ev => {
+                  const evTotal = ev.matches.filter(m => m.participant1Id && m.participant2Id && !m.isBye).length
+                  return evTotal > 0 && ev.matches.filter(m => m.result).length < evTotal
+                }).length
                 return (
                   <div key={t.id}
                     className="bg-green-50 border border-green-200 rounded-xl p-3 cursor-pointer hover:bg-green-100 transition-colors"
@@ -385,6 +389,10 @@ export default function Home() {
                       {pendingM > 0
                         ? <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">{pendingM}경기 남음</span>
                         : totalM > 0 && <span className="text-[10px] bg-green-200 text-green-700 px-1.5 py-0.5 rounded-full font-bold">완료</span>
+                      }
+                      {pendingEvents > 0
+                        ? <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">{pendingEvents}종목 남음</span>
+                        : t.events.length > 0 && totalM > 0 && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold">전체 완료</span>
                       }
                     </div>
                     <div className="h-1 bg-green-200 rounded-full">
