@@ -1493,6 +1493,67 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 승률 구간 분포 파이 */}
+          {(() => {
+            const todayISO = new Date().toISOString().slice(0, 10)
+            const todayRecs = scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO))
+            if (todayRecs.length < 5) return null
+            const winsMap = new Map<string, number>()
+            const gamesMap = new Map<string, number>()
+            todayRecs.forEach(r => {
+              const winnerId = r.p1Score > r.p2Score ? r.participant1Id : r.participant2Id
+              const loserId = r.p1Score > r.p2Score ? r.participant2Id : r.participant1Id
+              winsMap.set(winnerId, (winsMap.get(winnerId) ?? 0) + 1)
+              gamesMap.set(winnerId, (gamesMap.get(winnerId) ?? 0) + 1)
+              gamesMap.set(loserId, (gamesMap.get(loserId) ?? 0) + 1)
+            })
+            const buckets = [0, 0, 0, 0]
+            gamesMap.forEach((g, id) => {
+              const rate = (winsMap.get(id) ?? 0) / g
+              if (rate <= 0.25) buckets[0]++
+              else if (rate <= 0.5) buckets[1]++
+              else if (rate <= 0.75) buckets[2]++
+              else buckets[3]++
+            })
+            const total = buckets.reduce((a, b) => a + b, 0)
+            if (buckets.filter(b => b > 0).length < 2) return null
+            const colors = ['#ef4444','#f97316','#14b8a6','#22c55e']
+            const labels = ['0–25%','26–50%','51–75%','76–100%']
+            let angle = -90
+            const slices = buckets.map((b, i) => {
+              const pct = b / total
+              const sweep = pct * 360
+              const start = angle; angle += sweep
+              const toRad = (d: number) => d * Math.PI / 180
+              const x1 = 50 + 40 * Math.cos(toRad(start))
+              const y1 = 50 + 40 * Math.sin(toRad(start))
+              const x2 = 50 + 40 * Math.cos(toRad(start + sweep))
+              const y2 = 50 + 40 * Math.sin(toRad(start + sweep))
+              const large = sweep > 180 ? 1 : 0
+              return { d: `M50,50 L${x1},${y1} A40,40 0 ${large},1 ${x2},${y2} Z`, color: colors[i], label: labels[i], count: b, pct: Math.round(pct * 100) }
+            }).filter(s => s.count > 0)
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm mb-3">오늘 승률 분포</h2>
+                <div className="flex items-center gap-4">
+                  <svg viewBox="0 0 100 100" className="w-20 h-20 flex-shrink-0">
+                    {slices.map((s, i) => <path key={i} d={s.d} fill={s.color} />)}
+                  </svg>
+                  <div className="flex flex-col gap-1">
+                    {slices.map((s, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                        <span className="text-[11px] text-gray-600">{s.label}</span>
+                        <span className="text-[11px] font-bold text-gray-800">{s.count}명</span>
+                        <span className="text-[10px] text-gray-400">{s.pct}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
