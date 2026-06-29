@@ -728,6 +728,18 @@ export default function DashboardPage() {
                 </span>
               )
             })()}
+            {pendingCalls.length >= 1 && (() => {
+              const maxWait = pendingCalls
+                .map(c => c.calledAt ? Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000) : null)
+                .filter((x): x is number => x !== null)
+                .sort((a, b) => b - a)[0] ?? null
+              if (maxWait === null || maxWait < 20) return null
+              return (
+                <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                  ⏳ 대기 {maxWait}분
+                </span>
+              )
+            })()}
             <button onClick={() => setCourtExpanded(v => !v)}
               className="ml-1 text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 bg-gray-50 flex-shrink-0">
               {courtExpanded ? '접기 ▲' : '전체 ▼'}
