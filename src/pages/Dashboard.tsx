@@ -564,6 +564,28 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* 오늘 코트 활용률 칩 */}
+      {activeTournaments.length > 0 && (() => {
+        const todayISO = new Date().toISOString().split('T')[0]
+        const todayCalls = matchCalls.filter(c => c.calledAt?.startsWith(todayISO) && c.tableNo)
+        if (todayCalls.length < 5) return null
+        const courtCount = new Map<number, number>()
+        todayCalls.forEach(c => courtCount.set(c.tableNo, (courtCount.get(c.tableNo) ?? 0) + 1))
+        if (courtCount.size < 2) return null
+        const sorted = [...courtCount.entries()].sort((a, b) => b[1] - a[1])
+        const top3 = sorted.slice(0, 3)
+        return (
+          <div className="flex-shrink-0 px-4 py-1.5 bg-white border-b border-gray-50 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-gray-400 font-medium flex-shrink-0">코트 활용</span>
+            {top3.map(([no, n]) => (
+              <span key={no} className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-1.5 py-0.5 rounded-full font-medium">
+                {no}번 {n}경기
+              </span>
+            ))}
+          </div>
+        )
+      })()}
+
       {/* 활성 대회별 종목 미완료 경기 현황 */}
       {activeTournaments.length > 0 && (() => {
         const rows = activeTournaments.flatMap(t =>
