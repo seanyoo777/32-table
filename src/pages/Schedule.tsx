@@ -1640,7 +1640,10 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                       )
                     })()}
                     <div className="space-y-1.5">
-                      {courtSlots.map((slot, si) => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`);
+                      {(() => {
+                        const firstPendingIdx = courtSlots.findIndex(s => !completedMatchSet.has(`${s.eventId}-${s.matchNo}`) && s.participant1 && s.participant2)
+                        return courtSlots.map((slot, si) => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`);
+                        const isNextUp = si === firstPendingIdx
                         const toMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
                         const gapMin = si > 0 && courtSlots[si - 1].endTime ? toMins(slot.startTime) - toMins(courtSlots[si - 1].endTime) : 0
                         return (
@@ -1655,7 +1658,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                           </div>
                         ) : null}
                         <div
-                          className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${eventTypeAccent(slot.eventType)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : slotSearch.trim() ? 'ring-2 ring-yellow-300' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
+                          className={`p-1.5 rounded border ${divColors[slot.division]} ${courtCardAccent(slot.courtNo)} ${eventTypeAccent(slot.eventType)} ${conflictSlotIds.has(slot.id) ? 'ring-2 ring-red-400' : isNextUp ? 'ring-2 ring-blue-400' : slotSearch.trim() ? 'ring-2 ring-yellow-300' : ''} ${(!slot.type || slot.type === 'match') ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingSlotId === slot.id ? 'opacity-50' : ''} ${isDone ? 'opacity-60' : ''} ${(!slot.participant1 || !slot.participant2) ? 'border-dashed opacity-70' : ''}`}
                           draggable={!slot.type || slot.type === 'match'}
                           onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('slotId', slot.id); setDraggingSlotId(slot.id); setEditingSlotId(null) }}
                           onDragEnd={() => { setDraggingSlotId(null); setDragOverCourt(null) }}
@@ -1665,6 +1668,7 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${slotEventColors(slot)}`} />
                             <span className="font-mono text-[11px] text-blue-700 font-semibold">{formatTime12h(slot.startTime)}</span>
                             <span className="text-[10px] text-gray-400">~{formatTime12h(slot.endTime)}</span>
+                            {isNextUp && <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">다음</span>}
                             {isDone ? (
                               <span className="text-[9px] text-green-600 font-bold ml-auto flex items-center gap-1">
                                 ✓완료
@@ -1730,7 +1734,8 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                           )}
                         </div>
                         </div>
-                      )})}
+                      )})
+                      })()}
                     </div>
                   </div>
                 )
