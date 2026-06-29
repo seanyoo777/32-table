@@ -1763,6 +1763,43 @@ export default function Stats() {
             )
           })()}
 
+          {/* 오늘 활동 선수 Elo 현황 */}
+          {(() => {
+            const todayISO = new Date().toISOString().split('T')[0]
+            const todayIds = new Set<string>()
+            scoreRecords.filter(r => r.recordedAt?.startsWith(todayISO)).forEach(r => {
+              if (r.participant1Id) todayIds.add(r.participant1Id)
+              if (r.participant2Id) todayIds.add(r.participant2Id)
+            })
+            const active = players.filter(p => todayIds.has(p.id) && p.rating && p.rating !== 1000)
+              .sort((a, b) => (b.rating ?? 1000) - (a.rating ?? 1000)).slice(0, 5)
+            if (active.length < 3) return null
+            const maxElo = Math.max(...active.map(p => p.rating ?? 1000))
+            return (
+              <section className="card">
+                <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2 mb-3">
+                  <TrendingUp size={14} className="text-pink-500" /> 오늘 활동 선수 Elo TOP{active.length}
+                </h2>
+                <div className="space-y-2">
+                  {active.map(p => {
+                    const elo = p.rating ?? 1000
+                    const pct = Math.round(elo / maxElo * 100)
+                    const diff = elo - 1000
+                    return (
+                      <div key={p.id} className="flex items-center gap-2">
+                        <span className="text-[10px] text-gray-600 w-16 flex-shrink-0 truncate">{p.name}</span>
+                        <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${diff > 100 ? 'bg-yellow-400' : diff > 0 ? 'bg-indigo-400' : 'bg-gray-300'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`text-[10px] font-bold w-16 text-right flex-shrink-0 ${diff > 0 ? 'text-indigo-600' : 'text-gray-400'}`}>{elo} {diff !== 0 && <span className={diff > 0 ? 'text-green-500' : 'text-red-500'}>{diff > 0 ? `+${diff}` : diff}</span>}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
