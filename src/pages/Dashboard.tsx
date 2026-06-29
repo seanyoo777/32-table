@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const [rowTableNos, setRowTableNos] = useState<Record<string, number>>({})
   const [selectedMatchKeys, setSelectedMatchKeys] = useState<Set<string>>(new Set())
   const [pendingTourFilter, setPendingTourFilter] = useState('')
+  const [callTourFilter, setCallTourFilter] = useState('')
 
   function toggleSelectMatch(key: string) {
     setSelectedMatchKeys(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
@@ -671,11 +672,18 @@ export default function DashboardPage() {
                 <Bell size={11} /> 호출
               </button>
             </div>
+            {activeTournaments.length > 1 && matchCalls.length > 0 && (
+              <select className="select w-full py-0.5 text-xs mb-1.5" value={callTourFilter}
+                onChange={e => setCallTourFilter(e.target.value)}>
+                <option value="">전체 대회</option>
+                {activeTournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            )}
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {matchCalls.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-2">호출 없음</p>
               ) : (
-                [...matchCalls].reverse().map(c => {
+                [...matchCalls].reverse().filter(c => !callTourFilter || c.tournamentId === callTourFilter).map(c => {
                   const callElapsed = Math.floor((now.getTime() - new Date(c.calledAt).getTime()) / 60000)
                   const isOverdue = !c.acknowledged && callElapsed >= 5
                   return (
