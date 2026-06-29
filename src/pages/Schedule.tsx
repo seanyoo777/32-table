@@ -1522,10 +1522,20 @@ function ScheduleDetail({ plan: planProp, onBack }: { plan: SchedulePlan; onBack
                     onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCourt(null) }}
                     onDrop={e => { e.preventDefault(); const sid = draggingSlotId || e.dataTransfer.getData('slotId'); if (sid) { handleMoveSlot(sid, { courtNo: c }); setDraggingSlotId(null); setDragOverCourt(null) } }}
                   >
-                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm">
-                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold ${courtBadgeColor(c)}`}>{c}</span>
+                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2 text-sm flex-wrap">
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold flex-shrink-0 ${courtBadgeColor(c)}`}>{c}</span>
                       코트
-                      <span className="text-xs text-gray-400 font-normal">{courtSlots.length}경기</span>
+                      {(() => {
+                        const done = courtSlots.filter(s => completedMatchSet.has(`${s.eventId}-${s.matchNo}`)).length
+                        const unassigned = courtSlots.filter(s => !s.participant1 || !s.participant2).length
+                        return (
+                          <span className="flex items-center gap-1 ml-auto font-normal">
+                            <span className="text-[10px] text-gray-400">{courtSlots.length}경기</span>
+                            {done > 0 && <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">완료 {done}</span>}
+                            {unassigned > 0 && <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">미배정 {unassigned}</span>}
+                          </span>
+                        )
+                      })()}
                     </h3>
                     <div className="space-y-1.5">
                       {courtSlots.map((slot, si) => { const isDone = completedMatchSet.has(`${slot.eventId}-${slot.matchNo}`);
