@@ -2,7 +2,7 @@
 
 > **배포 URL**: https://32-table.pages.dev  
 > **GitHub**: https://github.com/seanyoo777/32-table  
-> **버전**: v5.68 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
+> **버전**: v5.74 | **스택**: Vite + React 18 + TypeScript + Tailwind CSS + Zustand  
 > **레이팅**: USATT Elo 방식 (미국 탁구협회 기준, ITTF 아님)
 
 ---
@@ -278,6 +278,54 @@ git push             # → Cloudflare Pages 자동 빌드·배포 (~1분)
 | 대진표 생성 안됨 | 참가자 0명 | 종목에 참가자 배정 후 재시도 |
 | 점수 반영 안됨 | 완료 대회 선택 | 진행중 대회만 점수 입력 가능 |
 | 일정에 경기 일부 누락 | 운영시간 초과 | 코트 수↑ 또는 일차 추가 후 재생성 (생성 시 경고 표시됨) |
+
+---
+
+## 12-181. v5.74 — 일정 인쇄 전용 헤더
+
+자동 루프. Schedule.tsx print-only div.
+
+### 변경 (Schedule.tsx)
+- `hidden print:block` div: plan.name, 코트번호 목록, 슬롯 수, 출력일.
+- main content 영역 바로 앞에 삽입.
+
+---
+
+## 12-180. v5.73 — 통계 대회별 완료 경기 바
+
+자동 루프. Stats.tsx.
+
+### 변경 (Stats.tsx)
+- 대회 2개+ 조건. done/total 집계, amber 가로 바.
+
+---
+
+## 12-179. v5.72 — 대시보드 LIVE 평균 진행 시간
+
+자동 루프. Dashboard.tsx.
+
+### 변경 (Dashboard.tsx)
+- liveMatches×matchCalls calledAt 매칭 → 평균 경과분 "평균 N분" sub.
+
+---
+
+## 12-178. v5.71 — 랭킹 포인트 없는 선수 숨기기
+
+자동 루프. Rankings.tsx.
+
+### 변경 (Rankings.tsx)
+- `hideZeroPoints` state + 체크박스 UI.
+- `filteredPlayers` useMemo 의존성 추가.
+
+---
+
+## 12-177. v5.69 — 대시보드 대기 경기 소요 예측
+
+자동 루프. Dashboard.tsx.
+
+### 변경 (Dashboard.tsx)
+- `avgMatchMin` IIFE: sets 기반 평균 경기 시간 추산.
+- "대기중 경기" DashCard sub `"약 N분"`.
 
 ---
 
