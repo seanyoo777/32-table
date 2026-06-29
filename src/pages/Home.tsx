@@ -705,6 +705,20 @@ export default function Home() {
                         )
                       })()}
                       {ddayChip}
+                      {totalM > 0 && (() => {
+                        const chipColor = pct === 100
+                          ? 'bg-green-100 text-green-700 border-green-300'
+                          : pct >= 50
+                          ? 'bg-blue-100 text-blue-700 border-blue-200'
+                          : pct >= 1
+                          ? 'bg-amber-100 text-amber-700 border-amber-200'
+                          : 'bg-gray-100 text-gray-500 border-gray-200'
+                        return (
+                          <span className={`text-[10px] border px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${chipColor}`}>
+                            {pct}%
+                          </span>
+                        )
+                      })()}
                       {tourCalls > 0 && (
                         <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold animate-pulse flex-shrink-0">
                           <Bell size={9} className="inline mr-0.5" />{tourCalls}
