@@ -421,12 +421,17 @@ export default function Home() {
               <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
             {(() => {
+              const nowHHmm2 = now.toTimeString().slice(0, 5)
+              const remaining = todayAllSlots.filter(sl => sl.startTime && sl.startTime >= nowHHmm2 && sl.participant1 && sl.participant2).length
               const courtMap = new Map<number, number>()
               todayAllSlots.filter(sl => sl.participant1 && sl.participant2).forEach(sl => courtMap.set(sl.courtNo, (courtMap.get(sl.courtNo) ?? 0) + 1))
-              if (courtMap.size < 2) return null
+              if (courtMap.size < 2 && remaining < 1) return null
               const courts = [...courtMap.entries()].sort((a, b) => a[0] - b[0])
               return (
                 <div className="flex gap-1.5 flex-wrap">
+                  {remaining >= 1 && (
+                    <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">앞으로 {remaining}경기</span>
+                  )}
                   {courts.map(([c, n]) => (
                     <span key={c} className="text-[10px] bg-white text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded-full">{c}번 {n}경기</span>
                   ))}
