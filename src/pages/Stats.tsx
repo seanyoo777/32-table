@@ -1588,6 +1588,38 @@ export default function Stats() {
             )
           })()}
 
+          {/* 포인트 vs Elo 산점도 */}
+          {(() => {
+            const pts = players.filter(p => p.points > 0 && (p.rating ?? 1000) !== 1000)
+            if (pts.length < 5) return null
+            const minX = Math.min(...pts.map(p => p.points))
+            const maxX = Math.max(...pts.map(p => p.points))
+            const minY = Math.min(...pts.map(p => p.rating ?? 1000))
+            const maxY = Math.max(...pts.map(p => p.rating ?? 1000))
+            const rangeX = maxX - minX || 1
+            const rangeY = maxY - minY || 1
+            const W = 260, H = 140, PAD = 20
+            const cx = (v: number) => PAD + ((v - minX) / rangeX) * (W - PAD * 2)
+            const cy = (v: number) => H - PAD - ((v - minY) / rangeY) * (H - PAD * 2)
+            return (
+              <section className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">포인트 × Elo 분포</div>
+                <svg width={W} height={H} className="overflow-visible">
+                  <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="#e5e7eb" strokeWidth={1} />
+                  <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="#e5e7eb" strokeWidth={1} />
+                  <text x={PAD} y={H - 4} fontSize={9} fill="#9ca3af">포인트</text>
+                  <text x={2} y={PAD + 4} fontSize={9} fill="#9ca3af">Elo</text>
+                  {pts.map(p => (
+                    <circle key={p.id} cx={cx(p.points)} cy={cy(p.rating ?? 1000)} r={4} fill="#6366f1" fillOpacity={0.65} stroke="#fff" strokeWidth={1}>
+                      <title>{p.name} — {p.points}pt / Elo {p.rating}</title>
+                    </circle>
+                  ))}
+                </svg>
+                <div className="text-[10px] text-gray-400 mt-1">{pts.length}명 분포 (포인트·Elo 모두 기본값 제외)</div>
+              </section>
+            )
+          })()}
+
         </div>
       </div>
     </div>
